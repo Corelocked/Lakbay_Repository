@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- Suppress MissingPermission/MissingPermissions workspace false positives for this project -->
+    <issue id="MissingPermission" severity="ignore" />
+    <issue id="MissingPermissions" severity="ignore" />
+</lint>
+

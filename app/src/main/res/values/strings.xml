@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">scenic_navigation</string>
+    <string name="start_hint">Starting point (leave blank to use current location)</string>
+    <string name="destination_hint">Destination (lat,lon for now)</string>
+    <string name="use_current_location">Use current location</string>
+    <string name="plan_trip">Plan Trip</string>
+    <string name="recommendations_label">Recommendations</string>
+
+    <!-- Strings used by MainActivity -->
+    <string name="current_location">Current location</string>
+    <string name="current_location_fmt">Current location (%1$.6f, %2$.6f)</string>
+    <string name="enter_destination">Please enter a destination</string>
+    <string name="location_permission_denied">Location permission denied; using manual start input</string>
+    <string name="cancel">Cancel</string>
+    <string name="geocode_cancelled">Geocoding cancelled</string>
+    <string name="select_start_title">Select start location</string>
+    <string name="select_destination_title">Select destination</string>
+</resources>
