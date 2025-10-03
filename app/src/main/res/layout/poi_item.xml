@@ -3,7 +3,10 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:padding="12dp"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
 
     <TextView
         android:id="@+id/tv_name"
@@ -11,7 +14,7 @@
         android:layout_height="wrap_content"
         android:textStyle="bold"
         android:textSize="16sp"
-        android:text="POI Name" />
+        android:text="@string/poi_name_placeholder" />
 
     <TextView
         android:id="@+id/tv_category"
@@ -19,7 +22,7 @@
         android:layout_height="wrap_content"
         android:textSize="14sp"
         android:textColor="#666666"
-        android:text="Category" />
+        android:text="@string/poi_category_placeholder" />
 
     <TextView
         android:id="@+id/tv_description"
@@ -27,6 +30,6 @@
         android:layout_height="wrap_content"
         android:textSize="14sp"
         android:layout_marginTop="4dp"
-        android:text="Short description" />
+        android:text="@string/poi_description_placeholder" />
 
 </LinearLayout>

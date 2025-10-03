@@ -15,4 +15,9 @@
     <string name="geocode_cancelled">Geocoding cancelled</string>
     <string name="select_start_title">Select start location</string>
     <string name="select_destination_title">Select destination</string>
+
+    <!-- POI item placeholders -->
+    <string name="poi_name_placeholder">POI Name</string>
+    <string name="poi_category_placeholder">Category</string>
+    <string name="poi_description_placeholder">Short description</string>
 </resources>

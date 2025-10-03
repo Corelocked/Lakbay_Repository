@@ -14,6 +14,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.app.ActivityCompat
+import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
@@ -34,6 +35,7 @@ import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import java.util.Locale
 
 import com.google.android.material.snackbar.Snackbar
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -43,7 +45,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONArray
 import kotlin.coroutines.resume
 
 import java.util.LinkedHashMap
@@ -54,6 +55,8 @@ class MainActivity : AppCompatActivity() {
     private var lastLocation: Location? = null
     private var map: MapView? = null
     private var myLocationOverlay: MyLocationNewOverlay? = null
+    // map of POI key -> Marker to allow selecting/highlighting from the recommendations list
+    private val poiMarkerMap = mutableMapOf<String, Marker>()
 
     // reuse OkHttp client for geocoding
     private val httpClient: OkHttpClient by lazy { OkHttpClient() }
@@ -124,7 +127,7 @@ class MainActivity : AppCompatActivity() {
         val alreadyAsked = prefs.getBoolean(askedKey, false)
         if (!alreadyAsked && !hasLocationPermission()) {
             // mark we've asked so we don't prompt repeatedly
-            prefs.edit().putBoolean(askedKey, true).apply()
+            prefs.edit { putBoolean(askedKey, true) }
             // show rationale snackbar with Allow action
             Snackbar.make(findViewById(R.id.main), "Allow location access to center the map and suggest nearby places", Snackbar.LENGTH_INDEFINITE)
                 .setAction("Allow") {
@@ -204,6 +207,11 @@ class MainActivity : AppCompatActivity() {
                             val sel = selectGeocodeResult(startResults, "Select start location")
                             sel?.let { GeoPoint(it.lat, it.lon) }
                         }
+                    } else {
+                        // No results: inform the user (could be network or no matches)
+                        withContext(Dispatchers.Main) {
+                            Snackbar.make(findViewById(R.id.main), "No geocoding results for start input (check network or spelling)", Snackbar.LENGTH_LONG).show()
+                        }
                     }
                 }
                 var destPoint = parseLatLon(destInput)
@@ -215,6 +223,10 @@ class MainActivity : AppCompatActivity() {
                         } else {
                             val sel = selectGeocodeResult(destResults, "Select destination")
                             sel?.let { GeoPoint(it.lat, it.lon) }
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            Snackbar.make(findViewById(R.id.main), "No geocoding results for destination (check network or spelling)", Snackbar.LENGTH_LONG).show()
                         }
                     }
                 }
@@ -239,13 +251,60 @@ class MainActivity : AppCompatActivity() {
 
                 // Merge route POIs into recommendations (route POIs first)
                 val recommendations = mutableListOf<Poi>()
-                for (p in routePois) recommendations.add(p)
-                recommendations.addAll(generateRecommendations(startInput, destInput))
-                rvRecs.adapter = PoiAdapter(recommendations)
+                for (p in routePois) if (keepPoi(p)) recommendations.add(p)
+                // Fetch additional recommendations: prefer POIs along/near the route; fall back to destination-centered search
+                var fetched = if (routePoints.isNotEmpty()) {
+                    // sample every ~800m along the route and search within 100m
+                    generateRecommendationsAlongRoute(routePoints, sampleDistMeters = 800, radiusMeters = 100)
+                } else {
+                    generateRecommendations(destPoint, 5000)
+                }
 
-                // Clear existing overlays then re-add myLocationOverlay if present
+                // If route-based fetch returned none, try a destination-centered fallback with larger radius
+                if (fetched.isEmpty() && routePoints.isNotEmpty()) {
+                    Log.d("MainActivity", "Route-based POIs empty, falling back to destination-centered search")
+                    val fallback = generateRecommendations(destPoint, 10000)
+                    if (fallback.isNotEmpty()) {
+                        fetched = fallback
+                        Log.d("MainActivity", "Fallback returned ${fetched.size} POIs")
+                        withContext(Dispatchers.Main) {
+                            Snackbar.make(findViewById(R.id.main), "No POIs found along route — showing ${fetched.size} near destination", Snackbar.LENGTH_LONG).show()
+                        }
+                    }
+                }
+
+                Log.d("MainActivity", "routePois=${routePois.size}, fetched=${fetched.size}")
+                if (fetched.isNotEmpty()) {
+                    // Log first few names for easier debugging in Logcat
+                    val firstNames = fetched.take(5).joinToString(", ") { it.name }
+                    Log.d("MainActivity", "Sample POIs: $firstNames")
+                    withContext(Dispatchers.Main) {
+                        Snackbar.make(findViewById(R.id.main), "Found ${fetched.size} POIs (route: ${routePois.size})", Snackbar.LENGTH_LONG).show()
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        Snackbar.make(findViewById(R.id.main), "No POIs found (route:${routePois.size}). Try increasing radius or check network.", Snackbar.LENGTH_LONG).show()
+                        AlertDialog.Builder(this@MainActivity)
+                            .setTitle("No recommendations found")
+                            .setMessage("No POIs were found along the route. You can try increasing the search radius or check network/Overpass availability. Run a quick test?")
+                            .setPositiveButton("Run test") { _, _ ->
+                                val dbgPoint = destPoint
+                                lifecycleScope.launch {
+                                    // run a small debug Overpass request at destination to surface logs
+                                    debugOverpassAt(dbgPoint, 1000)
+                                }
+                            }
+                            .setNegativeButton("OK", null)
+                            .show()
+                    }
+                }
+                // filter fetched POIs for blank names / surveillance cameras
+                val filteredFetched = fetched.filter { keepPoi(it) }
+                recommendations.addAll(filteredFetched)
+                // Clear existing overlays and marker map, then re-add myLocationOverlay if present
                 val overlays = map?.overlays
                 overlays?.clear()
+                poiMarkerMap.clear()
                 overlays?.let { overlayList ->
                     myLocationOverlay?.let { overlay -> if (!overlayList.contains(overlay)) overlayList.add(overlay) }
                 }
@@ -259,6 +318,8 @@ class MainActivity : AppCompatActivity() {
                         marker.subDescription = poi.description
                         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                         overlays?.add(marker)
+                        // store marker keyed by POI so list clicks can find it
+                        poiMarkerMap[poiKey(poi)] = marker
                     }
                 }
 
@@ -283,6 +344,19 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 map?.invalidate()
+
+                // Now that markers are present, set adapter so clicks can show corresponding marker info
+                rvRecs.adapter = PoiAdapter(recommendations) { poi ->
+                    if (poi.lat != null && poi.lon != null) {
+                        map?.controller?.setCenter(GeoPoint(poi.lat, poi.lon))
+                        map?.controller?.setZoom(15.0)
+                        val key = poiKey(poi)
+                        val marker = poiMarkerMap[key]
+                        marker?.showInfoWindow()
+                        map?.invalidate()
+                    }
+                }
+
                 // hide progress and re-enable inputs
                 progress.visibility = View.GONE
                 btnCancel.visibility = View.GONE
@@ -352,202 +426,533 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    private fun generateRecommendations(start: String, dest: String): List<Poi> {
-        // Minimal mocked dataset. In a real app you'd call a routing API and POI service.
-        val dataset = listOf(
-            Poi("Ocean View Point", "Scenic", "A beautiful overlook with ocean views.", 37.7749, -122.4194),
-            Poi("Old Town Market", "Cultural", "Historic market with local crafts and food.", 37.8044, -122.2711),
-            Poi("Riverside Inn", "Hotel", "Comfortable stay near the river.", 37.6879, -122.4702),
-            Poi("Sunset Diner", "Restaurant", "Local diner known for sunset views.", 37.7599, -122.4148),
-            Poi("Artisan Museum", "Cultural", "Small museum showcasing regional art.", 37.8008, -122.4098),
-            Poi("Vista Trail", "Scenic", "Short hiking trail with panoramic vistas.", 37.8651, -122.2545)
-        )
+    // Fetch POIs near a center point using Overpass API. Returns empty list if center is null or on error.
+    private suspend fun generateRecommendations(center: GeoPoint?, radiusMeters: Int = 5000): List<Poi> = withContext(Dispatchers.IO) {
+        if (center == null) return@withContext emptyList()
+        val lat = center.latitude
+        val lon = center.longitude
 
-        // Very simple ranking: mix scenic first, then culture, then food/hotel
-        return dataset.sortedWith(compareBy({ it.category != "Scenic" }, { it.category }))
-    }
+        // Overpass QL: nodes with common POI tags within radius
+        val ql = """
++[out:json][timeout:15];
++(
++  node(around:$radiusMeters,$lat,$lon)[tourism];
++  way(around:$radiusMeters,$lat,$lon)[tourism];
++  relation(around:$radiusMeters,$lat,$lon)[tourism];
++  node(around:$radiusMeters,$lat,$lon)[amenity];
++  way(around:$radiusMeters,$lat,$lon)[amenity];
++  relation(around:$radiusMeters,$lat,$lon)[amenity];
++  node(around:$radiusMeters,$lat,$lon)[historic];
++  way(around:$radiusMeters,$lat,$lon)[historic];
++  relation(around:$radiusMeters,$lat,$lon)[historic];
++  node(around:$radiusMeters,$lat,$lon)[leisure];
++  way(around:$radiusMeters,$lat,$lon)[leisure];
++  relation(around:$radiusMeters,$lat,$lon)[leisure];
++  node(around:$radiusMeters,$lat,$lon)[man_made];
++  way(around:$radiusMeters,$lat,$lon)[man_made];
++  relation(around:$radiusMeters,$lat,$lon)[man_made];
++);
++out center 50;
++""".trimIndent()
 
-    // Return multiple candidate geocoding results from Nominatim
-    private suspend fun geocodeAddresses(address: String): List<GeocodeResult> {
-        // check cache first (and TTL)
-        synchronized(geocodeCache) {
-            geocodeCache[address]?.let { entry ->
-                if (System.currentTimeMillis() - entry.timestamp <= GEOCODE_TTL_MS) {
-                    return entry.results
-                } else {
-                    geocodeCache.remove(address)
-                }
-            }
-        }
-        val urlString = "https://nominatim.openstreetmap.org/search?format=json&q=${Uri.encode(address)}"
-        return withContext(Dispatchers.IO) {
-            try {
-                val request = Request.Builder()
-                    .url(urlString)
-                    .header("User-Agent", packageName)
-                    .header("Accept-Language", "en-US,en;q=0.9")
-                    .get()
-                    .build()
+        // Ensure the QL has no stray leading characters and send as text/plain
+        val qlClean = ql.lines().joinToString("\n") { it.trimStart('+') }
+        val mediaType = "text/plain; charset=utf-8".toMediaType()
+        val requestBody = qlClean.toRequestBody(mediaType)
+        val request = Request.Builder()
+            .url("https://overpass-api.de/api/interpreter")
+            .post(requestBody)
+            .header("User-Agent", "${packageName}/1.0 (contact: cedricjoshua.palapuz@gmail.com)")
+            .header("Accept", "application/json")
+            .build()
 
-                httpClient.newCall(request).execute().use { resp ->
-                    if (!resp.isSuccessful) return@withContext emptyList()
-                    val body = resp.body?.string() ?: return@withContext emptyList()
-                    val results = JSONArray(body)
-                    val out = mutableListOf<GeocodeResult>()
-                    for (i in 0 until results.length()) {
-                        val obj = results.getJSONObject(i)
-                        val lat = obj.getDouble("lat")
-                        val lon = obj.getDouble("lon")
-                        val display = obj.optString("display_name", "$lat,$lon")
-                        out.add(GeocodeResult(display, lat, lon))
-                    }
-                    // cache the results for this query
-                    synchronized(geocodeCache) {
-                        geocodeCache[address] = CacheEntry(out, System.currentTimeMillis())
-                    }
-                    return@withContext out
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
+        try {
+            Log.d("MainActivity", "Overpass request: around=$radiusMeters lat=$lat lon=$lon")
+            val response = httpClient.newCall(request).execute()
+            if (!response.isSuccessful) {
+                Log.d("MainActivity", "Overpass response code: ${response.code}")
+                response.close()
                 return@withContext emptyList()
             }
+            val body = response.body?.string() ?: ""
+            val json = org.json.JSONObject(body)
+            val elements = json.optJSONArray("elements") ?: return@withContext emptyList()
+
+            val pois = mutableListOf<Poi>()
+            for (i in 0 until elements.length()) {
+                val el = elements.getJSONObject(i)
+                // try node lat/lon, otherwise check 'center' (for ways/relations)
+                var elLat = el.optDouble("lat", Double.NaN)
+                var elLon = el.optDouble("lon", Double.NaN)
+                if (elLat.isNaN() || elLon.isNaN()) {
+                    val center = el.optJSONObject("center")
+                    if (center != null) {
+                        elLat = center.optDouble("lat", Double.NaN)
+                        elLon = center.optDouble("lon", Double.NaN)
+                    }
+                }
+                val tags = el.optJSONObject("tags")
+                val name = tags?.optString("name") ?: tags?.optString("official_name") ?: "Unknown"
+                val category = deriveCategory(tags)
+                val desc = tags?.optString("description") ?: tags?.optString("operator") ?: ""
+
+                // Skip blank/unknown names and surveillance cameras
+                val nameTrim = name.trim()
+                if (nameTrim.isBlank() || nameTrim.equals("Unknown", ignoreCase = true)) continue
+                if (isSurveillance(tags)) continue
+
+                if (!elLat.isNaN() && !elLon.isNaN()) {
+                    pois.add(Poi(nameTrim, category, desc, elLat, elLon))
+                }
+                if (pois.size >= 30) break
+            }
+
+            Log.d("MainActivity", "Overpass returned ${pois.size} POIs")
+            return@withContext pois
+        } catch (e: Exception) {
+            Log.d("MainActivity", "Overpass error: ${e.message}")
+            withContext(Dispatchers.Main) {
+                Snackbar.make(findViewById(R.id.main), "Failed to fetch POIs (network)", Snackbar.LENGTH_LONG).show()
+            }
+            return@withContext emptyList()
         }
     }
 
-    // Fetch route via OSRM and then POIs along the route via Overpass API
-    private suspend fun fetchRouteAndPois(start: GeoPoint?, dest: GeoPoint?): Pair<List<GeoPoint>, List<Poi>> {
-        if (dest == null) return Pair(emptyList(), emptyList())
-        return withContext(Dispatchers.IO) {
-            try {
-                val routePoints = mutableListOf<GeoPoint>()
-                if (start != null) {
-                    // call OSRM public demo server
-                    val url = "https://router.project-osrm.org/route/v1/driving/${start.longitude},${start.latitude};${dest.longitude},${dest.latitude}?overview=full&geometries=geojson"
-                    val req = Request.Builder().url(url).header("User-Agent", packageName).get().build()
-                    httpClient.newCall(req).execute().use { resp ->
-                        if (resp.isSuccessful) {
-                            val body = resp.body?.string() ?: ""
-                            val root = org.json.JSONObject(body)
-                            val routes = root.optJSONArray("routes")
-                            if (routes != null && routes.length() > 0) {
-                                val r0 = routes.getJSONObject(0)
-                                val geom = r0.getJSONObject("geometry")
-                                val coords = geom.getJSONArray("coordinates")
-                                for (i in 0 until coords.length()) {
-                                    val pair = coords.getJSONArray(i)
-                                    val lon = pair.getDouble(0)
-                                    val lat = pair.getDouble(1)
-                                    routePoints.add(GeoPoint(lat, lon))
-                                }
-                            }
-                        }
-                    }
-                }
+    // Helper: produce a friendly category label for a POI based on tags
+    private fun deriveCategory(tags: org.json.JSONObject?): String {
+        if (tags == null) return "POI"
+        val historic = tags.optString("historic").ifBlank { "" }
+        val manMade = tags.optString("man_made").ifBlank { "" }
+        val tourism = tags.optString("tourism").ifBlank { "" }
+        val amenity = tags.optString("amenity").ifBlank { "" }
+        val leisure = tags.optString("leisure").ifBlank { "" }
 
-                // If no start (only dest), we won't request route; but still try to find POIs around dest
-                val samplePoints = if (routePoints.isNotEmpty()) {
-                    // sample up to 6 points along route evenly
-                    val step = Math.max(1, routePoints.size / 6)
-                    routePoints.filterIndexed { idx, _ -> idx % step == 0 }
-                } else {
-                    listOf(dest)
-                }
+        if (historic.isNotBlank()) {
+            return when (historic.lowercase()) {
+                "memorial" -> "Memorial"
+                "monument" -> "Monument"
+                "archaeological_site" -> "Archaeological site"
+                "ruins" -> "Ruins"
+                "castle" -> "Castle"
+                "fort" -> "Fort"
+                "museum" -> "Museum"
+                else -> "Historical: ${historic.replace('_', ' ').replaceFirstChar { it.uppercase(Locale.getDefault()) }}"
+            }
+        }
+        if (manMade.isNotBlank()) {
+            return "Landmark (${manMade.replace('_', ' ').replaceFirstChar { it.uppercase(Locale.getDefault()) }})"
+        }
+        if (tourism.isNotBlank()) return tourism.replace('_', ' ').replaceFirstChar { it.uppercase(Locale.getDefault()) }
+        if (amenity.isNotBlank()) return amenity.replace('_', ' ').replaceFirstChar { it.uppercase(Locale.getDefault()) }
+        if (leisure.isNotBlank()) return leisure.replace('_', ' ').replaceFirstChar { it.uppercase(Locale.getDefault()) }
+        return "POI"
+    }
 
-                // Build overpass query by combining around clauses for selected sample points
-                val radius = 1000 // meters
-                val sb = StringBuilder()
-                sb.append("[out:json][timeout:25];(\n")
-                for (p in samplePoints) {
-                    // scenic / tourism
-                    sb.append("node[\"tourism\"~\"viewpoint|attraction|museum\"](around:$radius,${p.latitude},${p.longitude});\n")
-                    // historic
-                    sb.append("node[\"historic\"](around:$radius,${p.latitude},${p.longitude});\n")
-                    // amenities: restaurant, hotel
-                    sb.append("node[\"amenity\"~\"restaurant|hotel\"](around:$radius,${p.latitude},${p.longitude});\n")
-                }
-                sb.append(");out center 200;\n")
+    private suspend fun selectGeocodeResult(results: List<GeocodeResult>, title: String): GeocodeResult? = suspendCancellableCoroutine {
+        continuation ->
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setItems(results.map { it.displayName }.toTypedArray()) { _, which ->
+                continuation.resume(results[which])
+            }
+            .setOnCancelListener { continuation.resume(null) }
+            .show()
+    }
 
-                val overpassUrl = "https://overpass-api.de/api/interpreter"
-                val body = sb.toString().toRequestBody("application/x-www-form-urlencoded".toMediaType())
-                val overpassReq = Request.Builder().url(overpassUrl).post(body).header("User-Agent", packageName).build()
-                val pois = mutableListOf<Poi>()
-                httpClient.newCall(overpassReq).execute().use { resp ->
-                    if (resp.isSuccessful) {
-                        val body = resp.body?.string() ?: ""
-                        val root = org.json.JSONObject(body)
-                        val elements = root.optJSONArray("elements")
-                        if (elements != null) {
-                            for (i in 0 until elements.length()) {
-                                val el = elements.getJSONObject(i)
-                                val lat = el.optDouble("lat", Double.NaN)
-                                val lon = el.optDouble("lon", Double.NaN)
-                                val tags = el.optJSONObject("tags")
-                                val name = tags?.optString("name") ?: tags?.optString("description") ?: "POI"
-                                var category = "Scenic"
-                                if (tags != null) {
-                                    when {
-                                        tags.has("amenity") -> {
-                                            val a = tags.getString("amenity")
-                                            category = when (a) {
-                                                "restaurant" -> "Restaurant"
-                                                "hotel" -> "Hotel"
-                                                else -> "Food"
-                                            }
-                                        }
-                                        tags.has("tourism") -> category = "Scenic"
-                                        tags.has("historic") -> category = "Cultural"
-                                    }
-                                }
-                                if (!lat.isNaN() && !lon.isNaN()) {
-                                    pois.add(Poi(name, category, "From OpenStreetMap", lat, lon))
-                                }
-                            }
-                        }
-                    }
-                }
+    private suspend fun fetchRouteAndPois(start: GeoPoint?, dest: GeoPoint): Pair<List<GeoPoint>, List<Poi>> = withContext(Dispatchers.IO) {
+        if (start == null) return@withContext Pair(emptyList(), emptyList())
 
-                return@withContext Pair(routePoints, pois)
-            } catch (e: Exception) {
-                e.printStackTrace()
+        // Using OSRM demo server for routing. Replace with your own instance for production.
+        val url = "https://router.project-osrm.org/route/v1/driving/${start.longitude},${start.latitude};${dest.longitude},${dest.latitude}?overview=full&geometries=geojson&alternatives=false"
+
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", packageName)
+            .header("Accept", "application/json")
+            .build()
+        try {
+            Log.d("MainActivity", "OSRM request: $url")
+            val response = httpClient.newCall(request).execute()
+            Log.d("MainActivity", "OSRM response code: ${response.code}")
+            if (response.isSuccessful) {
+                val body = response.body?.string() ?: ""
+                val truncated = if (body.length > 200) body.substring(0, 200) + "..." else body
+                Log.d("MainActivity", "OSRM response body (truncated): $truncated")
+                val (route, pois) = parseOsrmResponse(body)
+                return@withContext Pair(route, pois)
+            } else {
                 return@withContext Pair(emptyList(), emptyList())
+            }
+        } catch (e: Exception) {
+            Log.d("MainActivity", "OSRM error: ${e.message}")
+            return@withContext Pair(emptyList(), emptyList())
+        }
+    }
+
+    private fun parseOsrmResponse(body: String): Pair<List<GeoPoint>, List<Poi>> {
+        try {
+            val json = org.json.JSONObject(body)
+            val routes = json.getJSONArray("routes")
+            if (routes.length() == 0) return Pair(emptyList(), emptyList())
+
+            val routeObj = routes.getJSONObject(0)
+            val geometry = routeObj.getJSONObject("geometry")
+            val coords = geometry.getJSONArray("coordinates")
+
+            val routePoints = mutableListOf<GeoPoint>()
+            for (i in 0 until coords.length()) {
+                val point = coords.getJSONArray(i)
+                routePoints.add(GeoPoint(point.getDouble(1), point.getDouble(0)))
+            }
+
+            // For demonstration, we'll mock some POIs found along the route.
+            // A real app might get these from the routing service or a separate POI database.
+            val pois = mutableListOf<Poi>()
+            // No mocked POIs: return only what the routing service provides. POIs along/near the route are fetched from Overpass.
+            // Keep pois empty here; callers will merge route POIs (if any) and Overpass results.
+
+            return Pair(routePoints, pois)
+        } catch (_: org.json.JSONException) {
+            return Pair(emptyList(), emptyList())
+        }
+    }
+
+    // Geocode using Nominatim; cached with TTL and retry/backoff on transient errors
+    private suspend fun geocodeAddresses(query: String): List<GeocodeResult> = withContext(Dispatchers.IO) {
+        val cached = geocodeCache[query]
+        if (cached != null && (System.currentTimeMillis() - cached.timestamp < GEOCODE_TTL_MS)) {
+            return@withContext cached.results
+        }
+
+        val url = "https://nominatim.openstreetmap.org/search?q=${Uri.encode(query)}&format=json&limit=5"
+        val userAgent = "$packageName/1.0 (contact: cedricjoshua.palapuz@gmail.com)"
+        val maxAttempts = 3
+        var backoff = 500L
+
+        for (attempt in 1..maxAttempts) {
+            try {
+                val request = Request.Builder()
+                    .url(url)
+                    .header("User-Agent", userAgent)
+                    .header("Accept", "application/json")
+                    .build()
+
+                Log.d("MainActivity", "Geocode request (attempt $attempt): $url")
+                val response = httpClient.newCall(request).execute()
+                Log.d("MainActivity", "Geocode response code: ${response.code}")
+
+                val code = response.code
+                val body = response.body?.string() ?: ""
+                val truncatedBody = if (body.length > 200) body.substring(0, 200) + "..." else body
+                Log.d("MainActivity", "Geocode response body (truncated): $truncatedBody")
+
+                if (code == 403) {
+                    withContext(Dispatchers.Main) {
+                        Snackbar.make(findViewById(R.id.main), "Geocoding forbidden (invalid User-Agent). Update User-Agent with contact info.", Snackbar.LENGTH_LONG).show()
+                    }
+                    return@withContext emptyList()
+                }
+
+                if (code == 429 || code >= 500) {
+                    response.close()
+                    if (attempt < maxAttempts) {
+                        Log.d("MainActivity", "Geocode will retry after $backoff ms (code $code)")
+                        kotlinx.coroutines.delay(backoff)
+                        backoff *= 2
+                        continue
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            Snackbar.make(findViewById(R.id.main), "Geocoding failed: server returned $code", Snackbar.LENGTH_LONG).show()
+                        }
+                        return@withContext emptyList()
+                    }
+                }
+
+                if (!response.isSuccessful) {
+                    val rc = response.code
+                    response.close()
+                    withContext(Dispatchers.Main) {
+                        Snackbar.make(findViewById(R.id.main), "Geocoding failed: server returned $rc", Snackbar.LENGTH_LONG).show()
+                    }
+                    return@withContext emptyList()
+                }
+
+                val results = mutableListOf<GeocodeResult>()
+                val jsonArray = org.json.JSONArray(body)
+                for (i in 0 until jsonArray.length()) {
+                    val item = jsonArray.getJSONObject(i)
+                    results.add(GeocodeResult(
+                        displayName = item.optString("display_name", "Unknown place"),
+                        lat = item.optDouble("lat", 0.0),
+                        lon = item.optDouble("lon", 0.0)
+                    ))
+                }
+                geocodeCache[query] = CacheEntry(results, System.currentTimeMillis())
+                return@withContext results
+
+            } catch (e: Exception) {
+                Log.d("MainActivity", "Geocode error (attempt $attempt): ${e.message}")
+                if (attempt < maxAttempts) {
+                    kotlinx.coroutines.delay(backoff)
+                    backoff *= 2
+                    continue
+                } else {
+                    withContext(Dispatchers.Main) {
+                        Snackbar.make(findViewById(R.id.main), "Geocoding error: ${e.message}", Snackbar.LENGTH_LONG).show()
+                    }
+                    return@withContext emptyList()
+                }
+            }
+        }
+
+        return@withContext emptyList()
+    }
+
+    // Fetch POIs along/near a polyline (routePoints).
+    // This samples the route every `sampleDistMeters` and queries Overpass around each sample point with `radiusMeters`.
+    private suspend fun generateRecommendationsAlongRoute(
+        routePoints: List<GeoPoint>,
+        sampleDistMeters: Int = 800,
+        radiusMeters: Int = 500,
+        maxSamples: Int = 25
+    ): List<Poi> = withContext(Dispatchers.IO) {
+         if (routePoints.isEmpty()) return@withContext emptyList()
+
+         fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+            val R = 6371000.0 // meters
+            val dLat = Math.toRadians(lat2 - lat1)
+            val dLon = Math.toRadians(lon2 - lon1)
+            val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2)
+            val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+            return R * c
+        }
+
+        // sample points along the polyline approximately every sampleDistMeters
+        val samples = mutableListOf<GeoPoint>()
+        samples.add(routePoints.first())
+        var acc = 0.0
+        for (i in 1 until routePoints.size) {
+            val a = routePoints[i - 1]
+            val b = routePoints[i]
+            val seg = haversine(a.latitude, a.longitude, b.latitude, b.longitude)
+            acc += seg
+            if (acc >= sampleDistMeters) {
+                samples.add(b)
+                acc = 0.0
+            }
+        }
+        samples.add(routePoints.last())
+
+        // If we have too many samples, downsample evenly to keep the Overpass query reasonable
+        if (samples.size > maxSamples) {
+            Log.d("MainActivity", "Downsampling samples from ${samples.size} to $maxSamples")
+            val down = mutableListOf<GeoPoint>()
+            val step = samples.size.toDouble() / maxSamples.toDouble()
+            var idx = 0.0
+            repeat(maxSamples) {
+                val pick = samples[minOf(samples.size - 1, idx.toInt())]
+                down.add(pick)
+                idx += step
+            }
+            // ensure last point present
+            if (down.last() != samples.last()) down[down.size - 1] = samples.last()
+            samples.clear()
+            samples.addAll(down)
+        }
+
+        // Build Overpass QL with node(around:...) for each sample and tag set
+        val sb = StringBuilder()
+        sb.append("[out:json][timeout:25];\n(")
+        for (s in samples) {
+            val lat = s.latitude
+            val lon = s.longitude
+            sb.append("node(around:$radiusMeters,$lat,$lon)[amenity];\n")
+            sb.append("way(around:$radiusMeters,$lat,$lon)[amenity];\n")
+            sb.append("relation(around:$radiusMeters,$lat,$lon)[amenity];\n")
+            sb.append("node(around:$radiusMeters,$lat,$lon)[tourism];\n")
+            sb.append("way(around:$radiusMeters,$lat,$lon)[tourism];\n")
+            sb.append("relation(around:$radiusMeters,$lat,$lon)[tourism];\n")
+            sb.append("node(around:$radiusMeters,$lat,$lon)[historic];\n")
+            sb.append("way(around:$radiusMeters,$lat,$lon)[historic];\n")
+            sb.append("relation(around:$radiusMeters,$lat,$lon)[historic];\n")
+            sb.append("node(around:$radiusMeters,$lat,$lon)[leisure];\n")
+            sb.append("way(around:$radiusMeters,$lat,$lon)[leisure];\n")
+            sb.append("relation(around:$radiusMeters,$lat,$lon)[leisure];\n")
+            sb.append("node(around:$radiusMeters,$lat,$lon)[man_made];\n")
+            sb.append("way(around:$radiusMeters,$lat,$lon)[man_made];\n")
+            sb.append("relation(around:$radiusMeters,$lat,$lon)[man_made];\n")
+        }
+        sb.append(")\nout center 200;")
+        val ql = sb.toString()
+
+        val mediaType = "text/plain; charset=utf-8".toMediaType()
+        val requestBody = ql.toRequestBody(mediaType)
+        val request = Request.Builder()
+            .url("https://overpass-api.de/api/interpreter")
+            .post(requestBody)
+            .header("User-Agent", "$packageName/1.0 (contact: cedricjoshua.palapuz@gmail.com)")
+            .header("Accept", "application/json")
+            .build()
+
+        try {
+            Log.d("MainActivity", "Overpass route request: samples=${samples.size} radius=$radiusMeters")
+            val response = httpClient.newCall(request).execute()
+            if (!response.isSuccessful) {
+                Log.d("MainActivity", "Overpass route response code: ${response.code}")
+                response.close()
+                return@withContext emptyList()
+            }
+            val body = response.body?.string() ?: ""
+            val json = org.json.JSONObject(body)
+            val elements = json.optJSONArray("elements") ?: return@withContext emptyList()
+
+            val pois = mutableListOf<Poi>()
+            val seen = mutableSetOf<Long>()
+            for (i in 0 until elements.length()) {
+                val el = elements.getJSONObject(i)
+                val id = el.optLong("id", -1L)
+                if (id == -1L || seen.contains(id)) continue
+                seen.add(id)
+                var elLat = el.optDouble("lat", Double.NaN)
+                var elLon = el.optDouble("lon", Double.NaN)
+                if (elLat.isNaN() || elLon.isNaN()) {
+                    val center = el.optJSONObject("center")
+                    if (center != null) {
+                        elLat = center.optDouble("lat", Double.NaN)
+                        elLon = center.optDouble("lon", Double.NaN)
+                      }
+                }
+                val tags = el.optJSONObject("tags")
+                val name = tags?.optString("name") ?: tags?.optString("official_name") ?: "Unknown"
+                val category = deriveCategory(tags)
+                val desc = tags?.optString("description") ?: tags?.optString("operator") ?: ""
+
+                // Skip blank/unknown names and surveillance cameras
+                val nameTrim = name.trim()
+                if (nameTrim.isBlank() || nameTrim.equals("Unknown", ignoreCase = true)) continue
+                if (isSurveillance(tags)) continue
+
+                if (!elLat.isNaN() && !elLon.isNaN()) {
+                    pois.add(Poi(nameTrim, category, desc, elLat, elLon))
+                }
+             }
+
+            Log.d("MainActivity", "Overpass route returned ${pois.size} POIs before sorting")
+
+            // compute distance of each POI to the route (min distance to sampled routePoints) and sort
+            fun minDistToRoute(lat: Double, lon: Double): Double {
+                var minD = Double.MAX_VALUE
+                for (rp in routePoints) {
+                    val d = haversine(lat, lon, rp.latitude, rp.longitude)
+                    if (d < minD) minD = d
+                }
+                return minD
+            }
+
+            // Filter POIs to only those within 100m of the route
+            val poisWithDist = pois.map { poi -> Pair(poi, minDistToRoute(poi.lat ?: 0.0, poi.lon ?: 0.0)) }
+                .filter { it.second <= 100.0 }
+                .sortedBy { it.second }
+                .map { it.first }
+
+            val limited = if (poisWithDist.size > 50) poisWithDist.subList(0, 50) else poisWithDist
+            Log.d("MainActivity", "Returning ${limited.size} POIs after filtering/sorting/limiting")
+            return@withContext limited
+         } catch (e: Exception) {
+             Log.d("MainActivity", "Overpass route error: ${e.message}")
+             withContext(Dispatchers.Main) {
+                 Snackbar.make(findViewById(R.id.main), "Failed to fetch POIs along route (network)", Snackbar.LENGTH_LONG).show()
+             }
+             return@withContext emptyList()
+         }
+     }
+
+    // Debug helper: run a small Overpass query at a point and log the raw response size and first element names
+    private suspend fun debugOverpassAt(center: GeoPoint, radiusMeters: Int = 1000) = withContext(Dispatchers.IO) {
+        val lat = center.latitude
+        val lon = center.longitude
+        val ql = """
++[out:json][timeout:10];
++(
++  node(around:$radiusMeters,$lat,$lon)[amenity];
++  node(around:$radiusMeters,$lat,$lon)[tourism];
++  node(around:$radiusMeters,$lat,$lon)[historic];
++  node(around:$radiusMeters,$lat,$lon)[leisure];
++  node(around:$radiusMeters,$lat,$lon)[man_made];
++);
++out center 20;
++""".trimIndent()
+        val qlClean = ql.lines().joinToString("\n") { it.trimStart('+') }
+        val mediaType = "text/plain; charset=utf-8".toMediaType()
+        val requestBody = qlClean.toRequestBody(mediaType)
+        val request = Request.Builder()
+            .url("https://overpass-api.de/api/interpreter")
+            .post(requestBody)
+            .header("User-Agent", "$packageName/1.0 (contact: cedricjoshua.palapuz@gmail.com)")
+            .header("Accept", "application/json")
+            .build()
+        try {
+            Log.d("MainActivity", "Debug Overpass test: lat=$lat lon=$lon r=$radiusMeters")
+            val response = httpClient.newCall(request).execute()
+            val body = response.body?.string() ?: ""
+            Log.d("MainActivity", "Debug Overpass response code: ${response.code}, length=${body.length}")
+            if (body.isNotBlank()) {
+                val json = org.json.JSONObject(body)
+                val elements = json.optJSONArray("elements")
+                val names = mutableListOf<String>()
+                if (elements != null) {
+                    for (i in 0 until minOf(5, elements.length())) {
+                        val el = elements.getJSONObject(i)
+                        val tags = el.optJSONObject("tags")
+                        names.add(tags?.optString("name") ?: "<no name>")
+                    }
+                }
+                Log.d("MainActivity", "Debug Overpass sample names: ${names.joinToString(", ")}")
+            }
+        } catch (e: Exception) {
+            Log.d("MainActivity", "Debug Overpass error: ${e.message}")
+            withContext(Dispatchers.Main) {
+                Snackbar.make(findViewById(R.id.main), "Debug Overpass failed: ${e.message}", Snackbar.LENGTH_LONG).show()
             }
         }
     }
 
-    // Show a blocking (suspend) single-choice dialog on the main thread to select a geocode candidate
-    private suspend fun selectGeocodeResult(results: List<GeocodeResult>, title: String): GeocodeResult? {
-        return suspendCancellableCoroutine { cont ->
-            val items = results.map { it.displayName }.toTypedArray()
-            var selectedIndex = 0
-            val dialog = AlertDialog.Builder(this)
-                .setTitle(title)
-                .setSingleChoiceItems(items, 0) { _, which -> selectedIndex = which }
-                .setPositiveButton("Select") { d, _ ->
-                    d.dismiss()
-                    if (!cont.isCancelled) cont.resume(results[selectedIndex])
-                }
-                .setNegativeButton("Cancel") { d, _ ->
-                    d.dismiss()
-                    if (!cont.isCancelled) cont.resume(null)
-                }
-                .setOnCancelListener {
-                    if (!cont.isCancelled) cont.resume(null)
-                }
-                .create()
-
-            cont.invokeOnCancellation { dialog.dismiss() }
-            dialog.show()
+    // Helper: detect surveillance/CCTV-like POIs by scanning tags for camera/cctv/surveillance/monitor
+    private fun isSurveillance(tags: org.json.JSONObject?): Boolean {
+        if (tags == null) return false
+        // Check some well-known keys first
+        val checkKeys = listOf("surveillance", "camera", "monitoring", "security", "man_made")
+        for (k in checkKeys) {
+            val v = tags.optString(k).ifBlank { "" }.lowercase()
+            if (v.contains("camera") || v.contains("cctv") || v.contains("surveillance") || v.contains("monitor")) return true
         }
+        // Fallback: check all tag values
+        val names = tags.names()
+        if (names != null) {
+            for (i in 0 until names.length()) {
+                val key = names.getString(i)
+                val v = tags.optString(key).ifBlank { "" }.lowercase()
+                if (v.contains("camera") || v.contains("cctv") || v.contains("surveillance") || v.contains("monitor")) return true
+            }
+        }
+        return false
     }
 
-    override fun onResume() {
-        super.onResume()
-        map?.onResume()
+    // Helper: basic check for Poi list filtering (blank/unknown names)
+    private fun keepPoi(p: Poi): Boolean {
+        val n = p.name.trim()
+        if (n.isBlank()) return false
+        if (n.equals("Unknown", ignoreCase = true)) return false
+        return true
     }
 
-    override fun onPause() {
-        super.onPause()
-        map?.onPause()
+    // Helper to create a stable key for a POI used in poiMarkerMap
+    private fun poiKey(p: Poi): String {
+        val lat = p.lat ?: 0.0
+        val lon = p.lon ?: 0.0
+        // include the name to distinguish POIs at same coords
+        return "%f_%f_%s".format(Locale.ROOT, lat, lon, p.name)
     }
 }

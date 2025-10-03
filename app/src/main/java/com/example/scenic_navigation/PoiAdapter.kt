@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class PoiAdapter(private val items: List<Poi>) : RecyclerView.Adapter<PoiAdapter.ViewHolder>() {
+class PoiAdapter(private val items: List<Poi>, private val onClick: (Poi) -> Unit) : RecyclerView.Adapter<PoiAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.poi_item, parent, false)
@@ -18,6 +18,7 @@ class PoiAdapter(private val items: List<Poi>) : RecyclerView.Adapter<PoiAdapter
         holder.name.text = poi.name
         holder.category.text = poi.category
         holder.description.text = poi.description
+        holder.itemView.setOnClickListener { onClick(poi) }
     }
 
     override fun getItemCount(): Int = items.size
@@ -28,4 +29,3 @@ class PoiAdapter(private val items: List<Poi>) : RecyclerView.Adapter<PoiAdapter
         val description: TextView = itemView.findViewById(R.id.tv_description)
     }
 }
-
