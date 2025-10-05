@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">scenic_navigation</string>
-    <string name="start_hint">Starting point (leave blank to use current location)</string>
-    <string name="destination_hint">Destination (lat,lon for now)</string>
+    <string name="start_hint">Starting point</string>
+    <string name="destination_hint">Destination</string>
     <string name="use_current_location">Use current location</string>
     <string name="plan_trip">Plan Trip</string>
     <string name="recommendations_label">Recommendations</string>
@@ -20,4 +20,5 @@
     <string name="poi_name_placeholder">POI Name</string>
     <string name="poi_category_placeholder">Category</string>
     <string name="poi_description_placeholder">Short description</string>
+    <string name="poi_icon_desc">POI icon</string>
 </resources>

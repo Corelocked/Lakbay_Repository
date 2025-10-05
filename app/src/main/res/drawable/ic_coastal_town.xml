@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+
+    <!-- Shadow -->
+    <path
+        android:fillColor="#40000000"
+        android:pathData="M16,3C11.03,3 7,7.03 7,12c0,7 9,17 9,17s9,-10 9,-17c0,-4.97 -4.03,-9 -9,-9z"/>
+
+    <!-- Main pin body - Blue for coastal -->
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M16,2C11.03,2 7,6.03 7,11c0,7 9,17 9,17s9,-10 9,-17c0,-4.97 -4.03,-9 -9,-9z"/>
+
+    <!-- Inner circle background -->
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M16,6.5 A4.5,4.5 0 1,1 16,15.5 A4.5,4.5 0 1,1 16,6.5 Z"/>
+
+    <!-- Coastal icon - waves and sun -->
+    <!-- Sun -->
+    <path
+        android:fillColor="#FFC107"
+        android:pathData="M18,8.5 A1.5,1.5 0 1,1 15,8.5 A1.5,1.5 0 1,1 18,8.5 Z"/>
+    
+    <!-- Waves -->
+    <path
+        android:fillColor="#1976D2"
+        android:pathData="M13,11.5 Q14,11 15,11.5 Q16,12 17,11.5 Q18,11 19,11.5 L19,12.5 Q18,12 17,12.5 Q16,13 15,12.5 Q14,12 13,12.5 Z"/>
+    <path
+        android:fillColor="#42A5F5"
+        android:pathData="M13,13 Q14,12.5 15,13 Q16,13.5 17,13 Q18,12.5 19,13 L19,14 Q18,13.5 17,14 Q16,14.5 15,14 Q14,13.5 13,14 Z"/>
+
+</vector>

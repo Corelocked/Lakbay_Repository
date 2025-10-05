@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+
+    <!-- Shadow -->
+    <path
+        android:fillColor="#40000000"
+        android:pathData="M16,3C11.03,3 7,7.03 7,12c0,7 9,17 9,17s9,-10 9,-17c0,-4.97 -4.03,-9 -9,-9z"/>
+
+    <!-- Main pin body - Brown/Gray for mountain -->
+    <path
+        android:fillColor="#795548"
+        android:pathData="M16,2C11.03,2 7,6.03 7,11c0,7 9,17 9,17s9,-10 9,-17c0,-4.97 -4.03,-9 -9,-9z"/>
+
+    <!-- Inner circle background -->
+    <path
+        android:fillColor="#EFEBE9"
+        android:pathData="M16,6.5 A4.5,4.5 0 1,1 16,15.5 A4.5,4.5 0 1,1 16,6.5 Z"/>
+
+    <!-- Mountain icon - three peaks -->
+    <path
+        android:fillColor="#5D4037"
+        android:pathData="M16,8 L18,12 L14,12 Z"/>
+    <path
+        android:fillColor="#6D4C41"
+        android:pathData="M13,10 L15,13 L11,13 Z"/>
+    <path
+        android:fillColor="#8D6E63"
+        android:pathData="M18,10 L20,13 L16,13 Z"/>
+    
+    <!-- Snow caps on peaks -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M16,8 L16.8,9.2 L15.2,9.2 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M13,10 L13.6,10.8 L12.4,10.8 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M18,10 L18.6,10.8 L17.4,10.8 Z"/>
+
+</vector>

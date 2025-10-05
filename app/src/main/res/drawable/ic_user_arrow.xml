@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- Outer glow/shadow -->
+    <path
+        android:fillColor="#80000000"
+        android:pathData="M24,6 L42,42 L24,33 L6,42 Z"/>
+
+    <!-- Main arrow body -->
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M24,4 L44,44 L24,34 L4,44 Z"/>
+
+    <!-- Highlight/shine -->
+    <path
+        android:fillColor="#64B5F6"
+        android:pathData="M24,4 L32,24 L24,20 L16,24 Z"/>
+
+    <!-- White center dot as circle path -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,21 A3,3 0 1,1 24,27 A3,3 0 1,1 24,21 Z"/>
+</vector>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp"
+    android:height="28dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+
+    <!-- Shadow -->
+    <path
+        android:fillColor="#40000000"
+        android:pathData="M16,3C11.03,3 7,7.03 7,12c0,7 9,17 9,17s9,-10 9,-17c0,-4.97 -4.03,-9 -9,-9z"/>
+
+    <!-- Main pin body -->
+    <path
+        android:fillColor="#8D6E63"
+        android:pathData="M16,2C11.03,2 7,6.03 7,11c0,7 9,17 9,17s9,-10 9,-17c0,-4.97 -4.03,-9 -9,-9z"/>
+
+    <!-- Inner circle background as path -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M16,6.5 A4.5,4.5 0 1,1 16,15.5 A4.5,4.5 0 1,1 16,6.5 Z"/>
+
+    <!-- Monument/building icon -->
+    <path
+        android:fillColor="#8D6E63"
+        android:strokeColor="#8D6E63"
+        android:strokeWidth="0.5"
+        android:pathData="M13,9 L16,8 L19,9 L19,13 L13,13 Z M14,10 L14,11 M16,10 L16,11 M18,10 L18,11"/>
+</vector>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+
+    <!-- Shadow -->
+    <path
+        android:fillColor="#40000000"
+        android:pathData="M16,3C11.03,3 7,7.03 7,12c0,7 9,17 9,17s9,-10 9,-17c0,-4.97 -4.03,-9 -9,-9z"/>
+
+    <!-- Main pin body -->
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M16,2C11.03,2 7,6.03 7,11c0,7 9,17 9,17s9,-10 9,-17c0,-4.97 -4.03,-9 -9,-9z"/>
+
+    <!-- Inner circle background as path -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M16,6 A5,5 0 1,1 16,16 A5,5 0 1,1 16,6 Z"/>
+
+    <!-- Star icon for waypoint -->
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M16,8.5 L16.9,10.3 L18.8,10.6 L17.4,12 L17.7,13.9 L16,13 L14.3,13.9 L14.6,12 L13.2,10.6 L15.1,10.3 Z"/>
+</vector>
