@@ -6,8 +6,6 @@ import android.location.Location
 import android.location.LocationManager
 import android.net.Uri
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -26,6 +24,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.app.AlertDialog
 import android.graphics.Color
+import com.google.android.material.switchmaterial.SwitchMaterial
 
 // osmdroid imports
 import org.osmdroid.config.Configuration
@@ -54,22 +53,20 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import kotlin.coroutines.resume
 
 import java.util.LinkedHashMap
-import kotlinx.coroutines.async
-import kotlinx.coroutines.supervisorScope
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
-import org.osmdroid.util.BoundingBox
 
 // Import models from the centralized models package
 import com.example.scenic_navigation.models.Poi
 import com.example.scenic_navigation.models.ScenicPoi
-import com.example.scenic_navigation.models.ScenicMunicipality
 import com.example.scenic_navigation.models.RecommendationItem
 import com.example.scenic_navigation.models.GeocodeResult
-import com.example.scenic_navigation.models.CoastalSegment
 import com.example.scenic_navigation.models.Waypoint
 import com.example.scenic_navigation.models.RoadTripSegment
 import com.example.scenic_navigation.models.RoadTripPlan
+import com.example.scenic_navigation.models.Town
+import com.example.scenic_navigation.data.FerryTerminals
+import com.example.scenic_navigation.services.TownService
+import com.example.scenic_navigation.services.ScenicRoutePlanner
+import com.example.scenic_navigation.utils.GeoUtils
 
 // Material components used in bottom sheet
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -105,6 +102,7 @@ class MainActivity : AppCompatActivity() {
 
     // Track current route polyline and markers
     private var currentRoutePolyline: Polyline? = null
+    private val currentRoutePolylines = mutableListOf<Polyline>()
     private val currentRouteMarkers = mutableListOf<Marker>()
 
     // Store the original destination when planning the route
@@ -122,36 +120,9 @@ class MainActivity : AppCompatActivity() {
     private val poiMarkers = mutableListOf<Marker>()
     private val scenicMarkers = mutableListOf<Marker>()
 
-    // Data classes for road trip planning
-    data class Waypoint(
-        val geoPoint: GeoPoint,
-        val name: String,
-        val estimatedStayDuration: Long = 30 * 60 * 1000L, // 30 minutes in milliseconds
-        val priority: Int = 1, // 1-5, with 5 being highest priority
-        val category: String = "poi",
-        val openingHours: String? = null,
-        val isOptional: Boolean = false
-    )
-
-    data class RoadTripSegment(
-        val from: Waypoint,
-        val to: Waypoint,
-        val route: List<GeoPoint>,
-        val distanceMeters: Double,
-        val estimatedDurationMs: Long,
-        val scenicScore: Double = 0.0
-    )
-
-    data class RoadTripPlan(
-        val waypoints: List<Waypoint>,
-        val segments: List<RoadTripSegment>,
-        val totalDistanceMeters: Double,
-        val totalDurationMs: Long,
-        val totalScenicScore: Double,
-        val startTime: Long? = null,
-        val endTime: Long? = null
-    )
-
+    // Town service for fetching towns along route
+    private val townService: TownService by lazy { TownService() }
+    private var currentRouteTowns = listOf<Town>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -170,7 +141,8 @@ class MainActivity : AppCompatActivity() {
         val etStart = findViewById<EditText>(R.id.et_start)
         val etDestination = findViewById<EditText>(R.id.et_destination)
         val switchUseCurrent = findViewById<SwitchCompat>(R.id.switch_use_current)
-        val switchScenicRoute = findViewById<SwitchCompat>(R.id.switch_scenic_route)
+        val switchOceanicRoute = findViewById<SwitchMaterial>(R.id.switch_oceanic_route)
+        val switchMountainRoute = findViewById<SwitchMaterial>(R.id.switch_mountain_route)
         val btnPlan = findViewById<Button>(R.id.btn_plan)
         // Inline (hidden) RecyclerView - kept as fallback
         val rvRecs = findViewById<RecyclerView>(R.id.rv_recommendations)
@@ -178,12 +150,14 @@ class MainActivity : AppCompatActivity() {
         val sheetRv = findViewById<RecyclerView>(R.id.sheet_rv_recommendations)
         val progress = findViewById<ProgressBar>(R.id.progress_geocoding)
         val progressOverlay = findViewById<View>(R.id.progress_overlay)
+        @Suppress("UNUSED_VARIABLE")
         val statusCard = findViewById<View>(R.id.card_status)
         statusView = findViewById(R.id.tv_status)
 
         // Set default states: current location and scenic route enabled by default
         switchUseCurrent.isChecked = true
-        switchScenicRoute.isChecked = true
+        switchOceanicRoute.isChecked = true
+        switchMountainRoute.isChecked = true
 
         // Use the sheet RecyclerView for the adapter so recommendations show in the modal
         sheetRv.layoutManager = LinearLayoutManager(this)
@@ -215,6 +189,57 @@ class MainActivity : AppCompatActivity() {
                 map?.overlays?.add(marker)
                 marker.showInfoWindow()
                 map?.invalidate()
+            },
+            onTownClick = { town ->
+                // When a town is clicked, show must-visit POIs in that town
+                lifecycleScope.launch {
+                    updateStatus("Loading attractions in ${town.name}...")
+                    val townService = TownService()
+                    val townPois = townService.getMustVisitPoisInTown(town, packageName)
+
+                    withContext(Dispatchers.Main) {
+                        if (townPois.isNotEmpty()) {
+                            // Update recommendations with POIs from this town
+                            val poiItems = townPois.map { poi ->
+                                RecommendationItem.PoiItem(poi)
+                            }
+                            poiAdapter.updateItems(poiItems)
+
+                            // Center map on town
+                            map?.controller?.setCenter(GeoPoint(town.lat, town.lon))
+                            map?.controller?.setZoom(14.0)
+
+                            // Add markers for town POIs
+                            currentRouteMarkers.forEach { map?.overlays?.remove(it) }
+                            currentRouteMarkers.clear()
+
+                            for (poi in townPois) {
+                                if (poi.lat != null && poi.lon != null) {
+                                    val marker = Marker(map)
+                                    marker.position = GeoPoint(poi.lat, poi.lon)
+                                    marker.title = poi.name
+                                    marker.subDescription = poi.description
+                                    marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                                    val iconRes = when {
+                                        poi.category.contains("restaurant", ignoreCase = true) -> R.drawable.ic_food_marker
+                                        poi.category.contains("museum", ignoreCase = true) -> R.drawable.ic_monument
+                                        else -> R.drawable.ic_scenic_marker
+                                    }
+                                    marker.icon = ResourcesCompat.getDrawable(resources, iconRes, theme)
+                                    map?.overlays?.add(marker)
+                                    currentRouteMarkers.add(marker)
+                                }
+                            }
+                            map?.invalidate()
+
+                            updateStatus("Found ${townPois.size} attractions in ${town.name}")
+                            clearStatusDelayed(2000)
+                        } else {
+                            updateStatus("No attractions found in ${town.name}")
+                            clearStatusDelayed(2000)
+                        }
+                    }
+                }
             }
         )
 
@@ -285,6 +310,10 @@ class MainActivity : AppCompatActivity() {
 
         // setup my-location overlay (we'll enable when permission exists)
         myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(this), map)
+        myLocationOverlay?.enableMyLocation()
+        myLocationOverlay?.enableFollowLocation()
+        myLocationOverlay?.setDrawAccuracyEnabled(true)
+
         // Convert Drawable to Bitmap for user location icon
         val userDrawable = ResourcesCompat.getDrawable(resources, R.drawable.ic_user_arrow, theme)
         // Drawable may be nullable; only create bitmap and set person icon if available
@@ -364,12 +393,42 @@ class MainActivity : AppCompatActivity() {
 
         btnPlan.setOnClickListener {
             val useCurrent = switchUseCurrent.isChecked
-            val useScenic = switchScenicRoute.isChecked
+            val useOceanic = switchOceanicRoute.isChecked
+            val useMountain = switchMountainRoute.isChecked
+
+            // Validate start location first
+            if (useCurrent && lastLocation == null) {
+                // Try to fetch location one more time
+                if (hasLocationPermission()) {
+                    lastLocation = fetchLastKnownLocation()
+                }
+
+                if (lastLocation == null) {
+                    Snackbar.make(
+                        findViewById(R.id.main),
+                        "Current location unavailable. Please enter a start address or wait for GPS.",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                    return@setOnClickListener
+                }
+            }
+
             val startInput = if (useCurrent) {
                 lastLocation?.let { "${it.latitude},${it.longitude}" } ?: etStart.text.toString()
             } else {
                 etStart.text.toString()
             }
+
+            // Validate start input
+            if (startInput.isBlank()) {
+                Snackbar.make(
+                    findViewById(R.id.main),
+                    "Please enter a start location or enable 'Use Current Location'",
+                    Snackbar.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
+
             val destInput = etDestination.text.toString()
             if (destInput.isBlank()) {
                 Snackbar.make(
@@ -387,7 +446,8 @@ class MainActivity : AppCompatActivity() {
                 etDestination.isEnabled = false
                 etStart.isEnabled = false
                 switchUseCurrent.isEnabled = false
-                switchScenicRoute.isEnabled = false
+                switchOceanicRoute.isEnabled = false
+                switchMountainRoute.isEnabled = false
                 btnCancel.visibility = View.VISIBLE
                 var startPoint = parseLatLon(startInput)
                 if (startPoint == null && startInput.isNotBlank()) {
@@ -410,6 +470,29 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+
+                // Additional validation: ensure we have a start point before continuing
+                if (startPoint == null) {
+                    withContext(Dispatchers.Main) {
+                        Snackbar.make(
+                            findViewById(R.id.main),
+                            "Could not determine start location. Please try again.",
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                        // cleanup and re-enable UI
+                        progress.visibility = View.GONE
+                        btnCancel.visibility = View.GONE
+                        btnPlan.isEnabled = true
+                        etDestination.isEnabled = true
+                        etStart.isEnabled = true
+                        switchUseCurrent.isEnabled = true
+                        switchOceanicRoute.isEnabled = true
+                        switchMountainRoute.isEnabled = true
+                        geocodeJob = null
+                    }
+                    return@launch
+                }
+
                 var destPoint = parseLatLon(destInput)
                 if (destPoint == null) {
                     val destResults = geocodeAddresses(destInput)
@@ -446,15 +529,24 @@ class MainActivity : AppCompatActivity() {
                     etDestination.isEnabled = true
                     etStart.isEnabled = true
                     switchUseCurrent.isEnabled = true
-                    switchScenicRoute.isEnabled = true
+                    switchOceanicRoute.isEnabled = true
+                    switchMountainRoute.isEnabled = true
                     geocodeJob = null
                     return@launch
                 }
                 // Scenic route logic
-                if (useScenic) {
-                    updateStatus("Fetching scenic alternatives…")
+                // Determine which scenic route type to use
+                val routeType = when {
+                    useOceanic && useMountain -> "oceanic" // Both checked: prioritize oceanic
+                    useOceanic -> "oceanic"
+                    useMountain -> "mountain"
+                    else -> null // Neither checked: use default route
+                }
+
+                if (routeType != null) {
+                    updateStatus("Fetching $routeType scenic alternatives…")
                     // Try to fetch multiple route alternatives (uses OSRM alternatives=true)
-                    Log.d("PolylineDebug", "[Scenic] Requesting route alternatives for scenic mode")
+                    Log.d("PolylineDebug", "[Scenic] Requesting route alternatives for $routeType scenic mode")
                     val alternatives = fetchRouteAlternatives(startPoint, destPoint).toMutableList()
                     Log.d(
                         "PolylineDebug",
@@ -472,12 +564,32 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
+                    // For mountain routes, try to generate mountain route via waypoints if we don't have enough alternatives
+                    if (routeType == "mountain" && alternatives.size <= 1 && startPoint != null) {
+                        Log.d("MountainRouting", "Only ${alternatives.size} alternatives from OSRM, generating mountain route via waypoints")
+                        val mountainRoute = generateMountainRouteViaWaypoints(startPoint, destPoint)
+                        if (mountainRoute.isNotEmpty()) {
+                            alternatives.add(mountainRoute)
+                            Log.d("MountainRouting", "Added mountain route alternative with ${mountainRoute.size} points")
+                        }
+                    }
+
+                    // For oceanic routes, try to generate coastal route via waypoints if we don't have enough alternatives
+                    if (routeType == "oceanic" && alternatives.size <= 1 && startPoint != null) {
+                        Log.d("CoastalRouting", "Only ${alternatives.size} alternatives from OSRM, generating coastal route via waypoints")
+                        val coastalRoute = generateCoastalRouteViaWaypoints(startPoint, destPoint)
+                        if (coastalRoute.isNotEmpty()) {
+                            alternatives.add(coastalRoute)
+                            Log.d("CoastalRouting", "Added coastal route alternative with ${coastalRoute.size} points")
+                        }
+                    }
+
                     if (alternatives.isNotEmpty()) {
                         Log.d(
                             "PolylineDebug",
-                            "[Scenic] Planning scenic route with ${alternatives.size} alternatives"
+                            "[Scenic] Planning $routeType scenic route with ${alternatives.size} alternatives"
                         )
-                        planScenicRoute(alternatives)
+                        planScenicRoute(alternatives, routeType)
                         clearStatusDelayed()
                         // Hide progress and re-enable inputs
                         progress.visibility = View.GONE
@@ -486,16 +598,18 @@ class MainActivity : AppCompatActivity() {
                         etDestination.isEnabled = true
                         etStart.isEnabled = true
                         switchUseCurrent.isEnabled = true
-                        switchScenicRoute.isEnabled = true
+                        switchOceanicRoute.isEnabled = true
+                        switchMountainRoute.isEnabled = true
                         geocodeJob = null
                         return@launch
                     } else {
                         Log.d(
                             "PolylineDebug",
-                            "[Scenic] Still no alternatives to plan scenic route"
+                            "[Scenic] Still no alternatives to plan $routeType scenic route, falling back to default"
                         )
                     }
                 }
+
                 // Default shortest route logic (existing)
                 // Fetch route and POIs along the route (route-aware recommendations)
                 Log.d("PolylineDebug", "Starting route calculation and polyline drawing...")
@@ -544,6 +658,13 @@ class MainActivity : AppCompatActivity() {
                 // Merge route POIs into recommendations (route POIs first)
                 val recommendations = mutableListOf<Poi>()
                 for (p in routePois) if (keepPoi(p)) recommendations.add(p)
+
+                // Fetch towns along the route in order
+                updateStatus("Fetching towns along route…")
+                val towns = townService.getTownsAlongRoute(routePoints, packageName, maxDistanceFromRoute = 5000.0)
+                currentRouteTowns = towns
+                Log.d("MainActivity", "Found ${towns.size} towns along the route")
+
                 // Fetch additional recommendations: prefer POIs along/near the route; fall back to destination-centered search
                 var fetched = emptyList<Poi>()
                 if (routePoints.isNotEmpty()) {
@@ -642,6 +763,18 @@ class MainActivity : AppCompatActivity() {
                 // filter fetched POIs for blank names / surveillance cameras
                 val filteredFetched = fetched.filter { keepPoi(it) }
                 recommendations.addAll(filteredFetched)
+
+                // Simplified road trip plan - just use the recommendations directly
+                Log.d("RoadTrip", "Created road trip with ${recommendations.size} POI recommendations")
+
+                withContext(Dispatchers.Main) {
+                    Snackbar.make(
+                        findViewById(R.id.main),
+                        "Found ${recommendations.size} recommended stops along route",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+
                 // Clear existing overlays and marker map, then re-add myLocationOverlay if present
                 val overlays = map?.overlays
                 overlays?.clear()
@@ -684,12 +817,10 @@ class MainActivity : AppCompatActivity() {
                 // Draw route polyline if available
                 if (routePoints.isNotEmpty()) {
                     Log.d("PolylineDebug", "Drawing polyline with ${routePoints.size} points.")
-                    val line = Polyline()
-                    line.setPoints(routePoints)
-                    line.outlinePaint.color = Color.MAGENTA // Even more visible
-                    line.outlinePaint.strokeWidth = 14.0f // Very thick line
-                    map?.overlays?.add(line)
-                    currentRoutePolyline = line // Track polyline for removal
+
+                    // Draw route (no ferry segments in simple mode for now)
+                    val ferrySegments = emptyList<Pair<Int, Int>>()
+                    drawRouteWithFerrySegments(routePoints, ferrySegments)
 
                     // center to middle of route
                     val mid = routePoints[routePoints.size / 2]
@@ -710,11 +841,19 @@ class MainActivity : AppCompatActivity() {
                 // Now that markers are present, update adapter so clicks can show corresponding marker info
                 // Previously we recreated the adapter here; now update the single adapter instance created above
                 withContext(Dispatchers.Main) {
-                    // Convert POI list to RecommendationItem list
-                    val recommendationItems = recommendations.map { poi ->
-                        RecommendationItem.PoiItem(poi)
+                    // Show towns in recommendations list (in order along route)
+                    val recommendationItems = towns.map { town ->
+                        RecommendationItem.TownItem(town)
                     }
                     poiAdapter.updateItems(recommendationItems)
+
+                    // Show snackbar with town count
+                    Snackbar.make(
+                        findViewById(R.id.main),
+                        "Route passes through ${towns.size} towns/cities",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+
                     // Open the recommendations sheet so the user sees the modal list
                     try { if (::sheetBehavior.isInitialized) sheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED } catch (_: Exception) {}
                 }
@@ -726,7 +865,8 @@ class MainActivity : AppCompatActivity() {
                 etDestination.isEnabled = true
                 etStart.isEnabled = true
                 switchUseCurrent.isEnabled = true
-                switchScenicRoute.isEnabled = true
+                switchOceanicRoute.isEnabled = true
+                switchMountainRoute.isEnabled = true
                 geocodeJob = null
             }
         }
@@ -1037,7 +1177,10 @@ class MainActivity : AppCompatActivity() {
         start: GeoPoint?,
         dest: GeoPoint
     ): Pair<List<GeoPoint>, List<Poi>> = withContext(Dispatchers.IO) {
-        if (start == null) return@withContext Pair(emptyList(), emptyList())
+        if (start == null) {
+            Log.e("MainActivity", "fetchRouteAndPois: start point is null")
+            return@withContext Pair(emptyList(), emptyList())
+        }
 
         // Using OSRM demo server for routing. Replace with your own instance for production.
         val url =
@@ -1057,12 +1200,15 @@ class MainActivity : AppCompatActivity() {
                 val truncated = if (body.length > 200) body.substring(0, 200) + "..." else body
                 Log.d("MainActivity", "OSRM response body (truncated): $truncated")
                 val (route, pois) = parseOsrmResponse(body)
+                Log.d("MainActivity", "fetchRouteAndPois parsed: route=${route.size} points, pois=${pois.size}")
                 return@withContext Pair(route, pois)
             } else {
+                val errorBody = response.body?.string() ?: "no error body"
+                Log.e("MainActivity", "OSRM request failed with code ${response.code}: $errorBody")
                 return@withContext Pair(emptyList(), emptyList())
             }
         } catch (e: Exception) {
-            Log.d("MainActivity", "OSRM error: ${e.message}")
+            Log.e("MainActivity", "OSRM error: ${e.message}", e)
             return@withContext Pair(emptyList(), emptyList())
         }
     }
@@ -1071,7 +1217,11 @@ class MainActivity : AppCompatActivity() {
         start: GeoPoint?,
         dest: GeoPoint
     ): List<List<GeoPoint>> = withContext(Dispatchers.IO) {
-        if (start == null) return@withContext emptyList()
+        if (start == null) {
+            Log.e("MainActivity", "fetchRouteAlternatives: start point is null")
+            return@withContext emptyList()
+        }
+
         val url =
             "https://router.project-osrm.org/route/v1/driving/${start.longitude},${start.latitude};${dest.longitude},${dest.latitude}?overview=full&geometries=geojson&alternatives=true"
         val request = Request.Builder()
@@ -1088,23 +1238,18 @@ class MainActivity : AppCompatActivity() {
                 val truncated = if (body.length > 200) body.substring(0, 200) + "..." else body
                 Log.d("MainActivity", "OSRM response body (truncated): $truncated")
                 val alternatives = parseOsrmAlternatives(body).toMutableList()
+                Log.d("MainActivity", "fetchRouteAlternatives parsed: ${alternatives.size} routes")
 
-                // If we only got 1 alternative, try to generate coastal alternatives via waypoints
-                if (alternatives.size <= 1) {
-                    Log.d("CoastalRouting", "Only ${alternatives.size} alternatives from OSRM, generating coastal route via waypoints")
-                    val coastalRoute = generateCoastalRouteViaWaypoints(start, dest)
-                    if (coastalRoute.isNotEmpty()) {
-                        alternatives.add(coastalRoute)
-                        Log.d("CoastalRouting", "Added coastal route alternative with ${coastalRoute.size} points")
-                    }
-                }
-
+                // Return alternatives without auto-generating routes
+                // Route-specific generation (coastal/mountain) is handled by the caller
                 return@withContext alternatives
             } else {
+                val errorBody = response.body?.string() ?: "no error body"
+                Log.e("MainActivity", "OSRM alternatives request failed with code ${response.code}: $errorBody")
                 return@withContext emptyList()
             }
         } catch (e: Exception) {
-            Log.d("MainActivity", "OSRM error: ${e.message}")
+            Log.e("MainActivity", "OSRM alternatives error: ${e.message}", e)
             return@withContext emptyList()
         }
     }
@@ -1219,18 +1364,19 @@ class MainActivity : AppCompatActivity() {
 
         val waypoints = when {
             // LUZON ROUTES
-            // Northern Luzon routes - Manila/NCR to Ilocos/Cagayan
-             startLat < 15.0 && destLat > 17.5 && startLon > 120.5 && destLon > 121.0 -> {
-                 Log.d("CoastalRouting", "Detected Manila to Northern Luzon route - using Ilocos coastal waypoints")
-                 coastalWaypoints["luzon_north"]
-             }
-            // Bicol routes - Eastern Pacific coast
-            startLat > 13.0 && destLat < 14.0 && destLon > 123.0 -> {
+            // Northern Luzon routes - Manila/NCR to Ilocos/Cagayan (going north from Manila area)
+            // Expanded longitude range to cover routes to Aparri and eastern Cagayan (up to 122.0)
+            startLat > 13.5 && startLat < 15.5 && destLat > 16.0 && destLon >= 120.0 && destLon <= 122.0 -> {
+                Log.d("CoastalRouting", "Detected Manila to Northern Luzon route - using Ilocos coastal waypoints")
+                coastalWaypoints["luzon_north"]
+            }
+            // Manila to Bicol - Eastern Luzon Pacific coast
+            startLat > 14.0 && destLat < 14.0 && destLon > 123.0 -> {
                 Log.d("CoastalRouting", "Detected Manila to Bicol (East) route - using Pacific coastal waypoints")
                 coastalWaypoints["luzon_bicol_east"]
             }
-            // Bicol routes - Western approach
-            startLat > 13.0 && destLat < 14.0 && destLon > 122.0 && destLon < 123.0 -> {
+            // Manila to Bicol - Western approach (going south from Manila to Bicol via Batangas)
+            startLat > 14.0 && destLat < 13.5 && destLon > 122.0 && destLon < 123.0 -> {
                 Log.d("CoastalRouting", "Detected Manila to Bicol (West) route - using Batangas coastal waypoints")
                 coastalWaypoints["luzon_bicol_west"]
             }
@@ -1338,6 +1484,204 @@ class MainActivity : AppCompatActivity() {
         return@withContext fullRoute
     }
 
+    // Generate a mountain route by routing through strategic mountain waypoints
+    private suspend fun generateMountainRouteViaWaypoints(start: GeoPoint, dest: GeoPoint): List<GeoPoint> = withContext(Dispatchers.IO) {
+        // Define strategic mountain waypoints for major Philippine mountain routes
+        val mountainWaypoints = mapOf(
+            // LUZON MOUNTAIN ROUTES
+            // Manila to Baguio - Cordillera highlands
+            "luzon_baguio" to listOf(
+                GeoPoint(15.2000, 120.6000), // Tarlac highlands
+                GeoPoint(15.8000, 120.5700), // Kennon Road scenic viewpoint
+                GeoPoint(16.4000, 120.5900)  // Baguio City
+            ),
+            // Baguio to Sagada - Mountain Province
+            "luzon_sagada" to listOf(
+                GeoPoint(16.6000, 120.7000), // Bontoc
+                GeoPoint(17.0800, 120.9000)  // Sagada
+            ),
+            // Manila to Tagaytay - Taal highlands
+            "luzon_tagaytay" to listOf(
+                GeoPoint(14.1650, 121.0500), // Cavite highlands
+                GeoPoint(14.1100, 120.9600)  // Tagaytay Ridge
+            ),
+            // Banaue Rice Terraces route
+            "luzon_banaue" to listOf(
+                GeoPoint(15.8000, 120.5700), // Baguio
+                GeoPoint(16.6000, 120.7000), // Bontoc
+                GeoPoint(16.9270, 121.0560)  // Banaue
+            ),
+            // Mount Pulag approach
+            "luzon_pulag" to listOf(
+                GeoPoint(16.4000, 120.5900), // Baguio
+                GeoPoint(16.5500, 120.7500), // La Trinidad
+                GeoPoint(16.6000, 120.8800)  // Pulag area
+            ),
+
+            // VISAYAS MOUNTAIN ROUTES
+            // Cebu mountain circuit (Tops, Busay)
+            "visayas_cebu_mountain" to listOf(
+                GeoPoint(10.3500, 123.8500), // Busay highlands
+                GeoPoint(10.3700, 123.8700)  // Tops viewpoint
+            ),
+            // Negros highlands (Canlaon area)
+            "visayas_canlaon" to listOf(
+                GeoPoint(10.4000, 123.1000), // Negros highlands
+                GeoPoint(10.4120, 123.1320)  // Canlaon Volcano area
+            ),
+            // Antique highlands (Panay)
+            "visayas_antique" to listOf(
+                GeoPoint(11.3000, 122.0500), // Antique highlands
+                GeoPoint(11.5000, 122.1000)  // Mountain villages
+            ),
+
+            // MINDANAO MOUNTAIN ROUTES
+            // Bukidnon highlands (Dahilayan, Del Monte)
+            "mindanao_bukidnon" to listOf(
+                GeoPoint(8.4800, 124.6500), // Cagayan de Oro
+                GeoPoint(8.2500, 125.0000), // Bukidnon highlands
+                GeoPoint(7.9000, 125.1000)  // Malaybalay area
+            ),
+            // Davao highlands (Eden area)
+            "mindanao_davao_highlands" to listOf(
+                GeoPoint(7.1900, 125.4550), // Davao City
+                GeoPoint(7.3000, 125.3000), // Toril highlands
+                GeoPoint(7.4000, 125.2500)  // Eden/Malagos highlands
+            ),
+            // Mount Apo approach
+            "mindanao_apo" to listOf(
+                GeoPoint(7.1900, 125.4550), // Davao
+                GeoPoint(7.0000, 125.2700), // Digos highlands
+                GeoPoint(6.9870, 125.2726)  // Mount Apo area
+            ),
+            // Lake Sebu highlands (South Cotabato)
+            "mindanao_lake_sebu" to listOf(
+                GeoPoint(6.1100, 125.1700), // General Santos
+                GeoPoint(6.2000, 124.7000), // Surallah
+                GeoPoint(6.2100, 124.7040)  // Lake Sebu
+            ),
+            // Kitanglad Range (Bukidnon)
+            "mindanao_kitanglad" to listOf(
+                GeoPoint(8.2500, 125.0000), // Bukidnon lowlands
+                GeoPoint(8.1500, 124.9500), // Kitanglad foothills
+                GeoPoint(8.1300, 124.9000)  // Kitanglad range
+            ),
+
+            // TRANS-REGIONAL MOUNTAIN ROUTES
+            // Cordillera circuit
+            "luzon_cordillera_circuit" to listOf(
+                GeoPoint(16.4000, 120.5900), // Baguio
+                GeoPoint(16.8000, 120.7500), // Mountain Province
+                GeoPoint(17.0000, 121.0000), // Ifugao highlands
+                GeoPoint(16.9270, 121.0560)  // Banaue
+            )
+        )
+
+        // Determine which waypoint set to use based on start/destination
+        val startLat = start.latitude
+        val destLat = dest.latitude
+        val startLon = start.longitude
+        val destLon = dest.longitude
+
+        val waypoints = when {
+            // LUZON MOUNTAIN ROUTES
+            // Manila to Baguio/Benguet
+            startLat < 15.0 && destLat in 16.0..17.0 && destLon in 120.5..121.0 -> {
+                Log.d("MountainRouting", "Detected Manila to Baguio route - using Cordillera waypoints")
+                mountainWaypoints["luzon_baguio"]
+            }
+            // Baguio to Sagada
+            startLat in 16.0..17.0 && destLat in 16.8..17.2 && destLon in 120.8..121.0 -> {
+                Log.d("MountainRouting", "Detected Baguio to Sagada route - using Mountain Province waypoints")
+                mountainWaypoints["luzon_sagada"]
+            }
+            // Manila to Tagaytay
+            startLat > 14.4 && destLat in 14.0..14.2 && destLon in 120.9..121.1 -> {
+                Log.d("MountainRouting", "Detected Manila to Tagaytay route - using Tagaytay Ridge waypoints")
+                mountainWaypoints["luzon_tagaytay"]
+            }
+            // Banaue Rice Terraces route
+            startLat in 15.0..17.0 && destLat in 16.8..17.0 && destLon in 121.0..121.2 -> {
+                Log.d("MountainRouting", "Detected route to Banaue - using rice terraces waypoints")
+                mountainWaypoints["luzon_banaue"]
+            }
+
+            // VISAYAS MOUNTAIN ROUTES
+            // Cebu mountain areas
+            startLat in 10.2..10.4 && destLat in 10.2..10.4 && startLon in 123.7..124.0 && destLon in 123.8..124.0 -> {
+                Log.d("MountainRouting", "Detected Cebu mountain route - using highlands waypoints")
+                mountainWaypoints["visayas_cebu_mountain"]
+            }
+            // Negros Canlaon area
+            startLat in 10.2..10.6 && destLat in 10.2..10.6 && startLon in 122.8..123.2 && destLon in 122.8..123.2 -> {
+                Log.d("MountainRouting", "Detected Negros highlands route - using Canlaon waypoints")
+                mountainWaypoints["visayas_canlaon"]
+            }
+
+            // MINDANAO MOUNTAIN ROUTES
+            // Bukidnon highlands
+            startLat in 7.5..8.5 && destLat in 7.5..8.5 && startLon in 124.5..125.5 && destLon in 124.5..125.5 -> {
+                Log.d("MountainRouting", "Detected Bukidnon highlands route - using mountain waypoints")
+                mountainWaypoints["mindanao_bukidnon"]
+            }
+            // Davao highlands
+            startLat in 7.0..7.5 && destLat in 7.0..7.5 && startLon in 125.0..125.5 && destLon in 125.0..125.5 -> {
+                Log.d("MountainRouting", "Detected Davao highlands route - using Eden waypoints")
+                mountainWaypoints["mindanao_davao_highlands"]
+            }
+            // Lake Sebu
+            startLat in 6.0..6.5 && destLat in 6.0..6.5 && startLon in 124.5..125.2 && destLon in 124.5..125.2 -> {
+                Log.d("MountainRouting", "Detected Lake Sebu route - using highlands waypoints")
+                mountainWaypoints["mindanao_lake_sebu"]
+            }
+
+            else -> null
+        }
+
+        if (waypoints == null) {
+            Log.d("MountainRouting", "No mountain waypoints defined for this route (${startLat},${startLon} to ${destLat},${destLon})")
+            return@withContext emptyList()
+        }
+
+        // Build route through waypoints
+        val fullRoute = mutableListOf<GeoPoint>()
+        val allPoints = listOf(start) + waypoints + listOf(dest)
+
+        for ( i in 0 until allPoints.size - 1) {
+            val from = allPoints[i]
+            val to = allPoints[i + 1]
+
+            val segmentUrl = "https://router.project-osrm.org/route/v1/driving/${from.longitude},${from.latitude};${to.longitude},${to.latitude}?overview=full&geometries=geojson"
+            val request = Request.Builder()
+                .url(segmentUrl)
+                .header("User-Agent", packageName)
+                .header("Accept", "application/json")
+                .build()
+
+            try {
+                val response = httpClient.newCall(request).execute()
+                if (response.isSuccessful) {
+                    val body = response.body?.string() ?: ""
+                    val (segmentRoute, _) = parseOsrmResponse(body)
+                    if (segmentRoute.isNotEmpty()) {
+                        if (fullRoute.isEmpty()) {
+                            fullRoute.addAll(segmentRoute)
+                        } else {
+                            // Skip first point to avoid duplication
+                            fullRoute.addAll(segmentRoute.drop(1))
+                        }
+                    }
+                }
+                response.close()
+            } catch (e: Exception) {
+                Log.d("MountainRouting", "Error fetching segment $i: ${e.message}")
+            }
+        }
+
+        Log.d("MountainRouting", "Generated mountain route with ${fullRoute.size} points through ${waypoints.size} waypoints")
+        return@withContext fullRoute
+    }
+
     // Display scenic POIs visually with distinct markers (re-added)
     private fun showScenicPoisOnMap(scenicPois: List<ScenicPoi>) {
         scenicMarkers.clear()
@@ -1413,41 +1757,116 @@ class MainActivity : AppCompatActivity() {
     private fun parseOsrmResponse(body: String): Pair<List<GeoPoint>, List<Poi>> {
         try {
             val json = org.json.JSONObject(body)
-            val routes = json.getJSONArray("routes")
-            if (routes.length() == 0) return Pair(emptyList(), emptyList())
+
+            // Check for OSRM error response
+            val code = json.optString("code", "")
+            if (code != "Ok") {
+                val message = json.optString("message", "Unknown error")
+                Log.e("MainActivity", "OSRM error response: code=$code, message=$message")
+                Log.e("MainActivity", "Full OSRM response: $body")
+                return Pair(emptyList(), emptyList())
+            }
+
+            val routes = json.optJSONArray("routes")
+            if (routes == null || routes.length() == 0) {
+                Log.e("MainActivity", "OSRM response has no routes")
+                Log.e("MainActivity", "Full OSRM response: $body")
+                return Pair(emptyList(), emptyList())
+            }
+
             val routeObj = routes.getJSONObject(0)
-            val geometry = routeObj.getJSONObject("geometry")
-            val coords = geometry.getJSONArray("coordinates")
+            val geometry = routeObj.optJSONObject("geometry")
+            if (geometry == null) {
+                Log.e("MainActivity", "OSRM route has no geometry")
+                return Pair(emptyList(), emptyList())
+            }
+
+            val coords = geometry.optJSONArray("coordinates")
+            if (coords == null) {
+                Log.e("MainActivity", "OSRM geometry has no coordinates")
+                return Pair(emptyList(), emptyList())
+            }
+
             val routePoints = mutableListOf<GeoPoint>()
             for (i in 0 until coords.length()) {
                 val point = coords.getJSONArray(i)
                 routePoints.add(GeoPoint(point.getDouble(1), point.getDouble(0)))
             }
+
+            Log.d("MainActivity", "Successfully parsed OSRM route with ${routePoints.size} points")
             return Pair(routePoints, emptyList())
-        } catch (_: org.json.JSONException) {
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error parsing OSRM response: ${e.message}", e)
+            Log.e("MainActivity", "Response body: $body")
             return Pair(emptyList(), emptyList())
         }
     }
 
-    private fun parseOsrmAlternatives(body: String): List<List<GeoPoint>> {
+    /**
+     * Parse OSRM response with ferry detection
+     * Returns triple: (routePoints, ferrySegments, pois)
+     * ferrySegments is a list of pairs (startIndex, endIndex) marking ferry route segments
+     */
+    private fun parseOsrmResponseWithFerries(body: String): Triple<List<GeoPoint>, List<Pair<Int, Int>>, List<Poi>> {
         try {
             val json = org.json.JSONObject(body)
             val routes = json.getJSONArray("routes")
-            val alternatives = mutableListOf<List<GeoPoint>>()
-            for (i in 0 until routes.length()) {
-                val routeObj = routes.getJSONObject(i)
-                val geometry = routeObj.getJSONObject("geometry")
-                val coords = geometry.getJSONArray("coordinates")
-                val routePoints = mutableListOf<GeoPoint>()
-                for (j in 0 until coords.length()) {
-                    val point = coords.getJSONArray(j)
-                    routePoints.add(GeoPoint(point.getDouble(1), point.getDouble(0)))
-                }
-                alternatives.add(routePoints)
+            if (routes.length() == 0) return Triple(emptyList(), emptyList(), emptyList())
+
+            val routeObj = routes.getJSONObject(0)
+            val geometry = routeObj.getJSONObject("geometry")
+            val coords = geometry.getJSONArray("coordinates")
+
+            val routePoints = mutableListOf<GeoPoint>()
+            for (i in 0 until coords.length()) {
+                val point = coords.getJSONArray(i)
+                routePoints.add(GeoPoint(point.getDouble(1), point.getDouble(0)))
             }
-            return alternatives
-        } catch (_: org.json.JSONException) {
-            return emptyList()
+
+            val ferrySegments = mutableListOf<Pair<Int, Int>>()
+
+            // Try to parse legs to detect ferry routes
+            val legs = routeObj.optJSONArray("legs")
+            if (legs != null) {
+                var pointIndex = 0
+
+                for (i in 0 until legs.length()) {
+                    val leg = legs.getJSONObject(i)
+                    val steps = leg.optJSONArray("steps")
+
+                    if (steps != null) {
+                        for (j in 0 until steps.length()) {
+                            val step = steps.getJSONObject(j)
+                            val mode = step.optString("mode", "")
+                            val stepGeometry = step.optJSONObject("geometry")
+
+                            if (stepGeometry != null) {
+                                val stepCoords = stepGeometry.optJSONArray("coordinates")
+                                val stepPointCount = stepCoords?.length() ?: 0
+
+                                // Check if this is a ferry segment
+                                if (mode == "ferry" || step.optString("maneuver.type", "").contains("ferry")) {
+                                    val startIdx = pointIndex
+                                    val endIdx = pointIndex + stepPointCount - 1
+                                    if (endIdx < routePoints.size) {
+                                        ferrySegments.add(Pair(startIdx, endIdx))
+                                        Log.d("FerryDetection", "Found ferry segment: $startIdx to $endIdx")
+                                    }
+                                }
+
+                                pointIndex += maxOf(0, stepPointCount - 1)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Log.d("FerryDetection", "Detected ${ferrySegments.size} ferry segments in route")
+            return Triple(routePoints, ferrySegments, emptyList())
+
+        } catch (e: org.json.JSONException) {
+            Log.e("FerryDetection", "Error parsing OSRM response: ${e.message}")
+            return Triple(emptyList(), emptyList(), emptyList())
         }
     }
 
@@ -1555,30 +1974,30 @@ class MainActivity : AppCompatActivity() {
             sb.append("way(around:$radiusMeters,$lat,$lon)[tourism];\n")
             sb.append("node(around:$radiusMeters,$lat,$lon)[historic];\n")
             sb.append("way(around:$radiusMeters,$lat,$lon)[historic];\n")
+            sb.append("node(around:$radiusMeters,$lat,$lon)[leisure];\n")
+            sb.append("way(around:$radiusMeters,$lat,$lon)[leisure];\n")
+            sb.append("node(around:$radiusMeters,$lat,$lon)[man_made];\n")
+            sb.append("way(around:$radiusMeters,$lat,$lon)[man_made];\n")
         }
-        sb.append(")\nout center 200;")
-        val ql = sb.toString()
+        sb.append(");\nout center;\n")
+        val ql = sb.toString().trim()
         val mediaType = "text/plain; charset=utf-8".toMediaType()
         val requestBody = ql.toRequestBody(mediaType)
         val request = Request.Builder()
             .url("https://overpass-api.de/api/interpreter")
             .post(requestBody)
-            .header("User-Agent", "$packageName/1.0")
+            .header("User-Agent", "${packageName}/1.0 (contact: cedricjoshua.palapuz@gmail.com)")
             .header("Accept", "application/json")
             .build()
         try {
             val response = httpClient.newCall(request).execute()
-            if (!response.isSuccessful) { response.close(); return@withContext emptyList() }
-            val body = response.body?.string() ?: ""
+            if (!response.isSuccessful) return@withContext emptyList()
+            val body = response.body?.string() ?: return@withContext emptyList()
             val json = org.json.JSONObject(body)
             val elements = json.optJSONArray("elements") ?: return@withContext emptyList()
             val pois = mutableListOf<Poi>()
-            val seen = mutableSetOf<Long>()
             for (i in 0 until elements.length()) {
                 val el = elements.getJSONObject(i)
-                val id = el.optLong("id", -1L)
-                if (id == -1L || seen.contains(id)) continue
-                seen.add(id)
                 var elLat = el.optDouble("lat", Double.NaN)
                 var elLon = el.optDouble("lon", Double.NaN)
                 if (elLat.isNaN() || elLon.isNaN()) {
@@ -1586,382 +2005,450 @@ class MainActivity : AppCompatActivity() {
                     if (center != null) {
                         elLat = center.optDouble("lat", Double.NaN)
                         elLon = center.optDouble("lon", Double.NaN)
-                    }
+                      }
                 }
                 val tags = el.optJSONObject("tags")
-                val name = tags?.optString("name") ?: "Unknown"
+                val name = tags?.optString("name") ?: tags?.optString("official_name") ?: "Unknown"
                 val category = deriveCategory(tags)
-                val desc = tags?.optString("description") ?: ""
+                val desc = tags?.optString("description") ?: tags?.optString("operator") ?: ""
+
+                // Skip blank/unknown names and surveillance cameras
                 val nameTrim = name.trim()
                 if (nameTrim.isBlank() || nameTrim.equals("Unknown", ignoreCase = true)) continue
                 if (isSurveillance(tags)) continue
+
                 if (!elLat.isNaN() && !elLon.isNaN()) {
                     pois.add(Poi(nameTrim, category, desc, elLat, elLon))
                 }
             }
-            fun minDistToRoute(lat: Double, lon: Double): Double {
-                var minD = Double.MAX_VALUE
-                for (rp in routePoints) {
-                    val d = haversine(lat, lon, rp.latitude, rp.longitude)
-                    if (d < minD) minD = d
-                }
-                return minD
-            }
-            val poisWithDist = pois.map { poi -> Pair(poi, minDistToRoute(poi.lat ?: 0.0, poi.lon ?: 0.0)) }
-                .filter { it.second <= maxDistToRouteMeters }
-                .sortedBy { it.second }
-                .map { it.first }
-            val limited = if (poisWithDist.size > 50) poisWithDist.subList(0, 50) else poisWithDist
-            return@withContext limited
+            return@withContext pois
         } catch (e: Exception) {
             return@withContext emptyList()
         }
     }
 
-    private suspend fun debugOverpassAt(center: GeoPoint, radiusMeters: Int = 1000) = withContext(Dispatchers.IO) {
-        // Debug function - implementation can be minimal
-    }
-
-    private fun isSurveillance(tags: org.json.JSONObject?): Boolean {
-        if (tags == null) return false
-        val checkKeys = listOf("surveillance", "camera", "monitoring", "security", "man_made")
-        for (k in checkKeys) {
-            val v = tags.optString(k).ifBlank { "" }.lowercase()
-            if (v.contains("camera") || v.contains("cctv") || v.contains("surveillance") || v.contains("monitor")) return true
-        }
-        return false
-    }
-
-    private fun keepPoi(p: Poi): Boolean {
-        val n = p.name.trim()
-        if (n.isBlank()) return false
-        if (n.equals("Unknown", ignoreCase = true)) return false
-        return true
-    }
-
-    private fun poiKey(p: Poi): String {
-        val lat = p.lat ?: 0.0
-        val lon = p.lon ?: 0.0
-        return "%f_%f_%s".format(Locale.ROOT, lat, lon, p.name)
-    }
-
+    // Compute route length in meters
     private fun computeRouteLength(route: List<GeoPoint>): Double {
         var total = 0.0
-        for (i in 1 until route.size) {
-            val a = route[i - 1]
-            val b = route[i]
+        for (i in 0 until route.size - 1) {
+            val a = route[i]
+            val b = route[i + 1]
             total += haversine(a.latitude, a.longitude, b.latitude, b.longitude)
         }
         return total
     }
 
+    // Haversine formula to calculate distance between two lat/lon points in meters
     private fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        val R = 6371000.0
+        val R = 6371000 // Earth radius in meters
         val dLat = Math.toRadians(lat2 - lat1)
         val dLon = Math.toRadians(lon2 - lon1)
         val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
                 Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
                 Math.sin(dLon / 2) * Math.sin(dLon / 2)
         val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-        return R * c
+        return R * c // Distance in meters
     }
 
-    private suspend fun updateStatus(msg: String) {
-        withContext(Dispatchers.Main) {
-            statusView?.text = msg
-            statusView?.visibility = View.VISIBLE
-            findViewById<View>(R.id.card_status)?.visibility = View.VISIBLE
+    // Check if a POI is a surveillance camera (based on heuristics)
+    private fun isSurveillance(tags: org.json.JSONObject?): Boolean {
+        if (tags == null) return false
+        val cameraTypes = listOf("surveillance", "camera", "cctv", "security")
+        for (type in cameraTypes) {
+            if (tags.optString("amenity", "").contains(type, ignoreCase = true) ||
+                tags.optString("tourism", "").contains(type, ignoreCase = true) ||
+                tags.optString("man_made", "").contains(type, ignoreCase = true)) {
+                return true
+            }
         }
+        return false
+    }
+
+    // Debugging: run a quick Overpass query at the destination to test connectivity and surface logs
+    private suspend fun debugOverpassAt(center: GeoPoint?, radiusMeters: Int = 1000) {
+        withContext(Dispatchers.IO) {
+            if (center == null) return@withContext
+            val lat = center.latitude
+            val lon = center.longitude
+            val ql = """
+                [out:json][timeout:25];
+                (
+                  node(around:$radiusMeters,$lat,$lon);
+                  way(around:$radiusMeters,$lat,$lon);
+                  relation(around:$radiusMeters,$lat,$lon);
+                );
+                out body;
+                >;
+                out skel qt;
+            """.trimIndent()
+            val mediaType = "text/plain; charset=utf-8".toMediaType()
+            val requestBody = ql.toRequestBody(mediaType)
+            val request = Request.Builder()
+                .url("https://overpass-api.de/api/interpreter")
+                .post(requestBody)
+                .header("User-Agent", "${packageName}/1.0 (contact: cedricjoshua.palapuz@gmail.com)")
+                .header("Accept", "application/json")
+                .build()
+            try {
+                val response = httpClient.newCall(request).execute()
+                if (response.isSuccessful) {
+                    val body = response.body?.string() ?: ""
+                    Log.d("OverpassDebug", "Response: $body")
+                } else {
+                    Log.d("OverpassDebug", "Error: ${response.code}")
+                }
+            } catch (e: Exception) {
+                Log.d("OverpassDebug", "Exception: ${e.message}")
+            }
+        }
+    }
+
+    // Status update helpers
+    private fun updateStatus(message: String) {
+        statusView?.text = message
+        findViewById<View>(R.id.card_status)?.visibility = View.VISIBLE
     }
 
     private fun clearStatus() {
-        statusView?.visibility = View.GONE
         findViewById<View>(R.id.card_status)?.visibility = View.GONE
     }
 
-    private fun clearStatusDelayed(delayMs: Long = 1800L) {
-        lifecycleScope.launch { kotlinx.coroutines.delay(delayMs); clearStatus() }
-    }
-
-    private fun initClusters() {
-        // No-op: clusters are now managed with simple marker lists
-    }
-
-    private fun planScenicRoute(alternatives: List<List<GeoPoint>>) {
-        if (alternatives.isEmpty()) return
-
+    private fun clearStatusDelayed(delayMs: Long = 3000L) {
         lifecycleScope.launch {
-            try {
-                updateStatus("Evaluating ${alternatives.size} route alternatives for scenic value…")
+            kotlinx.coroutines.delay(delayMs)
+            clearStatus()
+        }
+    }
 
-                // Fetch scenic POIs for each alternative route
-                val routeScores = mutableListOf<Triple<List<GeoPoint>, List<ScenicPoi>, Double>>()
+    // Initialize clusters (placeholder for marker clustering)
+    private fun initClusters() {
+        poiMarkers.clear()
+        scenicMarkers.clear()
+    }
 
-                for ((index, route) in alternatives.withIndex()) {
-                    updateStatus("Analyzing route ${index + 1}/${alternatives.size} for scenic attractions…")
+    // POI filtering helper
+    private fun keepPoi(poi: Poi): Boolean {
+        // Filter out surveillance cameras and other unwanted POIs
+        val name = poi.name.lowercase(Locale.getDefault())
+        val category = poi.category.lowercase(Locale.getDefault())
 
-                    // Fetch scenic POIs along this route
-                    val scenicPois = fetchScenicPoisAlongRoute(route, radiusMeters = 300, maxSamples = 30)
+        // Skip surveillance, CCTV, etc.
+        if (name.contains("surveillance") || name.contains("cctv") ||
+            name.contains("camera") || category.contains("surveillance")) {
+            return false
+        }
 
-                    // Calculate scenic score for this route
-                    val score = scenicScoreForRoute(route, scenicPois)
+        // Skip generic/unknown names
+        if (name.isBlank() || name == "unknown") {
+            return false
+        }
 
-                    routeScores.add(Triple(route, scenicPois, score))
+        return true
+    }
 
-                    Log.d("ScenicRouting", "Route ${index + 1}: ${route.size} points, ${scenicPois.size} scenic POIs, score=${"%.2f".format(score)}")
-                }
+    // Generate unique key for POI
+    private fun poiKey(poi: Poi): String {
+        return "${poi.name}_${poi.lat}_${poi.lon}"
+    }
 
-                // Select the route with the highest scenic score
-                val bestRoute = routeScores.maxByOrNull { it.third }
-
-                if (bestRoute == null) {
-                    updateStatus("No scenic route found")
-                    return@launch
-                }
-
-                val (selectedRoute, scenicPois, score) = bestRoute
-                val routeIndex = routeScores.indexOf(bestRoute) + 1
-
-                Log.d("ScenicRouting", "Selected route $routeIndex with score ${"%.2f".format(score)} and ${scenicPois.size} scenic POIs")
-
-                withContext(Dispatchers.Main) {
-                    try {
-                        // Clear existing route
-                        currentRoutePolyline?.let { map?.overlays?.remove(it) }
-                        currentRouteMarkers.forEach { map?.overlays?.remove(it) }
-                        currentRouteMarkers.clear()
-                        poiMarkerMap.clear()
-
-                        // Draw the selected scenic route
-                        val line = Polyline().apply {
-                            setPoints(selectedRoute)
-                            outlinePaint.color = Color.BLUE
-                            outlinePaint.strokeWidth = 12f
-                        }
-                        map?.overlays?.add(line)
-                        currentRoutePolyline = line
-
-                        // Add scenic POI markers
-                        for (poi in scenicPois) {
-                            val marker = Marker(map)
-                            marker.position = GeoPoint(poi.lat, poi.lon)
-                            marker.title = poi.name
-                            marker.subDescription = "${poi.type} (Score: ${poi.score})"
-                            marker.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_scenic_marker, theme)
-                            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                            map?.overlays?.add(marker)
-                            currentRouteMarkers.add(marker)
-                            poiMarkerMap["scenic_${poi.lat}_${poi.lon}_${poi.name}"] = marker
-                        }
-
-                        // Center map on route
-                        val mid = selectedRoute[selectedRoute.size / 2]
-                        map?.controller?.setCenter(mid)
-                        map?.controller?.setZoom(11.0)
-                        map?.invalidate()
-
-                        // Update adapter with scenic POIs
-                        val poiItems = scenicPois.map { scenicPoi ->
-                            RecommendationItem.PoiItem(
-                                Poi(
-                                    name = scenicPoi.name,
-                                    category = scenicPoi.type,
-                                    description = "Scenic attraction (Score: ${scenicPoi.score})",
-                                    lat = scenicPoi.lat,
-                                    lon = scenicPoi.lon
-                                )
-                            )
-                        }
-                        poiAdapter.updateItems(poiItems)
-
-                        // Show recommendations sheet
-                        try {
-                            if (::sheetBehavior.isInitialized) {
-                                sheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-                            }
-                        } catch (_: Exception) {}
-
-                        updateStatus("Scenic route selected: ${scenicPois.size} attractions, score ${"%.0f".format(score)}")
-                        clearStatusDelayed(3000)
-
-                        // Show snackbar with route info
-                        val lengthKm = computeRouteLength(selectedRoute) / 1000.0
-                        Snackbar.make(
-                            findViewById(R.id.main),
-                            "Scenic route $routeIndex: ${"%.1f".format(lengthKm)} km, ${scenicPois.size} attractions",
-                            Snackbar.LENGTH_LONG
-                        ).show()
-
-                    } catch (e: Exception) {
-                        Log.e("ScenicRouting", "Error displaying scenic route: ${e.message}")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("ScenicRouting", "Error planning scenic route: ${e.message}")
-                withContext(Dispatchers.Main) {
-                    updateStatus("Error planning scenic route")
-                    clearStatusDelayed()
+    // Create road trip plan from route and POIs (placeholder implementation)
+    private fun createRoadTripPlan(
+        routePoints: List<GeoPoint>,
+        pois: List<Poi>,
+        start: GeoPoint?,
+        dest: GeoPoint
+    ): Any {
+        // Simple implementation - just return a data structure
+        // This would be enhanced with actual RoadTripPlan model
+        return object {
+            val waypoints = pois.map { poi ->
+                object {
+                    val name = poi.name
+                    val category = poi.category
+                    val lat = poi.lat
+                    val lon = poi.lon
                 }
             }
         }
     }
 
-    // Fetch scenic POIs along a route
-    private suspend fun fetchScenicPoisAlongRoute(
-        routePoints: List<GeoPoint>,
-        radiusMeters: Int = 300,
-        maxSamples: Int = 30
-    ): List<ScenicPoi> = withContext(Dispatchers.IO) {
-        if (routePoints.isEmpty()) return@withContext emptyList()
+    // Draw route with ferry segments highlighted
+    private fun drawRouteWithFerrySegments(routePoints: List<GeoPoint>, ferrySegments: List<Pair<Int, Int>>) {
+        // Draw main route
+        val line = Polyline()
+        line.setPoints(routePoints)
+        line.outlinePaint.color = Color.BLUE
+        line.outlinePaint.strokeWidth = 10.0f
+        map?.overlays?.add(line)
+        currentRoutePolyline = line
 
-        // Sample points along the route
-        val samples = mutableListOf<GeoPoint>()
-        samples.add(routePoints.first())
-
-        val sampleDistMeters = 10000 // Sample every 10km for scenic features
-        var acc = 0.0
-        for (i in 1 until routePoints.size) {
-            val a = routePoints[i - 1]
-            val b = routePoints[i]
-            val seg = haversine(a.latitude, a.longitude, b.latitude, b.longitude)
-            acc += seg
-            if (acc >= sampleDistMeters) {
-                samples.add(b)
-                acc = 0.0
-            }
-        }
-        samples.add(routePoints.last())
-
-        // Limit samples
-        if (samples.size > maxSamples) {
-            val step = samples.size.toDouble() / maxSamples.toDouble()
-            val downsampled = mutableListOf<GeoPoint>()
-            var idx = 0.0
-            repeat(maxSamples) {
-                downsampled.add(samples[minOf(samples.size - 1, idx.toInt())])
-                idx += step
-            }
-            if (downsampled.last() != samples.last()) {
-                downsampled[downsampled.size - 1] = samples.last()
-            }
-            samples.clear()
-            samples.addAll(downsampled)
+        // Draw ferry segments in different color
+        for (segment in ferrySegments) {
+            val ferryPoints = routePoints.subList(segment.first, segment.second + 1)
+            val ferryLine = Polyline()
+            ferryLine.setPoints(ferryPoints)
+            ferryLine.outlinePaint.color = Color.CYAN
+            ferryLine.outlinePaint.strokeWidth = 12.0f
+            map?.overlays?.add(ferryLine)
+            currentRoutePolylines.add(ferryLine)
         }
 
-        // Build Overpass query for scenic features
-        val sb = StringBuilder()
-        sb.append("[out:json][timeout:25];\n(")
-        for (s in samples) {
-            val lat = s.latitude
-            val lon = s.longitude
-            // Query scenic features
-            sb.append("node(around:$radiusMeters,$lat,$lon)[tourism~\"viewpoint|attraction|museum|artwork\"];\n")
-            sb.append("way(around:$radiusMeters,$lat,$lon)[tourism~\"viewpoint|attraction|museum|artwork\"];\n")
-            sb.append("node(around:$radiusMeters,$lat,$lon)[historic~\"monument|memorial|castle|ruins|archaeological_site\"];\n")
-            sb.append("way(around:$radiusMeters,$lat,$lon)[historic~\"monument|memorial|castle|ruins|archaeological_site\"];\n")
-            sb.append("node(around:$radiusMeters,$lat,$lon)[natural~\"peak|beach|waterfall|spring|cave_entrance\"];\n")
-            sb.append("way(around:$radiusMeters,$lat,$lon)[natural~\"peak|beach|waterfall|spring|cave_entrance\"];\n")
-        }
-        sb.append(")\nout center 100;")
+        map?.invalidate()
+    }
 
-        val ql = sb.toString()
-        val mediaType = "text/plain; charset=utf-8".toMediaType()
-        val requestBody = ql.toRequestBody(mediaType)
-        val request = Request.Builder()
-            .url("https://overpass-api.de/api/interpreter")
-            .post(requestBody)
-            .header("User-Agent", "$packageName/1.0")
-            .header("Accept", "application/json")
-            .build()
-
+    // Parse OSRM alternatives response
+    private fun parseOsrmAlternatives(body: String): List<List<GeoPoint>> {
         try {
-            val response = httpClient.newCall(request).execute()
-            if (!response.isSuccessful) {
-                response.close()
-                return@withContext emptyList()
-            }
-
-            val body = response.body?.string() ?: ""
             val json = org.json.JSONObject(body)
-            val elements = json.optJSONArray("elements") ?: return@withContext emptyList()
+            val routes = json.getJSONArray("routes")
+            val alternatives = mutableListOf<List<GeoPoint>>()
 
-            val scenicPois = mutableListOf<ScenicPoi>()
-            val seen = mutableSetOf<Long>()
+            for (i in 0 until routes.length()) {
+                val routeObj = routes.getJSONObject(i)
+                val geometry = routeObj.getJSONObject("geometry")
+                val coords = geometry.getJSONArray("coordinates")
+                val routePoints = mutableListOf<GeoPoint>()
 
-            for (i in 0 until elements.length()) {
-                val el = elements.getJSONObject(i)
-                val id = el.optLong("id", -1L)
-                if (id == -1L || seen.contains(id)) continue
-                seen.add(id)
-
-                var elLat = el.optDouble("lat", Double.NaN)
-                var elLon = el.optDouble("lon", Double.NaN)
-                if (elLat.isNaN() || elLon.isNaN()) {
-                    val center = el.optJSONObject("center")
-                    if (center != null) {
-                        elLat = center.optDouble("lat", Double.NaN)
-                        elLon = center.optDouble("lon", Double.NaN)
-                    }
+                for (j in 0 until coords.length()) {
+                    val point = coords.getJSONArray(j)
+                    routePoints.add(GeoPoint(point.getDouble(1), point.getDouble(0)))
                 }
 
-                val tags = el.optJSONObject("tags")
-                val name = tags?.optString("name") ?: tags?.optString("official_name") ?: continue
-                val nameTrim = name.trim()
-                if (nameTrim.isBlank() || nameTrim.equals("Unknown", ignoreCase = true)) continue
-
-                // Determine type and score
-                val tourism = tags.optString("tourism", "")
-                val historic = tags.optString("historic", "")
-                val natural = tags.optString("natural", "")
-
-                val type = when {
-                    tourism == "viewpoint" -> "Viewpoint"
-                    tourism == "attraction" -> "Attraction"
-                    tourism == "museum" -> "Museum"
-                    tourism == "artwork" -> "Artwork"
-                    historic == "monument" -> "Monument"
-                    historic == "memorial" -> "Memorial"
-                    historic == "castle" -> "Castle"
-                    historic == "ruins" -> "Ruins"
-                    historic == "archaeological_site" -> "Archaeological Site"
-                    natural == "peak" -> "Mountain Peak"
-                    natural == "beach" -> "Beach"
-                    natural == "waterfall" -> "Waterfall"
-                    natural == "spring" -> "Spring"
-                    natural == "cave_entrance" -> "Cave"
-                    else -> "Scenic"
-                }
-
-                // Assign score based on type
-                val score = when (type) {
-                    "Viewpoint" -> 10
-                    "Beach" -> 9
-                    "Waterfall" -> 9
-                    "Castle" -> 8
-                    "Mountain Peak" -> 8
-                    "Monument" -> 7
-                    "Museum" -> 7
-                    "Ruins" -> 7
-                    "Archaeological Site" -> 7
-                    "Cave" -> 6
-                    "Memorial" -> 6
-                    "Attraction" -> 6
-                    "Spring" -> 5
-                    "Artwork" -> 5
-                    else -> 4
-                }
-
-                if (!elLat.isNaN() && !elLon.isNaN()) {
-                    scenicPois.add(ScenicPoi(nameTrim, type, elLat, elLon, score))
+                if (routePoints.isNotEmpty()) {
+                    alternatives.add(routePoints)
                 }
             }
 
-            Log.d("ScenicRouting", "Fetched ${scenicPois.size} scenic POIs for route evaluation")
-            return@withContext scenicPois
-
-        } catch (e: Exception) {
-            Log.e("ScenicRouting", "Error fetching scenic POIs: ${e.message}")
-            return@withContext emptyList()
+            return alternatives
+        } catch (_: org.json.JSONException) {
+            return emptyList()
         }
+    }
+
+    // Plan scenic route based on route type (oceanic or mountain)
+    private suspend fun planScenicRoute(
+        alternatives: List<List<GeoPoint>>,
+        routeType: String = "oceanic"
+    ) = withContext(Dispatchers.Main) {
+        if (alternatives.isEmpty()) {
+            updateStatus("No route alternatives available")
+            return@withContext
+        }
+
+        // Use ScenicRoutePlanner to find the best scenic route
+        val planner = ScenicRoutePlanner()
+
+        updateStatus("Analyzing scenic routes (${routeType})...")
+
+        val (bestRoute, scenicPois) = withContext(Dispatchers.IO) {
+            planner.selectMostScenicRoute(
+                alternatives,
+                packageName,
+                routeType
+            ) { status ->
+                lifecycleScope.launch(Dispatchers.Main) {
+                    updateStatus("$status (${routeType})")
+                }
+            }
+        }
+
+        if (bestRoute == null || bestRoute.isEmpty()) {
+            updateStatus("Could not find scenic route")
+            return@withContext
+        }
+
+        // Filter scenic POIs based on route type
+        val filteredPois = when (routeType) {
+            "oceanic" -> scenicPois.filter { poi ->
+                val type = poi.type.lowercase(Locale.getDefault())
+                type.contains("beach") ||
+                type.contains("coast") ||
+                type.contains("bay") ||
+                type.contains("sea") ||
+                type.contains("ocean") ||
+                type.contains("viewpoint") ||
+                type.contains("nature_reserve") ||
+                poi.name.lowercase(Locale.getDefault()).let { name ->
+                    name.contains("beach") ||
+                    name.contains("coast") ||
+                    name.contains("bay") ||
+                    name.contains("sea")
+                }
+            }
+            "mountain" -> scenicPois.filter { poi ->
+                val type = poi.type.lowercase(Locale.getDefault())
+                type.contains("peak") ||
+                type.contains("mountain") ||
+                type.contains("hill") ||
+                type.contains("viewpoint") ||
+                type.contains("nature_reserve") ||
+                type.contains("wood") ||
+                poi.name.lowercase(Locale.getDefault()).let { name ->
+                    name.contains("mountain") ||
+                    name.contains("peak") ||
+                    name.contains("hill") ||
+                    name.contains("summit")
+                }
+            }
+            else -> scenicPois
+        }
+
+        // Draw the route
+        currentRoutePolylines.forEach { map?.overlays?.remove(it) }
+        currentRoutePolylines.clear()
+        currentRouteMarkers.forEach { map?.overlays?.remove(it) }
+        currentRouteMarkers.clear()
+        currentRoutePolyline?.let { map?.overlays?.remove(it) }
+
+        val line = Polyline()
+        line.setPoints(bestRoute)
+        line.outlinePaint.color = when (routeType) {
+            "oceanic" -> Color.argb(200, 0, 120, 215)  // Ocean blue
+            "mountain" -> Color.argb(200, 76, 175, 80)  // Mountain green
+            else -> Color.MAGENTA
+        }
+        line.outlinePaint.strokeWidth = 14.0f
+        map?.overlays?.add(line)
+        currentRoutePolyline = line
+        currentRoutePolylines.add(line)
+
+        // Add scenic POI markers
+        for (poi in filteredPois) {
+            val marker = Marker(map)
+            marker.position = GeoPoint(poi.lat, poi.lon)
+            marker.title = poi.name
+            marker.subDescription = "${poi.type} (Score: ${poi.score})"
+            marker.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_scenic_marker, theme)
+            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            map?.overlays?.add(marker)
+            currentRouteMarkers.add(marker)
+            poiMarkerMap["scenic_${poi.lat}_${poi.lon}_${poi.name}"] = marker
+        }
+
+        // Center map on route
+        if (bestRoute.isNotEmpty()) {
+            val mid = bestRoute[bestRoute.size / 2]
+            map?.controller?.setCenter(mid)
+            map?.controller?.setZoom(10.0)
+        }
+
+        map?.invalidate()
+
+        // Fetch towns along the scenic route
+        updateStatus("Fetching towns along ${routeType} route…")
+        val towns = townService.getTownsAlongRoute(bestRoute, packageName, maxDistanceFromRoute = 5000.0)
+        currentRouteTowns = towns
+        Log.d("MainActivity", "Found ${towns.size} towns along the ${routeType} route")
+
+        // Fetch general POIs along the scenic route for recommendations
+        updateStatus("Fetching recommendations along ${routeType} route…")
+        val routePois = withContext(Dispatchers.IO) {
+            val pois = mutableListOf<Poi>()
+
+            // Try route-based POI search
+            val searchConfigs = listOf(
+                Triple(800, 150, 150),
+                Triple(800, 250, 200),
+                Triple(800, 400, 250)
+            )
+
+            for ((sampleDist, overpassRadius, maxDistRoute) in searchConfigs) {
+                val fetched = generateRecommendationsAlongRoute(
+                    routePoints = bestRoute,
+                    sampleDistMeters = sampleDist,
+                    radiusMeters = overpassRadius,
+                    maxDistToRouteMeters = maxDistRoute
+                )
+                if (fetched.isNotEmpty()) {
+                    pois.addAll(fetched.filter { keepPoi(it) })
+                    break
+                }
+            }
+
+            // If no POIs found along route, try destination-centered search
+            if (pois.isEmpty() && bestRoute.isNotEmpty()) {
+                val destPoint = bestRoute.last()
+                val fetched = generateRecommendations(destPoint, 5000)
+                pois.addAll(fetched.filter { keepPoi(it) })
+            }
+
+            pois
+        }
+
+        Log.d("MainActivity", "Found ${routePois.size} general POIs along ${routeType} route")
+
+        // Add POI markers to the map
+        for (poi in routePois) {
+            if (poi.lat != null && poi.lon != null) {
+                val marker = Marker(map)
+                marker.position = GeoPoint(poi.lat, poi.lon)
+                marker.title = poi.name
+                marker.subDescription = poi.description
+                marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                val cat = poi.category.lowercase(Locale.ROOT)
+                val iconRes = when {
+                    cat.contains("restaurant") || cat.contains("cafe") || cat.contains("food") || cat.contains("bar") || cat.contains("pub") || cat.contains("bakery") -> R.drawable.ic_food_marker
+                    cat.contains("bank") || cat.contains("atm") || cat.contains("cash") -> R.drawable.ic_bank
+                    cat.contains("monument") || cat.contains("memorial") || cat.contains("castle") || cat.contains("museum") || cat.contains("archaeological") || cat.contains("ruins") || cat.contains("fort") -> R.drawable.ic_monument
+                    cat.contains("park") || cat.contains("tree") || cat.contains("natural") || cat.contains("leisure") || cat.contains("playground") -> R.drawable.ic_tree
+                    cat.contains("medical") || cat.contains("hospital") || cat.contains("clinic") || cat.contains("pharmacy") -> R.drawable.ic_medical
+                    cat.contains("gas") || cat.contains("fuel") || cat.contains("petrol") || cat.contains("service_station") -> R.drawable.ic_gas
+                    cat.contains("train") || cat.contains("station") -> R.drawable.ic_train
+                    cat.contains("airport") || cat.contains("plane") || cat.contains("airfield") -> R.drawable.ic_plane
+                    cat.contains("grocery") || cat.contains("mall") || cat.contains("supermarket") || cat.contains("shopping") || cat.contains("store") -> R.drawable.ic_cart
+                    cat.contains("veterinary") || cat.contains("vet") || cat.contains("animal") || cat.contains("pet") -> R.drawable.ic_paw
+                    cat.contains("scenic") || cat.contains("viewpoint") || cat.contains("landmark") || cat.contains("tourism") || cat.contains("attraction") || cat.contains("hotel") -> R.drawable.ic_scenic_marker
+                    else -> R.drawable.ic_launcher_foreground
+                }
+                marker.icon = ResourcesCompat.getDrawable(resources, iconRes, theme)
+                map?.overlays?.add(marker)
+                currentRouteMarkers.add(marker)
+                poiMarkerMap[poiKey(poi)] = marker
+            }
+        }
+
+        // Update recommendations list - show towns first, then scenic POIs, then general POIs
+        val recommendationItems = mutableListOf<RecommendationItem>()
+
+        // Add towns
+        recommendationItems.addAll(towns.map { town ->
+            RecommendationItem.TownItem(town)
+        })
+
+        // Add scenic POIs (beaches, viewpoints, etc.)
+        val scenicItems = filteredPois.take(15).map { poi ->
+            RecommendationItem.ScenicItem(poi)
+        }
+        recommendationItems.addAll(scenicItems)
+
+        // Add general POIs (restaurants, gas stations, etc.)
+        val poiItems = routePois.take(20).map { poi ->
+            RecommendationItem.PoiItem(poi)
+        }
+        recommendationItems.addAll(poiItems)
+
+        poiAdapter.updateItems(recommendationItems)
+
+        // Show summary snackbar
+        withContext(Dispatchers.Main) {
+            Snackbar.make(
+                findViewById(R.id.main),
+                "Route: ${towns.size} towns, ${filteredPois.size} scenic points, ${routePois.size} POIs",
+                Snackbar.LENGTH_LONG
+            ).show()
+        }
+
+        // Open the recommendations sheet
+        try {
+            if (::sheetBehavior.isInitialized) {
+                sheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+            }
+        } catch (_: Exception) {}
+
+        val routeLength = GeoUtils.computeRouteLength(bestRoute)
+        val lengthKm = routeLength / 1000.0
+        updateStatus("${routeType.replaceFirstChar { it.uppercase() }} scenic route: ${"%.1f".format(lengthKm)} km")
+        clearStatusDelayed(5000)
     }
 }
+

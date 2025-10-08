@@ -82,7 +82,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:layout_marginBottom="16dp">
+                        android:layout_marginBottom="8dp">
 
                         <com.google.android.material.switchmaterial.SwitchMaterial
                             android:id="@+id/switch_use_current"
@@ -92,13 +92,30 @@
                             android:text="📍 Current"
                             android:textSize="14sp"
                             android:layout_marginEnd="8dp" />
+                    </LinearLayout>
+
+                    <!-- Scenic Route Toggles Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="16dp">
 
                         <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/switch_scenic_route"
+                            android:id="@+id/switch_oceanic_route"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="🌄 Scenic"
+                            android:text="🌊 Oceanic"
+                            android:textSize="14sp"
+                            android:layout_marginEnd="8dp" />
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switch_mountain_route"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="⛰️ Mountain"
                             android:textSize="14sp" />
                     </LinearLayout>
 
@@ -230,52 +247,121 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="@color/white"
-        android:paddingTop="8dp"
+        android:background="@drawable/bottom_sheet_background"
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
         app:behavior_peekHeight="0dp">
 
+        <!-- Enhanced header -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="16dp"
-            android:paddingEnd="8dp">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@android:color/white"
+            android:elevation="4dp">
 
+            <!-- Drag handle -->
             <View
-                android:layout_width="36dp"
+                android:layout_width="40dp"
                 android:layout_height="4dp"
-                android:layout_gravity="center"
-                android:background="@drawable/drag_handle"
-                android:layout_marginEnd="8dp" />
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/drag_handle" />
 
-            <TextView
-                android:id="@+id/sheet_title"
-                android:layout_width="0dp"
+            <!-- Header content -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Recommendations"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="20dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_close_sheet"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="Close"
-                style="@style/Widget.Material3.Button.TextButton" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/sheet_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/recommendations_along_route"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="?android:attr/textColorPrimary" />
+
+                    <TextView
+                        android:id="@+id/sheet_subtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Tap any item to view on map"
+                        android:textSize="14sp"
+                        android:textColor="?android:attr/textColorSecondary" />
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_close_sheet"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:insetLeft="0dp"
+                    android:insetTop="0dp"
+                    android:insetRight="0dp"
+                    android:insetBottom="0dp"
+                    app:icon="@drawable/ic_close"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp"
+                    android:contentDescription="Close"
+                    style="@style/Widget.Material3.Button.IconButton" />
+            </LinearLayout>
         </LinearLayout>
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/sheet_rv_recommendations"
+        <!-- RecyclerView with empty state -->
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:overScrollMode="never"
-            android:nestedScrollingEnabled="true"
-            tools:listitem="@layout/poi_item"
-            android:paddingBottom="24dp" />
+            android:layout_height="wrap_content">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/sheet_rv_recommendations"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:overScrollMode="never"
+                android:clipToPadding="false"
+                android:paddingTop="8dp"
+                android:paddingBottom="80dp"
+                tools:listitem="@layout/poi_item" />
+
+            <!-- Empty state -->
+            <LinearLayout
+                android:id="@+id/empty_state"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="48dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:src="@drawable/ic_scenic_marker"
+                    android:alpha="0.3"
+                    android:contentDescription="No recommendations" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="@string/no_recommendations"
+                    android:textSize="16sp"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:textAlignment="center"
+                    android:gravity="center" />
+            </LinearLayout>
+        </FrameLayout>
     </LinearLayout>
 
     <!-- FAB to toggle the recommendations sheet -->

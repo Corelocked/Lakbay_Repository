@@ -30,6 +30,7 @@ class ScenicRoutePlanner {
     suspend fun fetchScenicPois(
         routePoints: List<GeoPoint>,
         packageName: String,
+        routeType: String = "generic",
         onStatusUpdate: ((String) -> Unit)? = null
     ): List<ScenicPoi> = withContext(Dispatchers.IO) {
         if (routePoints.isEmpty()) return@withContext emptyList()
@@ -76,7 +77,7 @@ class ScenicRoutePlanner {
                             else -> 1000
                         }
 
-                        val pois = fetchScenicPoisAtPoint(sample, radius, packageName)
+                        val pois = fetchScenicPoisAtPoint(sample, radius, packageName, routeType)
 
                         if (pois.isNotEmpty()) {
                             mutex.lock()
@@ -110,13 +111,53 @@ class ScenicRoutePlanner {
     private suspend fun fetchScenicPoisAtPoint(
         point: GeoPoint,
         radius: Int,
-        packageName: String
+        packageName: String,
+        routeType: String = "generic"
     ): List<ScenicPoi> = withContext(Dispatchers.IO) {
         val lat = point.latitude
         val lon = point.longitude
 
-        val ql = """
-[out:json][timeout:25];
+        // Build Overpass query based on route type
+        val ql = when (routeType) {
+            "oceanic" -> """
+[out:json][timeout:15];
+(
+  node(around:$radius,$lat,$lon)[natural=beach];
+  node(around:$radius,$lat,$lon)[natural=coastline];
+  node(around:$radius,$lat,$lon)[natural=bay];
+  node(around:$radius,$lat,$lon)[natural=cape];
+  node(around:$radius,$lat,$lon)[tourism=viewpoint];
+  node(around:$radius,$lat,$lon)[leisure=nature_reserve];
+  node(around:$radius,$lat,$lon)[leisure=park];
+  node(around:$radius,$lat,$lon)[tourism=attraction];
+  node(around:$radius,$lat,$lon)[tourism=picnic_site];
+  node(around:$radius,$lat,$lon)[natural=water];
+  node(around:$radius,$lat,$lon)[waterway=waterfall];
+  way(around:$radius,$lat,$lon)[natural=beach];
+  way(around:$radius,$lat,$lon)[natural=coastline];
+  way(around:$radius,$lat,$lon)[natural=bay];
+);
+out center 60;
+""".trimIndent()
+            "mountain" -> """
+[out:json][timeout:15];
+(
+  node(around:$radius,$lat,$lon)[natural=peak];
+  node(around:$radius,$lat,$lon)[natural=saddle];
+  node(around:$radius,$lat,$lon)[natural=volcano];
+  node(around:$radius,$lat,$lon)[natural=wood];
+  node(around:$radius,$lat,$lon)[tourism=viewpoint];
+  node(around:$radius,$lat,$lon)[leisure=nature_reserve];
+  node(around:$radius,$lat,$lon)[natural=ridge];
+  node(around:$radius,$lat,$lon)[tourism=attraction];
+  node(around:$radius,$lat,$lon)[leisure=park];
+  node(around:$radius,$lat,$lon)[waterway=waterfall];
+  way(around:$radius,$lat,$lon)[natural=wood];
+);
+out center 60;
+""".trimIndent()
+            else -> """
+[out:json][timeout:15];
 (
   node(around:$radius,$lat,$lon)[tourism=viewpoint];
   node(around:$radius,$lat,$lon)[leisure=park];
@@ -133,6 +174,7 @@ class ScenicRoutePlanner {
 );
 out center 60;
 """.trimIndent()
+        }
 
         val mediaType = "text/plain; charset=utf-8".toMediaType()
         val requestBody = ql.toRequestBody(mediaType)
@@ -176,23 +218,54 @@ out center 60;
                     ?: tags?.optString("leisure")
                     ?: tags?.optString("natural")
                     ?: tags?.optString("historic")
+                    ?: tags?.optString("waterway")
                     ?: "unknown"
 
                 if (!elLat.isNaN() && !elLon.isNaN()) {
-                    val score = when {
-                        type.equals("viewpoint", true) -> 110
-                        type.equals("peak", true) -> 100
-                        type.equals("nature_reserve", true) -> 95
-                        type.equals("beach", true) -> 90
-                        type.equals("park", true) -> 85
-                        type.equals("wood", true) -> 70
-                        type.equals("historic", true) -> 65
-                        type.equals("attraction", true) -> 60
-                        type.equals("museum", true) -> 45
-                        type.equals("hotel", true) -> 25
-                        type.equals("camp_site", true) -> 40
-                        type.equals("picnic_site", true) -> 35
-                        else -> 20
+                    // Adjust scoring based on route type
+                    val score = when (routeType) {
+                        "oceanic" -> when {
+                            type.equals("beach", true) -> 120
+                            type.equals("coastline", true) -> 110
+                            type.equals("bay", true) -> 105
+                            type.equals("cape", true) -> 100
+                            type.equals("viewpoint", true) -> 95
+                            type.equals("nature_reserve", true) -> 85
+                            type.equals("water", true) -> 75
+                            type.equals("waterfall", true) -> 70
+                            type.equals("park", true) -> 60
+                            type.equals("attraction", true) -> 50
+                            type.equals("picnic_site", true) -> 40
+                            else -> 20
+                        }
+                        "mountain" -> when {
+                            type.equals("peak", true) -> 120
+                            type.equals("volcano", true) -> 115
+                            type.equals("saddle", true) -> 105
+                            type.equals("viewpoint", true) -> 100
+                            type.equals("ridge", true) -> 95
+                            type.equals("nature_reserve", true) -> 90
+                            type.equals("wood", true) -> 80
+                            type.equals("waterfall", true) -> 75
+                            type.equals("park", true) -> 65
+                            type.equals("attraction", true) -> 55
+                            else -> 20
+                        }
+                        else -> when {
+                            type.equals("viewpoint", true) -> 110
+                            type.equals("peak", true) -> 100
+                            type.equals("nature_reserve", true) -> 95
+                            type.equals("beach", true) -> 90
+                            type.equals("park", true) -> 85
+                            type.equals("wood", true) -> 70
+                            type.equals("historic", true) -> 65
+                            type.equals("attraction", true) -> 60
+                            type.equals("museum", true) -> 45
+                            type.equals("hotel", true) -> 25
+                            type.equals("camp_site", true) -> 40
+                            type.equals("picnic_site", true) -> 35
+                            else -> 20
+                        }
                     }
                     local.add(ScenicPoi(name, type, elLat, elLon, score))
                 }
@@ -227,6 +300,7 @@ out center 60;
     suspend fun selectMostScenicRoute(
         alternatives: List<List<GeoPoint>>,
         packageName: String,
+        routeType: String = "generic",
         onStatusUpdate: ((String) -> Unit)? = null
     ): Pair<List<GeoPoint>?, List<ScenicPoi>> = withContext(Dispatchers.IO) {
         if (alternatives.isEmpty()) return@withContext Pair(null, emptyList())
@@ -236,12 +310,12 @@ out center 60;
         var highestScore = Double.NEGATIVE_INFINITY
 
         for (alt in alternatives) {
-            val pois = fetchScenicPois(alt, packageName, onStatusUpdate)
+            val pois = fetchScenicPois(alt, packageName, routeType, onStatusUpdate)
             val score = calculateScenicScore(alt, pois)
 
             Log.d("ScenicRoutePlanner",
                 "Route length=${GeoUtils.computeRouteLength(alt).toInt()}m " +
-                "scenicCount=${pois.size} score=$score")
+                "scenicCount=${pois.size} score=$score (type=$routeType)")
 
             if (score > highestScore) {
                 highestScore = score

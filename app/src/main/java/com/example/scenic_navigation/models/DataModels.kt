@@ -12,6 +12,20 @@ data class Poi(
 )
 
 /**
+ * Town along the route
+ */
+data class Town(
+    val name: String,
+    val type: String, // "city", "town", "village"
+    val lat: Double,
+    val lon: Double,
+    val population: Int? = null,
+    val elevation: Double? = null, // Elevation in meters (for mountain towns)
+    val distanceFromStart: Double = 0.0, // Distance in meters from route start
+    val routeIndex: Int = 0 // Index in the route where this town is encountered
+)
+
+/**
  * Scenic Point of Interest with scoring for route planning
  */
 data class ScenicPoi(
@@ -36,11 +50,13 @@ data class ScenicMunicipality(
 )
 
 /**
- * Sealed class for recommendation items (POI or Municipality)
+ * Sealed class for recommendation items (POI, Municipality, or Town)
  */
 sealed class RecommendationItem {
     data class PoiItem(val poi: Poi) : RecommendationItem()
     data class MunicipalityItem(val municipality: ScenicMunicipality) : RecommendationItem()
+    data class TownItem(val town: Town) : RecommendationItem()
+    data class ScenicItem(val scenicPoi: ScenicPoi) : RecommendationItem()
 }
 
 /**
@@ -61,4 +77,3 @@ data class CoastalSegment(
     val avgDistanceToCoast: Double,
     val coastalLength: Double
 )
-
