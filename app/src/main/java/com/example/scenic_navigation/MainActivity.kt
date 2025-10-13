@@ -59,18 +59,15 @@ import com.example.scenic_navigation.models.Poi
 import com.example.scenic_navigation.models.ScenicPoi
 import com.example.scenic_navigation.models.RecommendationItem
 import com.example.scenic_navigation.models.GeocodeResult
-import com.example.scenic_navigation.models.Waypoint
-import com.example.scenic_navigation.models.RoadTripSegment
-import com.example.scenic_navigation.models.RoadTripPlan
 import com.example.scenic_navigation.models.Town
-import com.example.scenic_navigation.data.FerryTerminals
 import com.example.scenic_navigation.services.TownService
 import com.example.scenic_navigation.services.ScenicRoutePlanner
 import com.example.scenic_navigation.utils.GeoUtils
-
-// Material components used in bottom sheet
-import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.example.scenic_navigation.utils.OffRouteDetector
+import android.location.LocationListener
+import android.os.Looper
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 
 @Suppress("DEPRECATION")
 class MainActivity : AppCompatActivity() {
@@ -104,6 +101,8 @@ class MainActivity : AppCompatActivity() {
     private var currentRoutePolyline: Polyline? = null
     private val currentRoutePolylines = mutableListOf<Polyline>()
     private val currentRouteMarkers = mutableListOf<Marker>()
+    // Keep an explicit copy of the active route points for off-route detection
+    private var currentRoutePoints: List<GeoPoint> = emptyList()
 
     // Store the original destination when planning the route
     private var originalDestination: GeoPoint? = null
@@ -123,6 +122,15 @@ class MainActivity : AppCompatActivity() {
     // Town service for fetching towns along route
     private val townService: TownService by lazy { TownService() }
     private var currentRouteTowns = listOf<Town>()
+
+    // Off-route detection components
+    private var offRouteDetector: OffRouteDetector? = null
+    private var isRerouting: Boolean = false
+    private var locationManager: LocationManager? = null
+    private val locationListener = LocationListener { loc ->
+        lastLocation = loc
+        offRouteDetector?.updateLocation(loc)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -313,6 +321,9 @@ class MainActivity : AppCompatActivity() {
         myLocationOverlay?.enableMyLocation()
         myLocationOverlay?.enableFollowLocation()
         myLocationOverlay?.setDrawAccuracyEnabled(true)
+
+        // Initialize LocationManager for off-route detection updates
+        locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
 
         // Convert Drawable to Bitmap for user location icon
         val userDrawable = ResourcesCompat.getDrawable(resources, R.drawable.ic_user_arrow, theme)
@@ -933,6 +944,76 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         // Always enable and add MyLocationNewOverlay if permitted
         enableLocationOverlayIfPermitted()
+        // Start off-route monitoring
+        startLocationUpdatesForOffRoute()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopLocationUpdatesForOffRoute()
+    }
+
+    private fun startLocationUpdatesForOffRoute() {
+        if (!hasLocationPermission()) return
+        try {
+            // Request GPS and network for better coverage
+            locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000L, 5f, locationListener, Looper.getMainLooper())
+            locationManager?.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000L, 10f, locationListener, Looper.getMainLooper())
+        } catch (_: SecurityException) { }
+    }
+
+    private fun stopLocationUpdatesForOffRoute() {
+        try { locationManager?.removeUpdates(locationListener) } catch (_: Exception) { }
+    }
+
+    private fun ensureOffRouteDetector(routePoints: List<GeoPoint>) {
+        if (routePoints.size < 2) return
+        if (offRouteDetector == null) {
+            offRouteDetector = OffRouteDetector(
+                routePoints = routePoints,
+                thresholdMeters = 45f,
+                returnThresholdMeters = 25f,
+                requiredConsecutive = 2,
+                cooldownMs = 15000L
+            ) { loc ->
+                onOffRouteTriggered(loc)
+            }
+        } else {
+            offRouteDetector?.updateRoute(routePoints)
+        }
+    }
+
+    private fun onOffRouteTriggered(loc: Location) {
+        if (isRerouting) return
+        val dest = originalDestination ?: return
+        isRerouting = true
+        lifecycleScope.launch {
+            withContext(Dispatchers.Main) {
+                Snackbar.make(findViewById(R.id.main), "You went off-route. Recalculating…", Snackbar.LENGTH_SHORT).show()
+            }
+            val startPoint = GeoPoint(loc.latitude, loc.longitude)
+            val (newRoute, _) = fetchRouteAndPois(startPoint, dest)
+            if (newRoute.isNotEmpty()) {
+                withContext(Dispatchers.Main) {
+                    try {
+                        // Keep overlays but replace current route line
+                        currentRoutePolyline?.let { map?.overlays?.remove(it) }
+                        val line = Polyline().apply {
+                            setPoints(newRoute)
+                            outlinePaint.color = Color.argb(0xA0, 0x00, 0x40, 0xFF)
+                            outlinePaint.strokeWidth = 10f
+                        }
+                        map?.overlays?.add(line)
+                        currentRoutePolyline = line
+                        currentRoutePoints = newRoute
+                        map?.invalidate()
+                    } catch (_: Exception) { }
+                }
+                // Update detector with the new route
+                ensureOffRouteDetector(newRoute)
+            }
+            isRerouting = false
+        }
     }
 
     private fun enableLocationOverlayIfPermitted() {
@@ -1013,6 +1094,7 @@ class MainActivity : AppCompatActivity() {
                     etStart.setText(getString(R.string.current_location))
                 }
                 enableLocationOverlayIfPermitted()
+                startLocationUpdatesForOffRoute()
             } else {
                 Snackbar.make(
                     findViewById(R.id.main),
@@ -1734,6 +1816,9 @@ class MainActivity : AppCompatActivity() {
                     }
                     map?.overlays?.add(line)
                     currentRoutePolyline = line
+                    // Update off-route detector with new combined route
+                    currentRoutePoints = combined
+                    ensureOffRouteDetector(combined)
                     map?.invalidate()
                 } catch (_: Exception) { }
             }
@@ -2181,6 +2266,9 @@ class MainActivity : AppCompatActivity() {
         line.outlinePaint.strokeWidth = 10.0f
         map?.overlays?.add(line)
         currentRoutePolyline = line
+        // Update active route points for off-route detector
+        currentRoutePoints = routePoints
+        ensureOffRouteDetector(routePoints)
 
         // Draw ferry segments in different color
         for (segment in ferrySegments) {
@@ -2311,6 +2399,9 @@ class MainActivity : AppCompatActivity() {
         map?.overlays?.add(line)
         currentRoutePolyline = line
         currentRoutePolylines.add(line)
+        // Update route points for off-route detector
+        currentRoutePoints = bestRoute
+        ensureOffRouteDetector(bestRoute)
 
         // Add scenic POI markers
         for (poi in filteredPois) {
