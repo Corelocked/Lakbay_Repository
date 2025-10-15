@@ -157,7 +157,9 @@ out center 50;
                 if (isUnwantedAmenity(tags)) continue
 
                 if (!elLat.isNaN() && !elLon.isNaN()) {
-                    pois.add(Poi(nameTrim, category, desc, elLat, elLon))
+                    // Try to get municipality from tags, fallback to "Unknown"
+                    val municipality = tags?.optString("addr:city") ?: tags?.optString("addr:town") ?: tags?.optString("addr:municipality") ?: "Unknown"
+                    pois.add(Poi(nameTrim, category, desc, municipality, elLat, elLon))
                 }
             }
 
