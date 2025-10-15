@@ -7,6 +7,7 @@ data class Poi(
     val name: String,
     val category: String,
     val description: String,
+    val municipality: String, // Added for grouping by town/municipality
     val lat: Double? = null,
     val lon: Double? = null
 )
@@ -33,7 +34,8 @@ data class ScenicPoi(
     val type: String,
     val lat: Double,
     val lon: Double,
-    val score: Int
+    val score: Int,
+    val municipality: String? = null // Added for compatibility with RouteViewModel
 )
 
 /**

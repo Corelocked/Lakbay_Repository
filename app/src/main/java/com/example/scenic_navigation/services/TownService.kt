@@ -289,6 +289,7 @@ out center 50;
                     name = name,
                     category = category,
                     description = description,
+                    municipality = town.name,
                     lat = elLat,
                     lon = elLon
                 ))

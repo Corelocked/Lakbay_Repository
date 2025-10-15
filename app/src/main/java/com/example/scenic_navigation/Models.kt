@@ -1,5 +1,7 @@
 package com.example.scenic_navigation
 
+import com.example.scenic_navigation.models.Poi
+
 // Data class for scenic municipalities
 data class ScenicMunicipality(
     val name: String,
@@ -16,4 +18,3 @@ sealed class RecommendationItem {
     data class PoiItem(val poi: Poi) : RecommendationItem()
     data class MunicipalityItem(val municipality: ScenicMunicipality) : RecommendationItem()
 }
-
