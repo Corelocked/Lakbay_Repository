@@ -13,23 +13,6 @@ import org.osmdroid.util.GeoPoint
 class RoutingService {
     private val httpClient: OkHttpClient by lazy { OkHttpClient() }
 
-    // Hardcoded Philippine coastal waypoints
-    private val philippineCoastWaypoints = listOf(
-        GeoPoint(18.5046, 122.1177), // Northern Luzon (Cagayan)
-        GeoPoint(17.6189, 120.6200), // Ilocos Norte
-        GeoPoint(16.6000, 120.3167), // La Union
-        GeoPoint(15.4828, 120.5986), // Pangasinan
-        GeoPoint(14.5995, 120.9842), // Manila Bay
-        GeoPoint(13.9644, 121.0921), // Batangas
-        GeoPoint(12.8797, 121.7740), // Mindoro
-        GeoPoint(11.9674, 121.9244), // Panay
-        GeoPoint(10.7202, 122.5621), // Negros
-        GeoPoint(9.7489, 123.8556),  // Cebu
-        GeoPoint(8.4796, 124.6472),  // Northern Mindanao
-        GeoPoint(7.2048, 124.2464),  // Southern Mindanao
-        GeoPoint(6.9214, 122.0790)   // Zamboanga
-    )
-
     // Hardcoded Philippine mountain waypoints
     private val mountainWaypoints = mapOf(
         // LUZON MOUNTAIN ROUTES
@@ -82,6 +65,88 @@ class RoutingService {
             GeoPoint(6.2100, 124.7040)  // Lake Sebu
         )
     )
+    private val coastalWaypoints = mapOf(
+        // LUZON ROUTES
+        "luzon_north" to listOf(
+            GeoPoint(15.7800, 120.2800), // Zambales coast
+            GeoPoint(16.0500, 120.3300), // La Union coast
+            GeoPoint(17.5800, 120.3800), // Ilocos Norte coast
+            GeoPoint(18.1700, 120.5900)  // Northern tip before going to Aparri
+        ),
+        "luzon_bicol_east" to listOf(
+            GeoPoint(14.6000, 121.2000), // Laguna
+            GeoPoint(14.1700, 121.6200), // Quezon coast
+            GeoPoint(13.6200, 122.0100), // Camarines Norte coast
+            GeoPoint(13.4200, 123.4100)  // Camarines Sur/Albay coast
+        ),
+        "luzon_bicol_west" to listOf(
+            GeoPoint(14.0100, 120.9800), // Batangas coast
+            GeoPoint(13.7500, 120.9500), // Mindoro Strait view
+            GeoPoint(13.4200, 123.4100)  // Join at Albay
+        ),
+        // VISAYAS ROUTES
+        "visayas_cebu_coastal" to listOf(
+            GeoPoint(10.3200, 123.7500), // Northern Cebu coast
+            GeoPoint(10.6900, 124.0000), // Malapascua area
+            GeoPoint(10.3200, 123.7500), // Cebu City
+            GeoPoint(9.8600, 123.4000)   // Southern Cebu coast
+        ),
+        "visayas_panay_coastal" to listOf(
+            GeoPoint(11.9600, 122.0100), // Aklan/Boracay area
+            GeoPoint(11.0000, 122.5500), // Iloilo coast
+            GeoPoint(10.6900, 122.5700)  // Guimaras Strait
+        ),
+        "visayas_bohol_coastal" to listOf(
+            GeoPoint(9.8500, 124.4300), // Tagbilaran/Panglao
+            GeoPoint(10.1500, 124.2000), // Northern Bohol coast
+            GeoPoint(9.6500, 124.5000)   // Eastern Bohol coast
+        ),
+        "visayas_leyte_samar" to listOf(
+            GeoPoint(11.2500, 125.0000), // Samar west coast
+            GeoPoint(11.0000, 124.9500), // San Juanico Strait
+            GeoPoint(10.7200, 124.8400), // Tacloban area
+            GeoPoint(10.3900, 125.0100)  // Southern Leyte coast
+        ),
+        // MINDANAO ROUTES
+        "mindanao_south_pacific" to listOf(
+            GeoPoint(6.9000, 125.6100), // Davao coastal
+            GeoPoint(6.5000, 125.2000), // Davao del Sur coast
+            GeoPoint(6.1100, 125.1700)  // General Santos coastal approach
+        ),
+        "mindanao_north_coast" to listOf(
+            GeoPoint(8.4800, 124.6500), // Cagayan de Oro coastal
+            GeoPoint(8.8000, 125.1000), // Misamis Oriental coast
+            GeoPoint(8.9500, 125.5400)  // Butuan Bay approach
+        ),
+        "mindanao_west_zamboanga" to listOf(
+            GeoPoint(8.0000, 123.5000), // Lanao del Norte coast
+            GeoPoint(7.8000, 123.2000), // Misamis Occidental coast
+            GeoPoint(7.3000, 122.7000), // Zamboanga del Norte coast
+            GeoPoint(6.9100, 122.0700)  // Zamboanga City coastal
+        ),
+        "mindanao_surigao_coast" to listOf(
+            GeoPoint(9.7800, 125.4900), // Surigao City
+            GeoPoint(9.5000, 125.7000), // Eastern Surigao coast
+            GeoPoint(9.0000, 126.0000)  // Pacific coast route
+        ),
+        // INTER-ISLAND ROUTES
+        "luzon_visayas_manila_cebu" to listOf(
+            GeoPoint(14.0100, 120.9800), // Batangas coast
+            GeoPoint(13.4000, 121.3000), // Mindoro coast
+            GeoPoint(12.5000, 121.9000), // Romblon area
+            GeoPoint(11.2500, 123.2500), // Negros coast
+            GeoPoint(10.3200, 123.7500)  // Cebu
+        ),
+        "luzon_mindanao_manila_davao" to listOf(
+            GeoPoint(13.4200, 123.4100), // Bicol
+            GeoPoint(12.5000, 124.0000), // Samar coast
+            GeoPoint(11.0000, 125.0000), // Leyte coast
+            GeoPoint(10.3900, 125.0100), // Southern Leyte
+            GeoPoint(9.0000, 125.5000),  // Surigao coast
+            GeoPoint(7.5000, 126.0000),  // Eastern Mindanao coast
+            GeoPoint(6.9000, 125.6100)   // Davao
+        )
+    )
 
     suspend fun fetchRoute(
         start: GeoPoint,
@@ -109,7 +174,7 @@ class RoutingService {
                     Log.d("RoutingService", "OSRM response code: ${response.code}")
                     if (response.isSuccessful) {
                         val body = response.body?.string() ?: ""
-                        return@withContext parseRoute(body)
+                        return@withContext parseRouteFromOsrmResponse(body)
                     }
                 } catch (e: Exception) {
                     Log.d("RoutingService", "OSRM error: ${e.message}")
@@ -119,96 +184,41 @@ class RoutingService {
         }
     }
 
-    // --- COASTAL ROUTE GENERATION ---
-    private suspend fun generateCoastalRouteViaWaypoints(start: GeoPoint, dest: GeoPoint, packageName: String): List<GeoPoint> = withContext(Dispatchers.IO) {
-        // Define strategic coastal waypoints for major Philippine routes
-        val coastalWaypoints = mapOf(
-            // LUZON ROUTES
-            "luzon_north" to listOf(
-                GeoPoint(15.7800, 120.2800), // Zambales coast
-                GeoPoint(16.0500, 120.3300), // La Union coast
-                GeoPoint(17.5800, 120.3800), // Ilocos Norte coast
-                GeoPoint(18.1700, 120.5900)  // Northern tip before going to Aparri
-            ),
-            // Manila to Bicol - Eastern Luzon Pacific coast
-            "luzon_bicol_east" to listOf(
-                GeoPoint(14.6000, 121.2000), // Laguna
-                GeoPoint(14.1700, 121.6200), // Quezon coast
-                GeoPoint(13.6200, 122.0100), // Camarines Norte coast
-                GeoPoint(13.4200, 123.4100)  // Camarines Sur/Albay coast
-            ),
-            // Manila to Bicol - Western route via Batangas
-            "luzon_bicol_west" to listOf(
-                GeoPoint(14.0100, 120.9800), // Batangas coast
-                GeoPoint(13.7500, 120.9500), // Mindoro Strait view
-                GeoPoint(13.4200, 123.4100)  // Join at Albay
-            ),
-            // VISAYAS ROUTES
-            "visayas_cebu_coastal" to listOf(
-                GeoPoint(10.3200, 123.7500), // Northern Cebu coast
-                GeoPoint(10.6900, 124.0000), // Malapascua area
-                GeoPoint(10.3200, 123.7500), // Cebu City
-                GeoPoint(9.8600, 123.4000)   // Southern Cebu coast
-            ),
-            "visayas_panay_coastal" to listOf(
-                GeoPoint(11.9600, 122.0100), // Aklan/Boracay area
-                GeoPoint(11.0000, 122.5500), // Iloilo coast
-                GeoPoint(10.6900, 122.5700)  // Guimaras Strait
-            ),
-            "visayas_bohol_coastal" to listOf(
-                GeoPoint(9.8500, 124.4300), // Tagbilaran/Panglao
-                GeoPoint(10.1500, 124.2000), // Northern Bohol coast
-                GeoPoint(9.6500, 124.5000)   // Eastern Bohol coast
-            ),
-            "visayas_leyte_samar" to listOf(
-                GeoPoint(11.2500, 125.0000), // Samar west coast
-                GeoPoint(11.0000, 124.9500), // San Juanico Strait
-                GeoPoint(10.7200, 124.8400), // Tacloban area
-                GeoPoint(10.3900, 125.0100)  // Southern Leyte coast
-            ),
-            // MINDANAO ROUTES
-            "mindanao_south_pacific" to listOf(
-                GeoPoint(6.9000, 125.6100), // Davao coastal
-                GeoPoint(6.5000, 125.2000), // Davao del Sur coast
-                GeoPoint(6.1100, 125.1700)  // General Santos coastal approach
-            ),
-            "mindanao_north_coast" to listOf(
-                GeoPoint(8.4800, 124.6500), // Cagayan de Oro coastal
-                GeoPoint(8.8000, 125.1000), // Misamis Oriental coast
-                GeoPoint(8.9500, 125.5400)  // Butuan Bay approach
-            ),
-            "mindanao_west_zamboanga" to listOf(
-                GeoPoint(8.0000, 123.5000), // Lanao del Norte coast
-                GeoPoint(7.8000, 123.2000), // Misamis Occidental coast
-                GeoPoint(7.3000, 122.7000), // Zamboanga del Norte coast
-                GeoPoint(6.9100, 122.0700)  // Zamboanga City coastal
-            ),
-            "mindanao_surigao_coast" to listOf(
-                GeoPoint(9.7800, 125.4900), // Surigao City
-                GeoPoint(9.5000, 125.7000), // Eastern Surigao coast
-                GeoPoint(9.0000, 126.0000)  // Pacific coast route
-            ),
-            // INTER-ISLAND ROUTES
-            "luzon_visayas_manila_cebu" to listOf(
-                GeoPoint(14.0100, 120.9800), // Batangas coast
-                GeoPoint(13.4000, 121.3000), // Mindoro coast
-                GeoPoint(12.5000, 121.9000), // Romblon area
-                GeoPoint(11.2500, 123.2500), // Negros coast
-                GeoPoint(10.3200, 123.7500)  // Cebu
-            ),
-            "luzon_mindanao_manila_davao" to listOf(
-                GeoPoint(13.4200, 123.4100), // Bicol
-                GeoPoint(12.5000, 124.0000), // Samar coast
-                GeoPoint(11.0000, 125.0000), // Leyte coast
-                GeoPoint(10.3900, 125.0100), // Southern Leyte
-                GeoPoint(9.0000, 125.5000),  // Surigao coast
-                GeoPoint(7.5000, 126.0000),  // Eastern Mindanao coast
-                GeoPoint(6.9000, 125.6100)   // Davao
-            )
+    private fun findBestWaypointSet(start: GeoPoint, dest: GeoPoint, allWaypointSets: Map<String, List<GeoPoint>>, isLongDistanceOceanic: Boolean = false): List<GeoPoint> {
+        if (allWaypointSets.isEmpty()) return emptyList()
+
+        var bestSet: List<GeoPoint> = emptyList()
+        var minAvgDistance = Double.MAX_VALUE
+
+        val routeMidPoint = GeoPoint(
+            (start.latitude + dest.latitude) / 2.0,
+            (start.longitude + dest.longitude) / 2.0
         )
 
-        // Example: always use Luzon North for demo, you can add logic here
-        val waypoints = coastalWaypoints["luzon_north"] ?: emptyList()
+        for ((key, waypoints) in allWaypointSets) {
+            if (waypoints.isEmpty()) continue
+
+            val avgDistance = waypoints.sumOf { it.distanceToAsDouble(routeMidPoint) } / waypoints.size
+
+            if (avgDistance < minAvgDistance) {
+                minAvgDistance = avgDistance
+                bestSet = waypoints
+                Log.d("RoutingService", "New best waypoint set: $key with avg distance $avgDistance")
+            }
+        }
+
+        val threshold = if (isLongDistanceOceanic) 300_000 else 50_000
+
+        // If the closest waypoint set is still on average > threshold, it's probably not relevant.
+        if (minAvgDistance > threshold) {
+            Log.w("RoutingService", "No relevant waypoint sets found within the ${threshold/1000}km threshold.")
+            return emptyList()
+        }
+
+        return bestSet
+    }
+
+    private suspend fun generateRouteViaWaypoints(start: GeoPoint, dest: GeoPoint, packageName: String, waypoints: List<GeoPoint>): List<GeoPoint> {
         val allPoints = listOf(start) + waypoints + listOf(dest)
         val fullRoute = mutableListOf<GeoPoint>()
         for (i in 0 until allPoints.size - 1) {
@@ -235,51 +245,45 @@ class RoutingService {
                 }
                 response.close()
             } catch (e: Exception) {
-                Log.d("RoutingService", "Error fetching coastal segment $i: ${e.message}")
+                Log.e("RoutingService", "Error fetching route segment: ${e.message}")
             }
         }
-        return@withContext fullRoute
+        return fullRoute
     }
 
-    // --- MOUNTAIN ROUTE GENERATION ---
-    private suspend fun generateMountainRouteViaWaypoints(start: GeoPoint, dest: GeoPoint, packageName: String): List<GeoPoint> = withContext(Dispatchers.IO) {
-        // For mountain routes, we simply fetch the direct route
-        // The routing engine will naturally prefer roads through mountainous terrain
-        // We can enhance this by using elevation-aware routing preferences
+    private suspend fun generateCoastalRouteViaWaypoints(start: GeoPoint, dest: GeoPoint, packageName: String): List<GeoPoint> {
+        Log.d("RoutingService", "Finding best coastal route...")
+        val directDistance = start.distanceToAsDouble(dest)
+        val isLongDistance = directDistance > 300_000
 
-        Log.d("RoutingService", "Planning mountain route from ${start.latitude},${start.longitude} to ${dest.latitude},${dest.longitude}")
+        val bestWaypoints = findBestWaypointSet(start, dest, coastalWaypoints, isLongDistance)
 
-        val directUrl = "https://router.project-osrm.org/route/v1/driving/${start.longitude},${start.latitude};${dest.longitude},${dest.latitude}?overview=full&geometries=geojson"
-        val request = Request.Builder()
-            .url(directUrl)
-            .header("User-Agent", packageName)
-            .header("Accept", "application/json")
-            .build()
-
-        try {
-            val response = httpClient.newCall(request).execute()
-            if (response.isSuccessful) {
-                val body = response.body?.string() ?: ""
-                val route = parseRouteFromOsrmResponse(body)
-                Log.d("RoutingService", "Generated mountain route with ${route.size} points")
-                return@withContext route
-            } else {
-                Log.e("RoutingService", "Failed to fetch mountain route: ${response.code}")
-            }
-            response.close()
-        } catch (e: Exception) {
-            Log.e("RoutingService", "Error fetching mountain route: ${e.message}")
+        if (bestWaypoints.isEmpty()) {
+            Log.w("RoutingService", "No suitable coastal waypoints found. Falling back to direct route.")
+            return fetchRoute(start, dest, packageName, "default")
         }
 
-        return@withContext emptyList()
+        Log.d("RoutingService", "Using coastal waypoints. Count: ${bestWaypoints.size}")
+        return generateRouteViaWaypoints(start, dest, packageName, bestWaypoints)
     }
 
-    // Helper method to parse route from OSRM response
+    private suspend fun generateMountainRouteViaWaypoints(start: GeoPoint, dest: GeoPoint, packageName: String): List<GeoPoint> {
+        Log.d("RoutingService", "Finding best mountain route...")
+        val bestWaypoints = findBestWaypointSet(start, dest, mountainWaypoints, false)
+
+        if (bestWaypoints.isEmpty()) {
+            Log.w("RoutingService", "No suitable mountain waypoints found. Falling back to direct route.")
+            return fetchRoute(start, dest, packageName, "default")
+        }
+
+        Log.d("RoutingService", "Using mountain waypoints. Count: ${bestWaypoints.size}")
+        return generateRouteViaWaypoints(start, dest, packageName, bestWaypoints)
+    }
+
     private fun parseRouteFromOsrmResponse(body: String): List<GeoPoint> {
         return try {
             val json = org.json.JSONObject(body)
 
-            // Check for OSRM error response
             val code = json.optString("code", "")
             if (code != "Ok") {
                 Log.e("RoutingService", "OSRM error: $code")
@@ -337,29 +341,6 @@ class RoutingService {
         }
 
         return@withContext emptyList()
-    }
-
-    private fun parseRoute(body: String): List<GeoPoint> {
-        try {
-            val json = org.json.JSONObject(body)
-            val routes = json.getJSONArray("routes")
-            if (routes.length() == 0) return emptyList()
-
-            val routeObj = routes.getJSONObject(0)
-            val geometry = routeObj.getJSONObject("geometry")
-            val coords = geometry.getJSONArray("coordinates")
-
-            val routePoints = mutableListOf<GeoPoint>()
-            for (i in 0 until coords.length()) {
-                val point = coords.getJSONArray(i)
-                routePoints.add(GeoPoint(point.getDouble(1), point.getDouble(0)))
-            }
-
-            return routePoints
-        } catch (e: org.json.JSONException) {
-            Log.e("RoutingService", "Error parsing route: ${e.message}")
-            return emptyList()
-        }
     }
 
     private fun parseAlternatives(body: String): List<List<GeoPoint>> {
