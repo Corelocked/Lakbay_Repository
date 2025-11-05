@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">scenic_navigation</string>
+    <string name="app_name">Lakbay</string>
     <string name="start_hint">Starting point</string>
     <string name="destination_hint">Destination</string>
     <string name="use_current_location">Use current location</string>
