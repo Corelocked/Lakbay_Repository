@@ -77,7 +77,7 @@ class ScenicRoutePlanner {
                             else -> 1000
                         }
 
-                        val pois = fetchScenicPoisAtPoint(sample, radius, packageName, routeType)
+                        val pois = fetchScenicPoisAtPoint(sample, radius, packageName, routeType, routePoints)
 
                         if (pois.isNotEmpty()) {
                             mutex.lock()
@@ -112,7 +112,8 @@ class ScenicRoutePlanner {
         point: GeoPoint,
         radius: Int,
         packageName: String,
-        routeType: String = "generic"
+        routeType: String = "generic",
+        routePoints: List<GeoPoint>
     ): List<ScenicPoi> = withContext(Dispatchers.IO) {
         val lat = point.latitude
         val lon = point.longitude
@@ -222,9 +223,13 @@ out center 60;
                     ?: "unknown"
 
                 if (!elLat.isNaN() && !elLon.isNaN()) {
+                    val isNearCoast = routePoints.any { p ->
+                        p.distanceToAsDouble(GeoPoint(elLat, elLon)) < 20000 // 20km threshold
+                    }
+
                     // Adjust scoring based on route type
                     val score = when (routeType) {
-                        "oceanic" -> when {
+                        "oceanic" -> if (isNearCoast) when {
                             type.equals("beach", true) -> 120
                             type.equals("coastline", true) -> 110
                             type.equals("bay", true) -> 105
@@ -237,7 +242,7 @@ out center 60;
                             type.equals("attraction", true) -> 50
                             type.equals("picnic_site", true) -> 40
                             else -> 20
-                        }
+                        } else 20 // Default low score if not near coast
                         "mountain" -> when {
                             type.equals("peak", true) -> 120
                             type.equals("volcano", true) -> 115
