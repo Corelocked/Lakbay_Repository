@@ -32,6 +32,10 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
     private val _routePois = MutableLiveData<List<Poi>>(emptyList())
     val routePois: LiveData<List<Poi>> = _routePois
 
+    // Store destination and routing preferences for recalculation
+    private var currentDestination: GeoPoint? = null
+    private var currentRoutingMode: String = "default"
+
     fun planRoute(
         useCurrent: Boolean,
         useOceanic: Boolean,
@@ -109,6 +113,10 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                     else -> "default"
                 }
 
+                // Store for recalculation
+                currentDestination = destPoint
+                currentRoutingMode = routingMode
+
                 // Fetch route using OSRM with mode
                 val route = routingService.fetchRoute(startPoint, destPoint, packageName, routingMode)
 
@@ -162,5 +170,62 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
         _routePoints.value = emptyList()
         _routePois.value = emptyList()
         _statusMessage.value = null
+        currentDestination = null
+    }
+
+    /**
+     * Recalculate route from a new start location (used when user goes off route)
+     */
+    fun recalculateRouteFromLocation(newStart: GeoPoint) {
+        val destination = currentDestination ?: return
+
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                _statusMessage.value = "Recalculating route from current location..."
+
+                // Fetch new route
+                val route = routingService.fetchRoute(newStart, destination, packageName, currentRoutingMode)
+
+                if (route.isEmpty()) {
+                    _statusMessage.value = "Could not recalculate route"
+                    _isLoading.value = false
+                    return@launch
+                }
+
+                _routePoints.value = route
+
+                // Fetch scenic POIs along the new route
+                val routeType = when (currentRoutingMode) {
+                    "oceanic" -> "oceanic"
+                    "mountain" -> "mountain"
+                    else -> "generic"
+                }
+
+                _statusMessage.value = "Finding scenic spots on new route..."
+                val scenicPois = scenicRoutePlanner.fetchScenicPois(route, packageName, routeType) { status ->
+                    _statusMessage.postValue(status)
+                }
+
+                // Convert ScenicPoi to Poi
+                val pois = scenicPois.map { scenic ->
+                    Poi(
+                        name = scenic.name,
+                        category = scenic.type,
+                        description = "Scenic score: ${scenic.score}",
+                        municipality = scenic.municipality ?: "Unknown",
+                        lat = scenic.lat,
+                        lon = scenic.lon
+                    )
+                }
+
+                _routePois.value = pois
+                _statusMessage.value = "Route recalculated! Found ${scenicPois.size} scenic spots."
+            } catch (e: Exception) {
+                _statusMessage.value = "Error recalculating route: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 }

@@ -2,16 +2,20 @@ package com.example.scenic_navigation.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.location.Location
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import com.example.scenic_navigation.databinding.FragmentRouteBinding
+import com.example.scenic_navigation.services.LocationService
+import com.example.scenic_navigation.utils.OffRouteDetector
 import com.example.scenic_navigation.viewmodel.RouteViewModel
 import com.example.scenic_navigation.viewmodel.SharedRouteViewModel
 import com.google.android.material.snackbar.Snackbar
@@ -29,6 +33,12 @@ class RouteFragment : Fragment() {
     private val routeMarkers = mutableListOf<Marker>()
     private var routePolyline: Polyline? = null
     private var isInputCollapsed = false
+
+    // Location tracking
+    private lateinit var locationService: LocationService
+    private var currentLocationMarker: Marker? = null
+    private var offRouteDetector: OffRouteDetector? = null
+    private var isNavigating = false
 
     // Location permission launcher
     private val locationPermissionLauncher = registerForActivityResult(
@@ -57,6 +67,8 @@ class RouteFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        locationService = LocationService(requireContext())
 
         setupMap()
         setupInputs()
@@ -267,6 +279,94 @@ class RouteFragment : Fragment() {
         }
     }
 
+    /**
+     * Start continuous location tracking for navigation
+     */
+    private fun startLocationTracking() {
+        if (!locationService.hasLocationPermission()) {
+            Snackbar.make(binding.root, "Location permission needed for navigation", Snackbar.LENGTH_SHORT).show()
+            return
+        }
+
+        isNavigating = true
+        locationService.startLocationTracking(
+            onLocationUpdate = { location ->
+                updateCurrentLocationOnMap(location)
+                offRouteDetector?.updateLocation(location)
+            },
+            intervalMillis = 3000L // Update every 3 seconds
+        )
+    }
+
+    /**
+     * Stop location tracking
+     */
+    private fun stopLocationTracking() {
+        isNavigating = false
+        locationService.stopLocationTracking()
+    }
+
+    /**
+     * Update current location marker on map and center map on user
+     */
+    private fun updateCurrentLocationOnMap(location: Location) {
+        val userPosition = GeoPoint(location.latitude, location.longitude)
+
+        // Update or create current location marker
+        if (currentLocationMarker == null) {
+            currentLocationMarker = Marker(binding.map).apply {
+                position = userPosition
+                title = "Current Location"
+                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                icon = ResourcesCompat.getDrawable(resources, android.R.drawable.ic_menu_mylocation, null)
+                binding.map.overlays.add(this)
+            }
+        } else {
+            currentLocationMarker?.position = userPosition
+        }
+
+        // Center map on user location smoothly
+        binding.map.controller.animateTo(userPosition)
+        binding.map.invalidate()
+    }
+
+    /**
+     * Initialize off-route detector when route is available
+     */
+    private fun initializeOffRouteDetector(routePoints: List<GeoPoint>) {
+        if (routePoints.isEmpty()) {
+            offRouteDetector = null
+            return
+        }
+
+        offRouteDetector = OffRouteDetector(
+            routePoints = routePoints,
+            thresholdMeters = 50f, // 50 meters off-route threshold
+            returnThresholdMeters = 30f,
+            requiredConsecutive = 2,
+            cooldownMs = 20000L // 20 seconds cooldown between reroutes
+        ) { location ->
+            // Callback when user goes off route
+            handleOffRoute(location)
+        }
+    }
+
+    /**
+     * Handle off-route event - recalculate route
+     */
+    private fun handleOffRoute(location: Location) {
+        val newStart = GeoPoint(location.latitude, location.longitude)
+
+        Snackbar.make(
+            binding.root,
+            "You're off route! Recalculating...",
+            Snackbar.LENGTH_LONG
+        ).show()
+
+        // Recalculate route from current location
+        viewModel.recalculateRouteFromLocation(newStart)
+    }
+
     private fun updateRoute(points: List<GeoPoint>) {
         // Clear previous polyline
         routePolyline?.let { binding.map.overlays.remove(it) }
@@ -286,6 +386,20 @@ class RouteFragment : Fragment() {
                 setZoom(10.0)
             }
             binding.map.invalidate()
+
+            // Initialize off-route detector and start location tracking
+            initializeOffRouteDetector(points)
+
+            // Start tracking location when route is available
+            if (!isNavigating && locationService.hasLocationPermission()) {
+                startLocationTracking()
+            }
+        } else {
+            // Stop tracking when no route
+            if (isNavigating) {
+                stopLocationTracking()
+            }
+            offRouteDetector = null
         }
     }
 
@@ -326,6 +440,7 @@ class RouteFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        stopLocationTracking()
         _binding = null
     }
 }

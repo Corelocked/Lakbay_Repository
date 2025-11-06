@@ -4,9 +4,13 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
+import android.os.Looper
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
@@ -20,6 +24,9 @@ import kotlin.coroutines.resume
 class LocationService(private val context: Context) {
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
+
+    private var locationCallback: LocationCallback? = null
+    private var isTrackingLocation = false
 
     /**
      * Get the current device location
@@ -110,5 +117,76 @@ class LocationService(private val context: Context) {
                     Manifest.permission.ACCESS_COARSE_LOCATION
                 ) == PackageManager.PERMISSION_GRANTED
     }
+
+    /**
+     * Start continuous location tracking
+     * @param onLocationUpdate Callback invoked when location updates
+     * @param intervalMillis Update interval in milliseconds (default 5 seconds)
+     */
+    fun startLocationTracking(
+        onLocationUpdate: (Location) -> Unit,
+        intervalMillis: Long = 5000L
+    ) {
+        if (!hasLocationPermission()) {
+            Log.w("LocationService", "Cannot start tracking: Location permission not granted")
+            return
+        }
+
+        if (isTrackingLocation) {
+            Log.w("LocationService", "Location tracking already started")
+            return
+        }
+
+        try {
+            val locationRequest = LocationRequest.Builder(
+                Priority.PRIORITY_HIGH_ACCURACY,
+                intervalMillis
+            ).apply {
+                setMinUpdateIntervalMillis(intervalMillis / 2)
+                setMaxUpdateDelayMillis(intervalMillis * 2)
+            }.build()
+
+            locationCallback = object : LocationCallback() {
+                override fun onLocationResult(locationResult: LocationResult) {
+                    locationResult.lastLocation?.let { location ->
+                        Log.d("LocationService", "Location update: ${location.latitude}, ${location.longitude}")
+                        onLocationUpdate(location)
+                    }
+                }
+            }
+
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback!!,
+                Looper.getMainLooper()
+            )
+
+            isTrackingLocation = true
+            Log.d("LocationService", "Started location tracking with ${intervalMillis}ms interval")
+        } catch (e: SecurityException) {
+            Log.e("LocationService", "Security exception starting location tracking: ${e.message}")
+        }
+    }
+
+    /**
+     * Stop continuous location tracking
+     */
+    fun stopLocationTracking() {
+        if (!isTrackingLocation) {
+            return
+        }
+
+        locationCallback?.let {
+            fusedLocationClient.removeLocationUpdates(it)
+            Log.d("LocationService", "Stopped location tracking")
+        }
+        locationCallback = null
+        isTrackingLocation = false
+    }
+
+    /**
+     * Check if currently tracking location
+     */
+    fun isTracking(): Boolean = isTrackingLocation
 }
 
