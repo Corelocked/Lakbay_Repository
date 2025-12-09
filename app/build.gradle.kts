@@ -58,6 +58,9 @@ dependencies {
     // Fragment
     implementation(libs.androidx.fragment.ktx)
 
+    // Preference support for Settings screen
+    implementation("androidx.preference:preference-ktx:1.2.0")
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
@@ -66,6 +69,9 @@ dependencies {
 
     // Google Play Services Location for GPS
     implementation("com.google.android.gms:play-services-location:21.0.1")
+
+    // TensorFlow Lite for on-device inference (ensure version matches your trainer runtime)
+    implementation("org.tensorflow:tensorflow-lite:2.12.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

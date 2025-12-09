@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.scenic_navigation.models.Poi
 import com.example.scenic_navigation.models.Town
+import com.example.scenic_navigation.ml.PoiReranker
 import org.osmdroid.util.GeoPoint
 
 /**
@@ -27,6 +28,9 @@ class SharedRouteViewModel(application: Application) : AndroidViewModel(applicat
     private val _recommendations = MutableLiveData<List<Poi>>(emptyList())
     val recommendations: LiveData<List<Poi>> = _recommendations
 
+    // ML reranker (lazy initialized)
+    private val poiReranker: PoiReranker by lazy { PoiReranker(getApplication()) }
+
     // Loading state
     private val _isLoading = MutableLiveData<Boolean>(false)
     val isLoading: LiveData<Boolean> = _isLoading
@@ -42,14 +46,45 @@ class SharedRouteViewModel(application: Application) : AndroidViewModel(applicat
     private val _mapZoom = MutableLiveData<Double>(10.0)
     val mapZoom: LiveData<Double> = _mapZoom
 
+    // Control whether the UI should auto-recenter on the user's current location
+    private val _autoRecenter = MutableLiveData<Boolean>(false)
+    val autoRecenter: LiveData<Boolean> = _autoRecenter
+
+    // Curation intent provided by the curation UI flow (nullable)
+    private val _curationIntent = MutableLiveData<com.example.scenic_navigation.models.CurationIntent?>(null)
+    val curationIntent: LiveData<com.example.scenic_navigation.models.CurationIntent?> = _curationIntent
+
+    // Optional extras attached by the curation UI (forced coastal key, subtypes)
+    private val _curationExtras = MutableLiveData<com.example.scenic_navigation.models.CurationIntentExtras?>(null)
+    val curationExtras: LiveData<com.example.scenic_navigation.models.CurationIntentExtras?> = _curationExtras
+
+    fun setCurationIntent(intent: com.example.scenic_navigation.models.CurationIntent?) {
+        _curationIntent.value = intent
+    }
+
+    fun setCurationExtras(extras: com.example.scenic_navigation.models.CurationIntentExtras?) {
+        _curationExtras.value = extras
+    }
+
+    fun setAutoRecenter(enabled: Boolean) {
+        _autoRecenter.value = enabled
+    }
+
     // Update methods
     fun updateRouteData(points: List<GeoPoint>, pois: List<Poi>, towns: List<Town> = emptyList()) {
         _routePoints.value = points
         _routePois.value = pois
         _routeTowns.value = towns
 
-        // Also update recommendations with POIs
-        _recommendations.value = pois
+        // Also update recommendations with POIs — apply ML reranker if possible
+        try {
+            val center = if (points.isNotEmpty()) points[points.size / 2] else GeoPoint(14.5995, 120.9842)
+            val reranked = poiReranker.rerank(pois, center.latitude, center.longitude, System.currentTimeMillis())
+            _recommendations.value = reranked
+        } catch (t: Throwable) {
+            // Fall back to raw POIs if reranker fails
+            _recommendations.value = pois
+        }
 
         // Update map center to route midpoint
         if (points.isNotEmpty()) {
@@ -89,4 +124,3 @@ class SharedRouteViewModel(application: Application) : AndroidViewModel(applicat
         return _recommendations.value?.isNotEmpty() == true
     }
 }
-

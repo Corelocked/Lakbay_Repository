@@ -1,23 +1,84 @@
 package com.example.scenic_navigation.services
 
 import android.util.Log
+import android.content.Context
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import com.example.scenic_navigation.models.Poi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.example.scenic_navigation.config.Config
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.osmdroid.util.GeoPoint
+import java.text.Normalizer
 import java.util.Locale
 
 /**
  * Service for fetching Points of Interest from Overpass API
  */
-class PoiService {
-    private val httpClient: OkHttpClient by lazy { OkHttpClient() }
+class PoiService(private val context: Context? = null) {
+    private val httpClient: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
+            .callTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .connectionPool(okhttp3.ConnectionPool(8, 5, java.util.concurrent.TimeUnit.MINUTES))
+            .build()
+    }
     private var lastOverpassCallTime = 0L
     private val OVERPASS_MIN_INTERVAL_MS = 1000L
+    // Simple LRU cache for Overpass query results keyed by a short hash of the query
+    private val overpassCache: MutableMap<String, List<com.example.scenic_navigation.models.Poi>> =
+        java.util.Collections.synchronizedMap(
+            object : java.util.LinkedHashMap<String, List<com.example.scenic_navigation.models.Poi>>(64, 0.75f, true) {
+                override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<com.example.scenic_navigation.models.Poi>>?): Boolean {
+                    return size > 200
+                }
+            }
+        )
+
+    // Local dataset loaded from assets (optional)
+    private val localPois: MutableList<com.example.scenic_navigation.models.Poi> = mutableListOf()
+
+    init {
+        try {
+            context?.let { ctx ->
+                val am = ctx.assets
+                val datasetPath = "datasets"
+                val files = am.list(datasetPath) ?: emptyArray()
+                if (files.contains("luzon_dataset.csv")) {
+                    val path = "$datasetPath/luzon_dataset.csv"
+                    am.open(path).use { stream ->
+                        BufferedReader(InputStreamReader(stream)).use { br ->
+                            // Skip header
+                            var line = br.readLine()
+                            val csvSplit = Regex(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")
+                            while (true) {
+                                line = br.readLine() ?: break
+                                if (line.isBlank()) continue
+                                val parts = line.split(csvSplit)
+                                if (parts.size >= 5) {
+                                    val name = parts[0].trim().trim('"')
+                                    val category = parts[1].trim().trim('"')
+                                    val lat = parts[3].trim().toDoubleOrNull()
+                                    val lon = parts[4].trim().toDoubleOrNull()
+                                    if (lat != null && lon != null) {
+                                        localPois.add(com.example.scenic_navigation.models.Poi(name, category, "", "", lat, lon))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Log.d("PoiService", "Loaded ${localPois.size} local dataset POIs")
+                }
+            }
+        } catch (e: Exception) {
+            Log.d("PoiService", "Failed to load local dataset: ${e.message}")
+        }
+    }
 
     suspend fun fetchPoisNearLocation(
         center: GeoPoint,
@@ -26,32 +87,44 @@ class PoiService {
     ): List<Poi> = withContext(Dispatchers.IO) {
         val lat = center.latitude
         val lon = center.longitude
+        
+        // If Overpass queries are disabled, return local dataset matches only
+        if (Config.DISABLE_OVERPASS) {
+            val localMatches = localPoisNear(lat, lon, radiusMeters)
+            return@withContext localMatches
+        }
 
         val ql = """
-[out:json][timeout:15];
-(
-  node(around:$radiusMeters,$lat,$lon)[tourism];
-  way(around:$radiusMeters,$lat,$lon)[tourism];
-  relation(around:$radiusMeters,$lat,$lon)[tourism];
-  node(around:$radiusMeters,$lat,$lon)[amenity];
-  way(around:$radiusMeters,$lat,$lon)[amenity];
-  relation(around:$radiusMeters,$lat,$lon)[amenity];
-  node(around:$radiusMeters,$lat,$lon)[historic];
-  way(around:$radiusMeters,$lat,$lon)[historic];
-  relation(around:$radiusMeters,$lat,$lon)[historic];
-  node(around:$radiusMeters,$lat,$lon)[leisure];
-  way(around:$radiusMeters,$lat,$lon)[leisure];
-  relation(around:$radiusMeters,$lat,$lon)[leisure];
-  node(around:$radiusMeters,$lat,$lon)[man_made];
-  way(around:$radiusMeters,$lat,$lon)[man_made];
-  relation(around:$radiusMeters,$lat,$lon)[man_made];
-  node(around:$radiusMeters,$lat,$lon)[shop~"gift|souvenir|art|craft|bakery|deli|cheese|wine|farm|seafood"];
-  way(around:$radiusMeters,$lat,$lon)[shop~"gift|souvenir|art|craft|bakery|deli|cheese|wine|farm|seafood"];
-);
-out center 50;
-""".trimIndent()
+                    [out:json][timeout:15];
+                    (
+                      node(around:$radiusMeters,$lat,$lon)[tourism];
+                      way(around:$radiusMeters,$lat,$lon)[tourism];
+                      relation(around:$radiusMeters,$lat,$lon)[tourism];
+                      node(around:$radiusMeters,$lat,$lon)[amenity];
+                      way(around:$radiusMeters,$lat,$lon)[amenity];
+                      relation(around:$radiusMeters,$lat,$lon)[amenity];
+                      node(around:$radiusMeters,$lat,$lon)[historic];
+                      way(around:$radiusMeters,$lat,$lon)[historic];
+                      relation(around:$radiusMeters,$lat,$lon)[historic];
+                      node(around:$radiusMeters,$lat,$lon)[leisure];
+                      way(around:$radiusMeters,$lat,$lon)[leisure];
+                      relation(around:$radiusMeters,$lat,$lon)[leisure];
+                      node(around:$radiusMeters,$lat,$lon)[man_made];
+                      way(around:$radiusMeters,$lat,$lon)[man_made];
+                      relation(around:$radiusMeters,$lat,$lon)[man_made];
+                      node(around:$radiusMeters,$lat,$lon)[shop~"gift|souvenir|art|craft|bakery|deli|cheese|wine|farm|seafood"];
+                      way(around:$radiusMeters,$lat,$lon)[shop~"gift|souvenir|art|craft|bakery|deli|cheese|wine|farm|seafood"];
+                    );
+                    out center 50;
+                    """.trimIndent()
 
-        return@withContext fetchPois(ql, packageName)
+        val remote = fetchPois(ql, packageName)
+        // Merge with any local dataset POIs within radius
+        val localMatches = localPoisNear(lat, lon, radiusMeters)
+        val combined = (remote + localMatches).distinctBy { poi ->
+            String.format(Locale.US, "%s_%.5f_%.5f", poi.name, poi.lat ?: 0.0, poi.lon ?: 0.0)
+        }
+        return@withContext combined
     }
 
     suspend fun fetchPoisAlongRoute(
@@ -66,6 +139,15 @@ out center 50;
 
         // Sample points along the route
         val samples = sampleRoute(routePoints, sampleDistMeters, maxSamples)
+
+        // If Overpass is disabled for testing, return only local POIs near the samples
+        if (Config.DISABLE_OVERPASS) {
+            val localMatches = samples.flatMap { s -> localPoisNear(s.latitude, s.longitude, radiusMeters) }
+            val combined = localMatches.distinctBy { poi ->
+                String.format(Locale.US, "%s_%.5f_%.5f", poi.name, poi.lat ?: 0.0, poi.lon ?: 0.0)
+            }
+            return@withContext combined
+        }
 
         // Build Overpass query
         val sb = StringBuilder()
@@ -91,10 +173,17 @@ out center 50;
         }
         sb.append(")\nout center 200;")
 
-        val pois = fetchPois(sb.toString(), packageName)
+        val remotePois = fetchPois(sb.toString(), packageName)
+
+        // Also include local dataset POIs that are near any sample point
+        val localMatches = samples.flatMap { s -> localPoisNear(s.latitude, s.longitude, radiusMeters) }
+
+        val combined = (remotePois + localMatches).distinctBy { poi ->
+            String.format(Locale.US, "%s_%.5f_%.5f", poi.name, poi.lat ?: 0.0, poi.lon ?: 0.0)
+        }
 
         // Filter by distance to route
-        return@withContext pois
+        return@withContext combined
             .map { poi -> Pair(poi, minDistToRoute(poi, routePoints)) }
             .filter { it.second <= maxDistToRouteMeters }
             .sortedBy { it.second }
@@ -103,6 +192,16 @@ out center 50;
     }
 
     private suspend fun fetchPois(ql: String, packageName: String): List<Poi> {
+        // If disabled, do not perform network Overpass requests
+        if (Config.DISABLE_OVERPASS) {
+            Log.d("PoiService", "Overpass disabled via Config; returning empty remote list")
+            return emptyList()
+        }
+        // Try cache first
+        val key = ql.hashCode().toString()
+        val cached = overpassCache[key]
+        if (cached != null) return cached
+
         ensureRateLimit()
 
         val mediaType = "text/plain; charset=utf-8".toMediaType()
@@ -163,12 +262,133 @@ out center 50;
                 }
             }
 
-            Log.d("PoiService", "Returned ${pois.size} POIs")
-            return pois
+            // Sanitize and dedupe POIs before caching/returning
+            val cleaned = sanitizeAndDedupePois(pois)
+            Log.d("PoiService", "Returned ${cleaned.size} POIs (raw ${pois.size})")
+            overpassCache[key] = cleaned
+            return cleaned
         } catch (e: Exception) {
             Log.d("PoiService", "Overpass error: ${e.message}")
             return emptyList()
         }
+    }
+
+    // ---------- Cleaning & dedupe helpers ----------
+    private fun sanitizeAndDedupePois(pois: List<Poi>): List<Poi> {
+        // First sanitize fields
+        val sanitized = pois.map { poi ->
+            poi.copy(
+                name = sanitizeName(poi.name),
+                category = sanitizeCategory(poi.category),
+                description = sanitizeString(poi.description),
+                municipality = sanitizeString(poi.municipality)
+            )
+        }.filter { poi -> poi.name.isNotBlank() && isValidCoordinate(poi.lat, poi.lon) }
+
+        return dedupePois(sanitized)
+    }
+
+    private fun sanitizeString(s: String?): String {
+        if (s == null) return ""
+        var out = s.trim()
+        // Normalize unicode to NFC
+        out = Normalizer.normalize(out, Normalizer.Form.NFC)
+        // Collapse multiple spaces
+        out = out.replace(Regex("\\s+"), " ")
+        // Remove control chars
+        out = out.replace(Regex("[\\p{Cntrl}]"), "")
+        // Remove common markers like (closed)
+        out = out.replace(Regex("\\(?closed\\)?", RegexOption.IGNORE_CASE), "")
+        return out.trim()
+    }
+
+    private fun sanitizeName(name: String): String {
+        var n = sanitizeString(name)
+        // Remove wrapping quotes
+        n = n.trim('"', '\'')
+        // Common placeholders => empty
+        if (n.equals("unknown", ignoreCase = true) || n.equals("unnamed", ignoreCase = true)) return ""
+        return n
+    }
+
+    private fun sanitizeCategory(cat: String): String {
+        val c = cat.trim().lowercase()
+        return when {
+            c.contains("rest|food|restaurant|cafe") -> "food"
+            c.contains("view|viewpoint|scenic|sight") -> "sight"
+            c.contains("museum|gallery") -> "museum"
+            c.contains("park|garden") -> "park"
+            else -> cat
+        }
+    }
+
+    private fun isValidCoordinate(lat: Double?, lon: Double?): Boolean {
+        if (lat == null || lon == null) return false
+        if (lat < -90.0 || lat > 90.0) return false
+        if (lon < -180.0 || lon > 180.0) return false
+        return true
+    }
+
+    private fun levenshtein(a: String, b: String): Int {
+        val la = a.length
+        val lb = b.length
+        if (la == 0) return lb
+        if (lb == 0) return la
+        val dp = Array(la + 1) { IntArray(lb + 1) }
+        for (i in 0..la) dp[i][0] = i
+        for (j in 0..lb) dp[0][j] = j
+        for (i in 1..la) {
+            for (j in 1..lb) {
+                val cost = if (a[i - 1] == b[j - 1]) 0 else 1
+                dp[i][j] = minOf(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost)
+            }
+        }
+        return dp[la][lb]
+    }
+
+    private fun nameSimilarity(a: String, b: String): Double {
+        val aa = a.lowercase()
+        val bb = b.lowercase()
+        val max = maxOf(aa.length, bb.length)
+        if (max == 0) return 1.0
+        val dist = levenshtein(aa, bb)
+        return 1.0 - (dist.toDouble() / max.toDouble())
+    }
+
+    private fun preferRicherPoi(a: Poi, b: Poi): Poi {
+        fun score(p: Poi): Int {
+            var s = 0
+            if (p.description.isNotBlank()) s += 2
+            if (p.municipality.isNotBlank()) s += 2
+            if (p.category.isNotBlank()) s += 1
+            return s
+        }
+        return if (score(a) >= score(b)) a else b
+    }
+
+    private fun dedupePois(pois: List<Poi>): List<Poi> {
+        if (pois.isEmpty()) return pois
+        val used = BooleanArray(pois.size)
+        val out = mutableListOf<Poi>()
+        for (i in pois.indices) {
+            if (used[i]) continue
+            var best = pois[i]
+            used[i] = true
+            for (j in i + 1 until pois.size) {
+                if (used[j]) continue
+                val p1 = pois[i]
+                val p2 = pois[j]
+                // proximity check (within 25 meters)
+                val d = haversine(p1.lat ?: 0.0, p1.lon ?: 0.0, p2.lat ?: 0.0, p2.lon ?: 0.0)
+                val nameSim = nameSimilarity(p1.name, p2.name)
+                if (d <= 25.0 || nameSim >= 0.8) {
+                    best = preferRicherPoi(best, pois[j])
+                    used[j] = true
+                }
+            }
+            out.add(best)
+        }
+        return out
     }
 
     private fun sampleRoute(
@@ -410,5 +630,28 @@ out center 50;
                 Math.sin(dLon / 2) * Math.sin(dLon / 2)
         val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
         return R * c
+    }
+
+    private fun localPoisNear(lat: Double, lon: Double, radiusMeters: Int): List<Poi> {
+        if (localPois.isEmpty()) return emptyList()
+        return localPois.filter { lp ->
+            val d = haversine(lat, lon, lp.lat ?: 0.0, lp.lon ?: 0.0)
+            d <= radiusMeters.toDouble()
+        }
+    }
+
+    /**
+     * Public helper to get local dataset POIs that are near any point on the route.
+     * Returns deduplicated list keyed by name+coords.
+     */
+    fun getLocalPoisNearRoute(routePoints: List<GeoPoint>, radiusMeters: Int = 2000): List<Poi> {
+        if (localPois.isEmpty() || routePoints.isEmpty()) return emptyList()
+        // Sample the route points to reduce repeated work when routes are dense
+        val samples = com.example.scenic_navigation.utils.GeoUtils.sampleRoutePoints(routePoints, spacingMeters = radiusMeters.toDouble(), maxSamples = 60)
+        val matches = mutableListOf<Poi>()
+        for (rp in samples) {
+            matches.addAll(localPoisNear(rp.latitude, rp.longitude, radiusMeters))
+        }
+        return matches.distinctBy { poi -> String.format(Locale.US, "%s_%.5f_%.5f", poi.name, poi.lat ?: 0.0, poi.lon ?: 0.0) }
     }
 }

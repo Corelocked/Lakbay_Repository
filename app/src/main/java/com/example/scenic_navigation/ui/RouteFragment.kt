@@ -1,14 +1,11 @@
 package com.example.scenic_navigation.ui
 
 import android.Manifest
-import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
@@ -21,6 +18,15 @@ import com.example.scenic_navigation.viewmodel.SharedRouteViewModel
 import com.google.android.material.snackbar.Snackbar
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Typeface
+import android.graphics.drawable.BitmapDrawable
+import android.util.TypedValue
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 
@@ -40,21 +46,6 @@ class RouteFragment : Fragment() {
     private var offRouteDetector: OffRouteDetector? = null
     private var isNavigating = false
 
-    // Location permission launcher
-    private val locationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val fineLocationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
-        val coarseLocationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
-
-        if (fineLocationGranted || coarseLocationGranted) {
-            Snackbar.make(binding.root, "Location permission granted", Snackbar.LENGTH_SHORT).show()
-        } else {
-            Snackbar.make(binding.root, "Location permission denied. Will use default location.", Snackbar.LENGTH_LONG).show()
-            // Optionally turn off the "Use Current Location" switch
-            binding.switchUseCurrent.isChecked = false
-        }
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -73,8 +64,47 @@ class RouteFragment : Fragment() {
         setupMap()
         setupInputs()
         setupCollapseButton()
+        setupSettingsButton()
         restoreRouteIfAvailable()
         observeViewModel()
+        startClusterPolling()
+    }
+    private var clusterPollRunnable: Runnable? = null
+    private var lastZoomLevel: Double = -1.0
+
+    private fun startClusterPolling() {
+        stopClusterPolling()
+        lastZoomLevel = binding.map.zoomLevelDouble
+        val handler = android.os.Handler(android.os.Looper.getMainLooper())
+        val runnable = object : Runnable {
+            override fun run() {
+                try {
+                    val zoom = binding.map.zoomLevelDouble
+                    if (zoom != lastZoomLevel) {
+                        lastZoomLevel = zoom
+                        view?.let { v ->
+                            viewModel.routePois.value?.let { updateMarkers(it) }
+                        }
+                    }
+                } catch (_: Exception) {
+                }
+                handler.postDelayed(this, 800)
+            }
+        }
+        clusterPollRunnable = runnable
+        handler.postDelayed(runnable, 800)
+    }
+
+    private fun stopClusterPolling() {
+        clusterPollRunnable = null
+    }
+
+    private fun setupSettingsButton() {
+        binding.btnSettings.setOnClickListener {
+            val ctx = requireContext()
+            val intent = android.content.Intent(ctx, SettingsActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     private fun setupMap() {
@@ -87,52 +117,44 @@ class RouteFragment : Fragment() {
         }
     }
 
+    private lateinit var startPlaceAdapter: PlaceSuggestionAdapter
+    private lateinit var destPlaceAdapter: PlaceSuggestionAdapter
+
     private fun setupInputs() {
-        // Set initial state - start input disabled since "Use Current Location" is checked by default
-        binding.etStart.isEnabled = false
-        binding.tilStart.isEnabled = false
+        // Start input is always enabled now
+        binding.etStart.isEnabled = true
+        binding.tilStart.isEnabled = true
 
-        // Check location permission on start if toggle is on
-        if (binding.switchUseCurrent.isChecked) {
-            checkAndRequestLocationPermission()
-        }
+        // Setup autocomplete adapters for place suggestions with typo correction
+        val packageName = requireContext().packageName
+        startPlaceAdapter = PlaceSuggestionAdapter(requireContext(), packageName)
+        destPlaceAdapter = PlaceSuggestionAdapter(requireContext(), packageName)
 
-        // Enable/disable start input based on "Use Current Location" switch
-        binding.switchUseCurrent.setOnCheckedChangeListener { _, isChecked ->
-            binding.etStart.isEnabled = !isChecked
-            binding.tilStart.isEnabled = !isChecked
-            if (isChecked) {
-                binding.etStart.setText("")
-                binding.tilStart.error = null
-                // Request location permission when switch is turned on
-                checkAndRequestLocationPermission()
-            }
-        }
+        binding.etStart.setAdapter(startPlaceAdapter)
+        binding.etDestination.setAdapter(destPlaceAdapter)
 
-        // Plan route button click
-        binding.btnPlan.setOnClickListener {
-            val useCurrent = binding.switchUseCurrent.isChecked
-            val useOceanic = binding.switchOceanicRoute.isChecked
-            val useMountain = binding.switchMountainRoute.isChecked
-            val startInput = binding.etStart.text.toString().trim()
-            val destInput = binding.etDestination.text.toString().trim()
+        // Set threshold for triggering autocomplete (2 characters)
+        binding.etStart.threshold = 2
+        binding.etDestination.threshold = 2
 
-            // Validation - only check start input if not using current location
-            if (!useCurrent && startInput.isEmpty()) {
-                binding.tilStart.error = "Please enter a start location"
-                return@setOnClickListener
-            }
-            if (destInput.isEmpty()) {
-                binding.tilDestination.error = "Please enter a destination"
-                return@setOnClickListener
-            }
-
-            // Clear errors
+        // Handle item selection from autocomplete
+        binding.etStart.setOnItemClickListener { parent, _, position, _ ->
+            val selected = startPlaceAdapter.getItem(position)
+            binding.etStart.setText(selected)
             binding.tilStart.error = null
-            binding.tilDestination.error = null
+        }
 
-            // Plan route - useCurrent flag takes priority over startInput
-            viewModel.planRoute(useCurrent, useOceanic, useMountain, startInput, destInput)
+        binding.etDestination.setOnItemClickListener { parent, _, position, _ ->
+            val selected = destPlaceAdapter.getItem(position)
+            binding.etDestination.setText(selected)
+            binding.tilDestination.error = null
+        }
+
+        // Plan route button click - always use curation dialog
+        binding.btnPlan.setOnClickListener {
+            // Show curation dialog directly
+            val dlg = CurationDialogFragment()
+            dlg.show(parentFragmentManager, "curation_dialog")
         }
 
         // Clear errors on text change
@@ -144,39 +166,6 @@ class RouteFragment : Fragment() {
         }
     }
 
-    private fun checkAndRequestLocationPermission() {
-        when {
-            ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED -> {
-                // Permission already granted
-            }
-            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) -> {
-                // Show rationale and request permission
-                Snackbar.make(
-                    binding.root,
-                    "Location permission needed to use current location",
-                    Snackbar.LENGTH_LONG
-                ).setAction("Grant") {
-                    requestLocationPermission()
-                }.show()
-            }
-            else -> {
-                // Request permission directly
-                requestLocationPermission()
-            }
-        }
-    }
-
-    private fun requestLocationPermission() {
-        locationPermissionLauncher.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        )
-    }
 
     private fun setupCollapseButton() {
         binding.btnCollapse.setOnClickListener {
@@ -239,6 +228,52 @@ class RouteFragment : Fragment() {
             binding.btnPlan.isEnabled = !loading
             binding.cardInput.isEnabled = !loading
             sharedViewModel.setLoading(loading)
+            binding.progressOverlay.visibility = if (loading) View.VISIBLE else View.GONE
+        }
+
+        // Observe phased loading flags for more granular UI
+        viewModel.isGeocoding.observe(viewLifecycleOwner) { g ->
+            binding.progressGeocoding.visibility = if (g) View.VISIBLE else View.GONE
+            if (g) binding.tvOverlayStatus.text = getString(com.example.scenic_navigation.R.string.geocoding_status)
+        }
+
+        viewModel.isRouting.observe(viewLifecycleOwner) { r ->
+            binding.progressRouting.visibility = if (r) View.VISIBLE else View.GONE
+            if (r) binding.tvOverlayStatus.text = getString(com.example.scenic_navigation.R.string.routing_status)
+        }
+
+        viewModel.isFetchingPois.observe(viewLifecycleOwner) { p ->
+            binding.progressPoiFetch.visibility = if (p) View.VISIBLE else View.GONE
+            if (p) binding.tvOverlayStatus.text = getString(com.example.scenic_navigation.R.string.finding_pois_status)
+        }
+
+        // Observe route summary values
+        viewModel.routeDistanceMeters.observe(viewLifecycleOwner) { meters ->
+            if (meters != null && meters > 0.0) {
+                binding.cardSummary.visibility = View.VISIBLE
+                val km = meters / 1000.0
+                binding.tvSummaryDistance.text = String.format("Distance: %.1f km", km)
+            } else {
+                binding.cardSummary.visibility = View.GONE
+            }
+        }
+
+        viewModel.routeDurationSeconds.observe(viewLifecycleOwner) { secs ->
+            if (secs != null && secs > 0L) {
+                val hours = secs / 3600
+                val mins = (secs % 3600) / 60
+                binding.tvSummaryDuration.text = if (hours > 0) String.format("Duration: %dh %02dm", hours, mins) else String.format("Duration: %dm", mins)
+            } else {
+                binding.tvSummaryDuration.text = "Duration: --"
+            }
+        }
+
+        viewModel.scenicScore.observe(viewLifecycleOwner) { score ->
+            if (score != null && score > 0f) {
+                binding.tvSummaryScore.text = String.format("Scenic score: %.1f", score)
+            } else {
+                binding.tvSummaryScore.text = "Scenic score: --"
+            }
         }
 
         // Observe status messages
@@ -252,6 +287,8 @@ class RouteFragment : Fragment() {
                 if (!viewModel.isLoading.value!!) {
                     Snackbar.make(binding.root, it, Snackbar.LENGTH_SHORT).show()
                 }
+                // update overlay status text if visible
+                binding.tvOverlayStatus.text = it
             }
         }
 
@@ -267,6 +304,15 @@ class RouteFragment : Fragment() {
             updateMarkers(pois)
             // Update shared ViewModel only if both points and POIs are ready
             updateSharedViewModelIfReady()
+        }
+
+        // Observe curation intent from curation dialog
+        sharedViewModel.curationIntent.observe(viewLifecycleOwner) { intent ->
+            intent?.let {
+                // Trigger curated route planning and clear the intent to avoid re-trigger
+                viewModel.planRouteCurated(it.destinationQuery, it.seeing, it.activity)
+                sharedViewModel.setCurationIntent(null)
+            }
         }
     }
 
@@ -325,8 +371,10 @@ class RouteFragment : Fragment() {
             currentLocationMarker?.position = userPosition
         }
 
-        // Center map on user location smoothly
-        binding.map.controller.animateTo(userPosition)
+        // Center map on user location smoothly only if auto-recenter is enabled
+        if (sharedViewModel.autoRecenter.value == true) {
+            binding.map.controller.animateTo(userPosition)
+        }
         binding.map.invalidate()
     }
 
@@ -407,18 +455,259 @@ class RouteFragment : Fragment() {
         // Clear previous markers
         routeMarkers.forEach { binding.map.overlays.remove(it) }
         routeMarkers.clear()
+        // Read clustering pref (meters). Fall back to default
+        val prefs = requireContext().getSharedPreferences("scenic_prefs", android.content.Context.MODE_PRIVATE)
+        val epsMeters = prefs.getString(com.example.scenic_navigation.config.Config.PREF_CLUSTER_EPS_KEY, com.example.scenic_navigation.config.Config.DEFAULT_CLUSTER_EPS_METERS.toString())?.toDoubleOrNull()
+            ?: com.example.scenic_navigation.config.Config.DEFAULT_CLUSTER_EPS_METERS
 
-        pois.forEach { poi ->
-            val marker = Marker(binding.map).apply {
-                position = GeoPoint(poi.lat ?: 0.0, poi.lon ?: 0.0)
-                title = poi.name
-                snippet = poi.description
-                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+        // Simple greedy clustering: group POIs within epsMeters of cluster centroid
+        data class Cluster(var latSum: Double = 0.0, var lonSum: Double = 0.0, val members: MutableList<com.example.scenic_navigation.models.Poi> = mutableListOf()) {
+            fun add(p: com.example.scenic_navigation.models.Poi) {
+                members.add(p)
+                latSum += p.lat ?: 0.0
+                lonSum += p.lon ?: 0.0
             }
-            binding.map.overlays.add(marker)
-            routeMarkers.add(marker)
+            fun centroid(): Pair<Double, Double> {
+                val count = members.size
+                return if (count == 0) Pair(0.0, 0.0) else Pair(latSum / count, lonSum / count)
+            }
+        }
+
+        val clusters = mutableListOf<Cluster>()
+
+        fun haversineMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+            val R = 6371000.0 // Earth radius in meters
+            val dLat = Math.toRadians(lat2 - lat1)
+            val dLon = Math.toRadians(lon2 - lon1)
+            val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+            val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+            return R * c
+        }
+
+        for (poi in pois) {
+            val plat = poi.lat ?: continue
+            val plon = poi.lon ?: continue
+            var placed = false
+            for (cluster in clusters) {
+                val (cx, cy) = cluster.centroid()
+                val dist = haversineMeters(plat, plon, cx, cy)
+                if (dist <= epsMeters) {
+                    cluster.add(poi)
+                    placed = true
+                    break
+                }
+            }
+            if (!placed) {
+                val c = Cluster()
+                c.add(poi)
+                clusters.add(c)
+            }
+        }
+
+        // Create markers for clusters
+        // Lazy clustering: only cluster POIs inside current map bbox for performance
+        val bbox = binding.map.boundingBox
+        val visibleClusters = clusters.map { cl ->
+            val (lat, lon) = cl.centroid()
+            val inView = lat >= bbox.latSouth && lat <= bbox.latNorth && lon >= bbox.lonWest && lon <= bbox.lonEast
+            Pair(cl, inView)
+        }
+
+        for ((cluster, inView) in visibleClusters) {
+            val count = cluster.members.size
+            val (clat, clon) = cluster.centroid()
+            if (count <= 1) {
+                val poi = cluster.members.first()
+                val marker = Marker(binding.map).apply {
+                    position = GeoPoint(poi.lat ?: 0.0, poi.lon ?: 0.0)
+                    title = poi.name
+                    snippet = poi.description
+                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                    // Use custom icon based on category and scenic score
+                    try {
+                        icon = android.graphics.drawable.BitmapDrawable(resources, createPoiIcon(poi))
+                    } catch (_: Exception) {
+                    }
+                    setOnMarkerClickListener { m, _ ->
+                        val bottom = POIDetailBottomSheet(poi)
+                        bottom.show(parentFragmentManager, "poi_detail")
+                        true
+                    }
+                }
+                binding.map.overlays.add(marker)
+                routeMarkers.add(marker)
+            } else {
+                // Create cluster marker with generated icon (styled to theme)
+                val membersCopy = cluster.members.toList()
+                // Compute average scenic score for cluster (if available)
+                val avgScore = try {
+                    val scores = cluster.members.mapNotNull { it.scenicScore }
+                    if (scores.isNotEmpty()) scores.average().toFloat() else 0f
+                } catch (_: Exception) { 0f }
+
+                val marker = Marker(binding.map).apply {
+                    position = GeoPoint(clat, clon)
+                    title = "$count POIs"
+                    snippet = cluster.members.joinToString(", ") { it.name }.take(200)
+                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                    icon = BitmapDrawable(resources, createClusterIcon(count, avgScore))
+                    setOnMarkerClickListener { m, _ ->
+                        // Open a bottom sheet listing cluster members
+                        val sheet = com.example.scenic_navigation.ui.ClusterListBottomSheet(membersCopy)
+                        sheet.show(parentFragmentManager, "cluster_list")
+                        true
+                    }
+                }
+                binding.map.overlays.add(marker)
+                routeMarkers.add(marker)
+            }
         }
         binding.map.invalidate()
+
+        // Populate horizontal preview RecyclerView with first N POIs (unclustered ordering)
+        val rv = binding.rvPoiPreviews
+        if (pois.isNotEmpty()) {
+            rv.visibility = View.VISIBLE
+            val adapter = com.example.scenic_navigation.PoiPreviewAdapter(pois.take(20)) { poi ->
+                // Center map on selected preview and open detail
+                poi.lat?.let { lat ->
+                    poi.lon?.let { lon ->
+                        binding.map.controller.setCenter(GeoPoint(lat, lon))
+                        binding.map.controller.setZoom(14.0)
+                        val bottom = POIDetailBottomSheet(poi)
+                        bottom.show(parentFragmentManager, "poi_detail")
+                    }
+                }
+            }
+            rv.adapter = adapter
+            rv.layoutManager = LinearLayoutManager(requireContext(), RecyclerView.HORIZONTAL, false)
+        } else {
+            rv.visibility = View.GONE
+        }
+    }
+
+    private fun createClusterIcon(count: Int): Bitmap {
+        val size = 110
+        val radius = size / 2f
+        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bmp)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        // Try to resolve Material token `colorPrimaryContainer` from theme, fall back to app color
+        var fillColor = android.graphics.Color.parseColor("#1976D2")
+        try {
+            val typedValue = TypedValue()
+            val theme = requireContext().theme
+            val resolved = theme.resolveAttribute(com.google.android.material.R.attr.colorPrimaryContainer, typedValue, true)
+            if (resolved) {
+                // typedValue may carry color in data or a resourceId
+                fillColor = if (typedValue.resourceId != 0) {
+                    ContextCompat.getColor(requireContext(), typedValue.resourceId)
+                } else {
+                    typedValue.data
+                }
+            } else {
+                // fallback to app resource color if attr not found
+                fillColor = ContextCompat.getColor(requireContext(), com.example.scenic_navigation.R.color.primary_dark)
+            }
+        } catch (_: Exception) {
+            // keep fallback
+        }
+
+        paint.color = fillColor
+        // draw outer stroke for contrast
+        val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        strokePaint.style = Paint.Style.STROKE
+        strokePaint.strokeWidth = 6f
+        strokePaint.color = android.graphics.Color.WHITE
+        canvas.drawCircle(radius, radius, radius - 3f, paint)
+        canvas.drawCircle(radius, radius, radius - 3f, strokePaint)
+
+        val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        textPaint.color = android.graphics.Color.WHITE
+        textPaint.textSize = 40f
+        textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        val text = count.toString()
+        val textWidth = textPaint.measureText(text)
+        val x = (size - textWidth) / 2f
+        val fm = textPaint.fontMetrics
+        val y = (size - fm.ascent - fm.descent) / 2f
+        canvas.drawText(text, x, y, textPaint)
+        return bmp
+    }
+
+    private fun getCategoryColor(category: String?): Int {
+        val cat = category?.lowercase() ?: ""
+        return when {
+            cat.contains("beach") || cat.contains("coast") || cat.contains("ocean") || cat.contains("sea") -> android.graphics.Color.parseColor("#0288D1") // blue
+            cat.contains("mount") || cat.contains("hike") || cat.contains("view") -> android.graphics.Color.parseColor("#2E7D32") // green
+            cat.contains("historic") || cat.contains("church") || cat.contains("monument") -> android.graphics.Color.parseColor("#FFA000") // amber
+            else -> android.graphics.Color.parseColor("#1976D2") // default primary
+        }
+    }
+
+    // Create a small circular icon for a POI with the initial letter and color by category
+    private fun createPoiIcon(poi: com.example.scenic_navigation.models.Poi): Bitmap {
+        val size = 72
+        val radius = size / 2f
+        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bmp)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        val fill = getCategoryColor(poi.category)
+        paint.color = fill
+        canvas.drawCircle(radius, radius, radius - 2f, paint)
+
+        val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        textPaint.color = android.graphics.Color.WHITE
+        textPaint.textSize = 28f
+        textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        val letter = poi.name.trim().takeIf { it.isNotEmpty() }?.get(0)?.uppercaseChar() ?: '?'
+        val text = letter.toString()
+        val textWidth = textPaint.measureText(text)
+        val fm = textPaint.fontMetrics
+        val x = (size - textWidth) / 2f
+        val y = (size - fm.ascent - fm.descent) / 2f
+        canvas.drawText(text, x, y, textPaint)
+
+        return bmp
+    }
+
+    private fun createClusterIcon(count: Int, avgScore: Float): Bitmap {
+        val size = 120
+        val radius = size / 2f
+        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bmp)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        // Color by avgScore: green high -> red low
+        val fillColor = when {
+            avgScore >= 75f -> android.graphics.Color.parseColor("#2E7D32")
+            avgScore >= 50f -> android.graphics.Color.parseColor("#FFC107")
+            avgScore >= 25f -> android.graphics.Color.parseColor("#FF7043")
+            else -> android.graphics.Color.parseColor("#D32F2F")
+        }
+
+        paint.color = fillColor
+        // draw outer stroke for contrast
+        val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        strokePaint.style = Paint.Style.STROKE
+        strokePaint.strokeWidth = 6f
+        strokePaint.color = android.graphics.Color.WHITE
+        canvas.drawCircle(radius, radius, radius - 4f, paint)
+        canvas.drawCircle(radius, radius, radius - 4f, strokePaint)
+
+        val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        textPaint.color = android.graphics.Color.WHITE
+        textPaint.textSize = 42f
+        textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        val text = count.toString()
+        val textWidth = textPaint.measureText(text)
+        val x = (size - textWidth) / 2f
+        val fm = textPaint.fontMetrics
+        val y = (size - fm.ascent - fm.descent) / 2f
+        canvas.drawText(text, x, y, textPaint)
+
+        return bmp
     }
 
     override fun onResume() {
@@ -436,11 +725,21 @@ class RouteFragment : Fragment() {
         if (center != null) {
             sharedViewModel.updateMapPosition(center, zoom)
         }
+        stopClusterPolling()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         stopLocationTracking()
+
+        // Clean up autocomplete adapters
+        if (::startPlaceAdapter.isInitialized) {
+            startPlaceAdapter.cleanup()
+        }
+        if (::destPlaceAdapter.isInitialized) {
+            destPlaceAdapter.cleanup()
+        }
+
         _binding = null
     }
 }
