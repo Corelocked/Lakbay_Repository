@@ -18,6 +18,13 @@
         android:theme="@style/Theme.Scenic_navigation">
         <activity
             android:name=".MainActivity"
+            android:exported="true" />
+        <activity
+            android:name=".ui.SettingsActivity"
+            android:exported="false"
+            android:label="Settings" />
+        <activity
+            android:name=".ui.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -26,9 +33,8 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.SettingsActivity"
-            android:exported="false"
-            android:label="Settings" />
+            android:name=".ui.SignupActivity"
+            android:exported="false" />
     </application>
 
 </manifest>
