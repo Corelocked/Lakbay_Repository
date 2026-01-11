@@ -10,14 +10,20 @@ import org.osmdroid.config.Configuration
 import android.view.Menu
 import android.view.MenuItem
 import android.content.Intent
+import com.example.scenic_navigation.ui.LoginActivity
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var auth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Configuration.getInstance().userAgentValue = packageName
         setContentView(R.layout.activity_main)
+
+        auth = FirebaseAuth.getInstance()
 
         // Setup toolbar as ActionBar for consistent Material AppBar behavior
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
@@ -55,6 +61,13 @@ class MainActivity : AppCompatActivity() {
                     supportFragmentManager.commit {
                         replace(R.id.fragment_container, com.example.scenic_navigation.ui.FavoritesFragment())
                     }
+                    true
+                }
+                R.id.nav_sign_out -> {
+                    auth.signOut()
+                    val intent = Intent(this, LoginActivity::class.java)
+                    startActivity(intent)
+                    finish()
                     true
                 }
                 else -> false
