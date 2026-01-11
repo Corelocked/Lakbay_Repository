@@ -12,5 +12,9 @@
         android:id="@+id/nav_favorites"
         android:icon="@android:drawable/btn_star_big_on"
         android:title="Favorites" />
+    <item
+        android:id="@+id/nav_sign_out"
+        android:icon="@android:drawable/ic_menu_close_clear_cancel"
+        android:title="Sign Out" />
 </menu>
 
