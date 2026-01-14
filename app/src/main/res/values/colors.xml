@@ -53,4 +53,7 @@
     <color name="category_town">#78909C</color>
     <color name="category_village">#BDBDBD</color>
     <color name="category_default">#90A4AE</color>
+
+    <color name="cream">#FFECC8</color>
+    <color name="dark_purple">#0A0613</color>
 </resources>
