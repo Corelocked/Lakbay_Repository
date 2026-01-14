@@ -35,7 +35,7 @@
         <item name="android:windowAnimationStyle">@android:style/Animation.Activity</item>
     </style>
 
-    <style name="Theme.Scenic_navigation" parent="Base.Theme.Scenic_navigation" />
+    <style name="Theme.Scenic_navigation" parent="Theme.Material3.Light.NoActionBar" />
 
     <!-- Button Styles -->
     <style name="Widget.App.Button.Primary" parent="Widget.Material3.Button.ElevatedButton">
