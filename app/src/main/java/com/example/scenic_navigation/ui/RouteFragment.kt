@@ -10,6 +10,7 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import com.example.scenic_navigation.R
 import com.example.scenic_navigation.databinding.FragmentRouteBinding
 import com.example.scenic_navigation.services.LocationService
 import com.example.scenic_navigation.utils.OffRouteDetector
@@ -38,6 +39,8 @@ class RouteFragment : Fragment() {
 
     private val routeMarkers = mutableListOf<Marker>()
     private var routePolyline: Polyline? = null
+    private var startMarker: Marker? = null
+    private var destinationMarker: Marker? = null
     private var isInputCollapsed = false
 
     // Location tracking
@@ -416,8 +419,10 @@ class RouteFragment : Fragment() {
     }
 
     private fun updateRoute(points: List<GeoPoint>) {
-        // Clear previous polyline
+        // Clear previous route overlays
         routePolyline?.let { binding.map.overlays.remove(it) }
+        startMarker?.let { binding.map.overlays.remove(it) }
+        destinationMarker?.let { binding.map.overlays.remove(it) }
 
         if (points.isNotEmpty()) {
             val polyline = Polyline().apply {
@@ -427,6 +432,25 @@ class RouteFragment : Fragment() {
             }
             binding.map.overlays.add(polyline)
             routePolyline = polyline
+
+            // Add start and destination markers
+            val startPoint = points.first()
+            startMarker = Marker(binding.map).apply {
+                position = startPoint
+                title = "Start"
+                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_pin_green, null)
+            }
+            binding.map.overlays.add(startMarker)
+
+            val endPoint = points.last()
+            destinationMarker = Marker(binding.map).apply {
+                position = endPoint
+                title = "Destination"
+                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_pin_red, null)
+            }
+            binding.map.overlays.add(destinationMarker)
 
             // Center map on route
             binding.map.controller.apply {
@@ -608,7 +632,7 @@ class RouteFragment : Fragment() {
                 }
             } else {
                 // fallback to app resource color if attr not found
-                fillColor = ContextCompat.getColor(requireContext(), com.example.scenic_navigation.R.color.primary_dark)
+                fillColor = ContextCompat.getColor(requireContext(), R.color.primary_dark)
             }
         } catch (_: Exception) {
             // keep fallback
