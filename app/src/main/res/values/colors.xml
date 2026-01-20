@@ -3,30 +3,57 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- Modern color palette for scenic navigation -->
-    <color name="primary">#2196F3</color>
-    <color name="primary_dark">#1976D2</color>
-    <color name="accent">#FF5722</color>
-    <color name="background">#F5F5F5</color>
+    <!-- Modern color palette for scenic navigation - Updated with gradients -->
+    <color name="primary">#1E88E5</color>
+    <color name="primary_dark">#1565C0</color>
+    <color name="primary_light">#64B5F6</color>
+    <color name="accent">#FF6F00</color>
+    <color name="accent_light">#FFA726</color>
+
+    <!-- Backgrounds -->
+    <color name="background">#F8F9FA</color>
+    <color name="background_dark">#E8EAF6</color>
     <color name="surface">#FFFFFF</color>
-    <color name="text_primary">#212121</color>
-    <color name="text_secondary">#757575</color>
-    <color name="divider">#EEEEEE</color>
+    <color name="surface_elevated">#FFFFFF</color>
+    <color name="card_background">#FFFFFF</color>
+
+    <!-- Text colors -->
+    <color name="text_primary">#1A1A1A</color>
+    <color name="text_secondary">#6B6B6B</color>
+    <color name="text_hint">#9E9E9E</color>
+
+    <!-- UI Elements -->
+    <color name="divider">#E0E0E0</color>
     <color name="success">#4CAF50</color>
     <color name="warning">#FF9800</color>
-    <color name="card_background">#FAFAFA</color>
+    <color name="error">#EF5350</color>
 
-    <!-- Category colors for POI types -->
-    <color name="category_food">#FF6B35</color>
-    <color name="category_culture">#9C27B0</color>
-    <color name="category_historic">#795548</color>
-    <color name="category_shopping">#E91E63</color>
-    <color name="category_nature">#4CAF50</color>
-    <color name="category_scenic">#2196F3</color>
-    <color name="category_coastal">#00BCD4</color>
-    <color name="category_mountain">#8BC34A</color>
-    <color name="category_city">#FF9800</color>
-    <color name="category_town">#607D8B</color>
-    <color name="category_village">#9E9E9E</color>
-    <color name="category_default">#757575</color>
+    <!-- Overlays -->
+    <color name="overlay_dark">#80000000</color>
+    <color name="overlay_light">#40FFFFFF</color>
+
+    <!-- Gradient colors for scenic theme -->
+    <color name="gradient_start">#1E88E5</color>
+    <color name="gradient_end">#42A5F5</color>
+    <color name="gradient_oceanic_start">#00ACC1</color>
+    <color name="gradient_oceanic_end">#26C6DA</color>
+    <color name="gradient_mountain_start">#66BB6A</color>
+    <color name="gradient_mountain_end">#81C784</color>
+
+    <!-- Category colors for POI types - Enhanced -->
+    <color name="category_food">#FF6F00</color>
+    <color name="category_culture">#8E24AA</color>
+    <color name="category_historic">#6D4C41</color>
+    <color name="category_shopping">#EC407A</color>
+    <color name="category_nature">#66BB6A</color>
+    <color name="category_scenic">#42A5F5</color>
+    <color name="category_coastal">#26C6DA</color>
+    <color name="category_mountain">#9CCC65</color>
+    <color name="category_city">#FFA726</color>
+    <color name="category_town">#78909C</color>
+    <color name="category_village">#BDBDBD</color>
+    <color name="category_default">#90A4AE</color>
+
+    <color name="cream">#FFECC8</color>
+    <color name="dark_purple">#0A0613</color>
 </resources>
