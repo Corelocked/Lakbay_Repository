@@ -35,7 +35,19 @@ object CurationMapper {
                     // Lakeside support: include general water/lake predicates
                     OsmPredicate("natural", "water"),
                     OsmPredicate("water", "lake"),
-                    OsmPredicate("leisure", "lakeside")
+                    OsmPredicate("leisure", "lakeside"),
+                    // Include historical sites with high scenic scores
+                    OsmPredicate("tourism", "museum"),
+                    OsmPredicate("historic", "monument"),
+                    OsmPredicate("historic", "castle"),
+                    OsmPredicate("historic", "archaeological_site"),
+                    OsmPredicate("historic", "ruins"),
+                    OsmPredicate("tourism", "gallery"),
+                    OsmPredicate("historic", "memorial"),
+                    OsmPredicate("historic", "city_gate"),
+                    OsmPredicate("historic", "shrine"),
+                    OsmPredicate("amenity", "place_of_worship"),
+                    OsmPredicate("tourism", "heritage_site")
                 ))
                 boosts["beach"] = 1.0
                 boosts["coast"] = 0.6
@@ -45,6 +57,13 @@ object CurationMapper {
                 // Boost lakes/lakeside to prefer lakefront stops when oceanic/lakeside intent
                 boosts["lake"] = 0.8
                 boosts["lakeside"] = 0.6
+                // Lower boosts for historical sites so they appear if scenic score is high
+                boosts["historic"] = 0.5
+                boosts["museum"] = 0.2
+                boosts["shrine"] = 0.2
+                boosts["heritage"] = 0.4
+                boosts["monument"] = 0.3
+                boosts["church"] = 0.2
             }
             com.example.scenic_navigation.models.SeeingType.MOUNTAIN -> {
                 filters.addAll(listOf(
@@ -67,7 +86,19 @@ object CurationMapper {
                     OsmPredicate("landuse", "farmland"),
                     OsmPredicate("landuse", "meadow"),
                     OsmPredicate("landuse", "orchard"),
-                    OsmPredicate("landuse", "agriculture")
+                    OsmPredicate("landuse", "agriculture"),
+                    // Include historical sites with high scenic scores
+                    OsmPredicate("tourism", "museum"),
+                    OsmPredicate("historic", "monument"),
+                    OsmPredicate("historic", "castle"),
+                    OsmPredicate("historic", "archaeological_site"),
+                    OsmPredicate("historic", "ruins"),
+                    OsmPredicate("tourism", "gallery"),
+                    OsmPredicate("historic", "memorial"),
+                    OsmPredicate("historic", "city_gate"),
+                    OsmPredicate("historic", "shrine"),
+                    OsmPredicate("amenity", "place_of_worship"),
+                    OsmPredicate("tourism", "heritage_site")
                 ))
                 boosts["peak"] = 1.0
                 boosts["ridge"] = 0.6
@@ -79,35 +110,13 @@ object CurationMapper {
                 // Boost for scenic provincial roads and rural farmland experience
                 boosts["provincial_road"] = boosts.getOrDefault("provincial_road", 0.0) + 0.8
                 boosts["farmland"] = boosts.getOrDefault("farmland", 0.0) + 0.7
-            }
-            com.example.scenic_navigation.models.SeeingType.HISTORICAL -> {
-                filters.addAll(listOf(
-                    OsmPredicate("tourism", "museum"),
-                    OsmPredicate("historic", "monument"),
-                    OsmPredicate("historic", "castle"),
-                    OsmPredicate("historic", "archaeological_site"),
-                    OsmPredicate("historic", "ruins"),
-                    OsmPredicate("tourism", "gallery"),
-                    OsmPredicate("historic", "memorial"),
-                    OsmPredicate("historic", "city_gate")
-                ))
-                boosts["historic"] = 1.0
-                boosts["museum"] = 0.8
-                boosts["shrine"] = 0.7
-                // Philippines-focused historical predicates/boosts: surface-level tags commonly used
-                // in the Philippines (churches, memorials, heritage markers, etc.). We add these
-                // directly so the Historical view returns PH-relevant results by default.
-                filters.addAll(listOf(
-                    OsmPredicate("historic", "shrine"),
-                    OsmPredicate("historic", "memorial"),
-                    OsmPredicate("historic", "monument"),
-                    OsmPredicate("historic", "ruins"),
-                    OsmPredicate("amenity", "place_of_worship"),
-                    OsmPredicate("tourism", "heritage_site")
-                ))
-                boosts["heritage"] = boosts.getOrDefault("heritage", 0.0) + 0.9
-                boosts["monument"] = boosts.getOrDefault("monument", 0.0) + 0.8
-                boosts["church"] = boosts.getOrDefault("church", 0.0) + 0.6
+                // Lower boosts for historical sites so they appear if scenic score is high
+                boosts["historic"] = 0.5
+                boosts["museum"] = 0.2
+                boosts["shrine"] = 0.2
+                boosts["heritage"] = 0.4
+                boosts["monument"] = 0.3
+                boosts["church"] = 0.2
             }
         }
 
@@ -124,6 +133,8 @@ object CurationMapper {
                     OsmPredicate("amenity", "bench"),
                     OsmPredicate("natural", "beach")
                 ))
+                // Include historic sites prominently in sightseeing
+                boosts["historic"] = boosts.getOrDefault("historic", 0.0) + 0.6
             }
             com.example.scenic_navigation.models.ActivityType.SHOP_AND_DINE -> {
                 boosts["restaurant"] = boosts.getOrDefault("restaurant", 0.0) + 0.9
@@ -169,7 +180,6 @@ object CurationMapper {
         val routeType = when (intent.seeing) {
             com.example.scenic_navigation.models.SeeingType.OCEANIC -> "oceanic"
             com.example.scenic_navigation.models.SeeingType.MOUNTAIN -> "mountain"
-            com.example.scenic_navigation.models.SeeingType.HISTORICAL -> "historical"
         }
 
         return PlannerCurationConfig(routeType, boosts.toMap(), filters.toSet())

@@ -31,6 +31,43 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
     private val packageName = application.packageName
     private var settingsObserver: Observer<Int>? = null
 
+    // Caches for routes and POIs to avoid redundant calculations
+    private val routeCache: MutableMap<String, List<GeoPoint>> = java.util.Collections.synchronizedMap(
+        object : java.util.LinkedHashMap<String, List<GeoPoint>>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<GeoPoint>>?): Boolean {
+                return size > 32
+            }
+        }
+    )
+    private val poiCache: MutableMap<String, List<Poi>> = java.util.Collections.synchronizedMap(
+        object : java.util.LinkedHashMap<String, List<Poi>>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<Poi>>?): Boolean {
+                return size > 32
+            }
+        }
+    )
+    private val distanceCache: MutableMap<String, Double> = java.util.Collections.synchronizedMap(
+        object : java.util.LinkedHashMap<String, Double>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Double>?): Boolean {
+                return size > 32
+            }
+        }
+    )
+    private val durationCache: MutableMap<String, Long> = java.util.Collections.synchronizedMap(
+        object : java.util.LinkedHashMap<String, Long>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Long>?): Boolean {
+                return size > 32
+            }
+        }
+    )
+    private val scoreCache: MutableMap<String, Float> = java.util.Collections.synchronizedMap(
+        object : java.util.LinkedHashMap<String, Float>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Float>?): Boolean {
+                return size > 32
+            }
+        }
+    )
+
     init {
         // Initialize prefs and planner from application context
         prefs = getApplication<Application>().getSharedPreferences("scenic_prefs", Context.MODE_PRIVATE)
@@ -41,7 +78,7 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
             refreshPlannerFromPrefs()
         }
         com.example.scenic_navigation.events.SettingsBus.events.observeForever(obs)
-        this.settingsObserver = obs
+        settingsObserver = obs
     }
 
 
@@ -207,7 +244,7 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                     forcedCoastalWaypoints != null -> forcedCoastalWaypoints
                     // Otherwise, for long oceanic routes and user preference enabled, let RoutingService pick its coastal set
                     routingMode == "oceanic" && directDistance > LONG_OCEANIC_THRESHOLD && preferCoastalPref -> null
-                    else -> if (curationIntent != null && suggestedVia.isNotEmpty()) suggestedVia else null
+                    else -> if (curationIntent != null && suggestedVia.isNotEmpty() && directDistance >= 50000) suggestedVia else null
                 }
 
                 // Clear transient extras after consuming
@@ -285,6 +322,14 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
 
                 _statusMessage.value = getApplication<Application>().getString(com.example.scenic_navigation.R.string.planning_your_scenic_route) + " Found ${scenicPois.size} scenic spots."
                 _isFetchingPois.value = false
+
+                // Cache the results for future use
+                val cacheKey = "${startPoint.latitude},${startPoint.longitude};${destPoint.latitude},${destPoint.longitude};$routingMode;${curationIntent?.hashCode() ?: 0}"
+                routeCache[cacheKey] = route
+                distanceCache[cacheKey] = _routeDistanceMeters.value ?: 0.0
+                durationCache[cacheKey] = _routeDurationSeconds.value ?: 0L
+                scoreCache[cacheKey] = _scenicScore.value ?: 0f
+                poiCache[cacheKey] = pois
             } catch (e: Exception) {
                 _statusMessage.value = "Error planning route: ${e.message}"
                 _routePoints.value = emptyList()
@@ -331,7 +376,7 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
         super.onCleared()
         prefs.unregisterOnSharedPreferenceChangeListener(prefsListener)
         try {
-            this.settingsObserver?.let { com.example.scenic_navigation.events.SettingsBus.events.removeObserver(it) }
+            settingsObserver?.let { com.example.scenic_navigation.events.SettingsBus.events.removeObserver(it) }
         } catch (_: Exception) {
         }
     }
@@ -360,7 +405,7 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                 val waypointsToPassForRecalc = if (currentRoutingMode == "oceanic" && directDistanceRecalc > LONG_OCEANIC_THRESHOLD) {
                     null
                 } else {
-                    if (lastCurationIntent != null && suggestedViaForRecalc.isNotEmpty()) suggestedViaForRecalc else null
+                    if (lastCurationIntent != null && suggestedViaForRecalc.isNotEmpty() && directDistanceRecalc >= 50000) suggestedViaForRecalc else null
                 }
 
                 val route = routingService.fetchRoute(newStart, destination, packageName, currentRoutingMode, waypointsToPassForRecalc)
@@ -373,6 +418,24 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 _routePoints.value = route
+
+                // Compute approximate route distance (meters) and estimated duration
+                try {
+                    var totalMeters = 0.0
+                    for (i in 0 until route.size - 1) {
+                        val a = route[i]
+                        val b = route[i + 1]
+                        totalMeters += com.example.scenic_navigation.utils.GeoUtils.haversine(a.latitude, a.longitude, b.latitude, b.longitude)
+                    }
+                    _routeDistanceMeters.value = totalMeters
+                    // Estimate duration using average speed 60 km/h -> 16.6667 m/s
+                    val avgSpeedMps = 16.6667
+                    val seconds = (totalMeters / avgSpeedMps).toLong()
+                    _routeDurationSeconds.value = seconds
+                } catch (_: Exception) {
+                    _routeDistanceMeters.value = 0.0
+                    _routeDurationSeconds.value = 0L
+                }
 
                 // Fetch scenic POIs along the new route
                 val routeType = when (currentRoutingMode) {
@@ -397,7 +460,8 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                         description = "Scenic score: ${scenic.score}",
                         municipality = scenic.municipality ?: "Unknown",
                         lat = scenic.lat,
-                        lon = scenic.lon
+                        lon = scenic.lon,
+                        scenicScore = scenic.score.toFloat()
                     )
                 }
 
@@ -411,6 +475,14 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 _statusMessage.value = getApplication<Application>().getString(com.example.scenic_navigation.R.string.planning_your_scenic_route) + " Found ${scenicPois.size} scenic spots."
                 _isFetchingPois.value = false
+
+                // Cache the results for future use
+                val cacheKey = "${newStart.latitude},${newStart.longitude};${destination.latitude},${destination.longitude};$currentRoutingMode;${lastCurationIntent?.hashCode() ?: 0}"
+                routeCache[cacheKey] = route
+                distanceCache[cacheKey] = _routeDistanceMeters.value ?: 0.0
+                durationCache[cacheKey] = _routeDurationSeconds.value ?: 0L
+                scoreCache[cacheKey] = _scenicScore.value ?: 0f
+                poiCache[cacheKey] = pois
             } catch (e: Exception) {
                 _statusMessage.value = "Error recalculating route: ${e.message}"
             } finally {
