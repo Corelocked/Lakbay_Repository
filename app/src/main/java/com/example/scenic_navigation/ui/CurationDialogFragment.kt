@@ -60,7 +60,6 @@ class CurationDialogFragment : DialogFragment() {
                 }
 
                 val seeing = when (binding.rgSeeing.checkedRadioButtonId) {
-                    binding.rbHistorical.id -> com.example.scenic_navigation.models.SeeingType.HISTORICAL
                     binding.rbOceanic.id -> com.example.scenic_navigation.models.SeeingType.OCEANIC
                     binding.rbMountain.id -> com.example.scenic_navigation.models.SeeingType.MOUNTAIN
                     else -> com.example.scenic_navigation.models.SeeingType.OCEANIC

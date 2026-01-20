@@ -45,9 +45,6 @@ class MainActivity : AppCompatActivity() {
             WindowInsetsCompat.CONSUMED
         }
 
-        // Initialize FavoriteStore
-        com.example.scenic_navigation.FavoriteStore.init(this)
-
         // Show RouteFragment by default
         if (savedInstanceState == null) {
             supportFragmentManager.commit {

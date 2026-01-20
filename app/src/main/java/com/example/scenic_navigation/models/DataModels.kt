@@ -86,7 +86,6 @@ data class CoastalSegment(
  * Curation intent captures the lightweight trip curation choices from the user.
  */
 enum class SeeingType {
-    HISTORICAL,
     OCEANIC,
     MOUNTAIN
 }

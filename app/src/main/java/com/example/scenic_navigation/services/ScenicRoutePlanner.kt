@@ -18,7 +18,6 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.osmdroid.util.GeoPoint
 import java.util.LinkedHashMap
 import java.util.Locale
-import kotlin.math.pow
 
 /**
  * Service for scenic route planning and scoring
@@ -87,14 +86,24 @@ class ScenicRoutePlanner(
             "beach",
             "nature_reserve",
             "wood",
-            "ridge"
+            "ridge",
+            "restaurant",
+            "gift",
+            "souvenir",
+            "art",
+            "craft",
+            "bakery",
+            "deli",
+            "cheese",
+            "wine",
+            "farm",
+            "seafood",
+            "books",
+            "clothes"
         )
 
         // Blend weight for generic query contribution (0.0..1.0)
         private const val GENERIC_BLEND_WEIGHT = 0.5
-        // Preserve companion-level defaults as fallbacks
-        private const val CLUSTER_EPS_METERS = 2000.0
-        private const val CLUSTER_MIN_PTS = 3
     }
 
     // Instance-level cluster parameters (resolved from constructor or Config)
@@ -104,6 +113,11 @@ class ScenicRoutePlanner(
     // PoiService used to access the local dataset (luzon CSV)
     private val poiService: com.example.scenic_navigation.services.PoiService by lazy {
         com.example.scenic_navigation.services.PoiService(context)
+    }
+
+    // WebSearchService for Wikipedia-based POI discovery
+    private val webSearchService: com.example.scenic_navigation.services.WebSearchService by lazy {
+        com.example.scenic_navigation.services.WebSearchService()
     }
 
     private fun deviceLocaleTag(): String? {
@@ -134,8 +148,12 @@ class ScenicRoutePlanner(
                 type.contains("waterfall") -> 70
                 type.contains("park") -> 60
                 type.contains("attraction") -> 50
+                type.contains("picnic_site") -> 40
                 else -> 20
-            } else 20
+            } else when {
+                type.contains("historic") -> 50
+                else -> 20
+            }
             "mountain" -> when {
                 type.contains("peak") -> 120
                 type.contains("volcano") -> 115
@@ -147,6 +165,7 @@ class ScenicRoutePlanner(
                 type.contains("waterfall") -> 75
                 type.contains("park") -> 65
                 type.contains("attract") || type.contains("attraction") -> 55
+                type.contains("historic") -> 50
                 else -> 20
             }
             else -> when {
@@ -191,13 +210,6 @@ class ScenicRoutePlanner(
             else -> 4_000.0
         }
 
-        val maxSamples = when {
-            length > 400_000 -> 40
-            length > 200_000 -> 32
-            length > 120_000 -> 28
-            else -> 20
-        }
-
         // Create segment centers for batched bbox/around queries so we run fewer Overpass requests
         val segmentLengthMeters = 50_000.0 // target ~50km per segment
         val segments = maxOf(1, (length / segmentLengthMeters).toInt())
@@ -231,7 +243,11 @@ class ScenicRoutePlanner(
                         val maxLon = longitudes.maxOrNull() ?: sub.first().longitude
 
                         // Padding in degrees (approx): convert ~radius meters to degrees roughly
-                        val padDegrees = 0.02 // ~2km padding, coarse but sufficient
+                        val padDegrees = when {
+                            length < 10_000 -> 0.01 // ~1km for very short routes
+                            length < 50_000 -> 0.03 // ~3km for short routes
+                            else -> 0.05 // ~5km for longer routes
+                        }
                         val bboxMinLat = (minLat - padDegrees)
                         val bboxMaxLat = (maxLat + padDegrees)
                         val bboxMinLon = (minLon - padDegrees)
@@ -253,14 +269,48 @@ class ScenicRoutePlanner(
                                 mutex.unlock()
                             }
                         }
+
+                        // Fetch Wikipedia POIs at segment center for additional scenic discovery
+                        val centerPoint = sub[sub.size / 2]
+                        try {
+                            val webPois = webSearchService.searchAttractionsNearLocation(centerPoint, radiusKm = 5)
+                            val convertedWebPois = webPois.mapNotNull { poi ->
+                                val lat = poi.lat ?: return@mapNotNull null
+                                val lon = poi.lon ?: return@mapNotNull null
+                                val score = poi.scenicScore?.toInt() ?: 0
+                                ScenicPoi(
+                                    name = poi.name,
+                                    type = poi.category,
+                                    lat = lat,
+                                    lon = lon,
+                                    score = score
+                                )
+                            }
+                            mutex.lock()
+                            try {
+                                scenicPois.addAll(convertedWebPois)
+                            } finally {
+                                mutex.unlock()
+                            }
+                        } catch (e: Exception) {
+                            Log.w("ScenicRoutePlanner", "Error fetching Wikipedia POIs: ${e.message}")
+                        }
                     }
                 }
                 }
             }
-        
+
+        // Filter POIs to only include those within 5km of the route
+        val filteredByDistance = scenicPois.filter { poi ->
+            val nearest = routePoints.minOfOrNull { p ->
+                GeoUtils.haversine(p.latitude, p.longitude, poi.lat, poi.lon)
+            } ?: Double.MAX_VALUE
+            nearest <= 5000.0 // 5km threshold
+        }
+
         // De-duplicate and sort by score
         val dedup = LinkedHashMap<String, ScenicPoi>()
-        for (p in scenicPois) {
+        for (p in filteredByDistance) {
             val key = "${"%.5f".format(p.lat)}_${"%.5f".format(p.lon)}_${p.name}"
             val existing = dedup[key]
             if (existing == null || p.score > existing.score) {
@@ -295,7 +345,7 @@ class ScenicRoutePlanner(
         // Return top results (capped). We intentionally avoid extra densification rounds
         // here to keep route planning responsive; dataset merging and segment batching
         // supply adequate coverage without extra network calls.
-        return@withContext if (list.size > 200) list.subList(0, 200) else list
+        return@withContext if (list.size > 250) list.subList(0, 250) else list
     }
 
     private suspend fun fetchScenicPoisAtPoint(
@@ -352,7 +402,7 @@ class ScenicRoutePlanner(
   way(around:$radius,$lat,$lon)[natural=coastline];
   way(around:$radius,$lat,$lon)[natural=bay];
 );
-out center 60;
+out center 200;
 """.trimIndent()
             "mountain" -> """
 [out:json][timeout:15];
@@ -369,7 +419,7 @@ out center 60;
   node(around:$radius,$lat,$lon)[waterway=waterfall];
   way(around:$radius,$lat,$lon)[natural=wood];
 );
-out center 60;
+out center 200;
 """.trimIndent()
             else -> """
 [out:json][timeout:15];
@@ -387,7 +437,7 @@ out center 60;
   node(around:$radius,$lat,$lon)[tourism=museum];
   node(around:$radius,$lat,$lon)[historic];
 );
-out center 60;
+out center 200;
 """.trimIndent()
         }
 
@@ -513,7 +563,10 @@ out center 40;
                                     type.equals("attraction", true) -> 50
                                     type.equals("picnic_site", true) -> 40
                                     else -> 20
-                                } else 20
+                                } else when {
+                                    type.contains("historic") -> 50
+                                    else -> 20
+                                }
                                 "mountain" -> when {
                                     type.equals("peak", true) -> 120
                                     type.equals("volcano", true) -> 115
@@ -525,6 +578,7 @@ out center 40;
                                     type.equals("waterfall", true) -> 75
                                     type.equals("park", true) -> 65
                                     type.equals("attraction", true) -> 55
+                                    type.equals("historic", true) -> 50
                                     else -> 20
                                 }
                                 else -> when {
@@ -540,7 +594,8 @@ out center 40;
                                     type.equals("hotel", true) -> 25
                                     type.equals("camp_site", true) -> 40
                                     type.equals("picnic_site", true) -> 35
-                                    else -> 20
+                                    type.equals("restaurant", true) -> 80
+                                    else -> if (type in listOf("gift", "souvenir", "art", "craft", "bakery", "deli", "cheese", "wine", "farm", "seafood", "books", "clothes")) 70 else 20
                                 }
                             }
                         } else {
@@ -557,7 +612,8 @@ out center 40;
                                 type.equals("hotel", true) -> 25
                                 type.equals("camp_site", true) -> 40
                                 type.equals("picnic_site", true) -> 35
-                                else -> 20
+                                type.equals("restaurant", true) -> 80
+                                else -> if (type in listOf("gift", "souvenir", "art", "craft", "bakery", "deli", "cheese", "wine", "farm", "seafood", "books", "clothes")) 70 else 20
                             }
                         }
 
@@ -766,7 +822,7 @@ out center 40;
   way($minLat,$minLon,$maxLat,$maxLon)[natural=coastline];
   way($minLat,$minLon,$maxLat,$maxLon)[natural=bay];
 );
-out center 80;
+out center 200;
 """.trimIndent()
             }
             "mountain" -> {
@@ -785,7 +841,7 @@ out center 80;
   node($minLat,$minLon,$maxLat,$maxLon)[waterway=waterfall];
   way($minLat,$minLon,$maxLat,$maxLon)[natural=wood];
 );
-out center 80;
+out center 200;
 """.trimIndent()
             }
             else -> {
@@ -805,7 +861,7 @@ out center 80;
   node($minLat,$minLon,$maxLat,$maxLon)[tourism=museum];
   node($minLat,$minLon,$maxLat,$maxLon)[historic];
 );
-out center 80;
+out center 200;
 """.trimIndent()
             }
         }
@@ -820,7 +876,7 @@ out center 80;
   node($minLat,$minLon,$maxLat,$maxLon)[tourism=camp_site];
   node($minLat,$minLon,$maxLat,$maxLon)[historic];
 );
-out center 60;
+out center 200;
 """.trimIndent()
 
         val mediaType = "text/plain; charset=utf-8".toMediaType()
@@ -874,7 +930,10 @@ out center 60;
                                     type.equals("attraction", true) -> 50
                                     type.equals("picnic_site", true) -> 40
                                     else -> 20
-                                } else 20
+                                } else when {
+                                    type.contains("historic") -> 50
+                                    else -> 20
+                                }
                                 "mountain" -> when {
                                     type.equals("peak", true) -> 120
                                     type.equals("volcano", true) -> 115
@@ -886,6 +945,7 @@ out center 60;
                                     type.equals("waterfall", true) -> 75
                                     type.equals("park", true) -> 65
                                     type.equals("attraction", true) -> 55
+                                    type.equals("historic", true) -> 50
                                     else -> 20
                                 }
                                 else -> when {
@@ -901,7 +961,8 @@ out center 60;
                                     type.equals("hotel", true) -> 25
                                     type.equals("camp_site", true) -> 40
                                     type.equals("picnic_site", true) -> 35
-                                    else -> 20
+                                    type.equals("restaurant", true) -> 80
+                                    else -> if (type in listOf("gift", "souvenir", "art", "craft", "bakery", "deli", "cheese", "wine", "farm", "seafood", "books", "clothes")) 70 else 20
                                 }
                             }
                         } else {
@@ -918,7 +979,8 @@ out center 60;
                                 type.equals("hotel", true) -> 25
                                 type.equals("camp_site", true) -> 40
                                 type.equals("picnic_site", true) -> 35
-                                else -> 20
+                                type.equals("restaurant", true) -> 80
+                                else -> if (type in listOf("gift", "souvenir", "art", "craft", "bakery", "deli", "cheese", "wine", "farm", "seafood", "books", "clothes")) 70 else 20
                             }
                         }
 
@@ -1169,3 +1231,4 @@ out center 60;
         return@withContext Pair(mostScenicRoute, mostScenicPois)
     }
 }
+
