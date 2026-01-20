@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.google.gms.google.services)
 }
 
 android {
@@ -58,6 +59,9 @@ dependencies {
     // Fragment
     implementation(libs.androidx.fragment.ktx)
 
+    // Preference support for Settings screen
+    implementation("androidx.preference:preference-ktx:1.2.0")
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
@@ -66,6 +70,19 @@ dependencies {
 
     // Google Play Services Location for GPS
     implementation("com.google.android.gms:play-services-location:21.0.1")
+
+    // 1. Add the BoM first (highly recommended)
+    implementation(platform(libs.firebase.bom))
+
+    // 2. Your existing line
+    implementation(libs.firebase.auth)
+
+    // 3. Add this line for data storage
+    implementation(libs.firebase.firestore)
+
+    // TensorFlow Lite for on-device inference (ensure version matches your trainer runtime)
+    implementation("org.tensorflow:tensorflow-lite:2.12.0")
+    implementation(libs.firebase.auth)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

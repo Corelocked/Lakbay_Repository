@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <EditTextPreference
+        android:key="pref_cluster_eps_meters"
+        android:title="Cluster EPS (meters)"
+        android:dialogTitle="Cluster EPS (meters)"
+        android:defaultValue="2000.0"
+        android:inputType="numberDecimal" />
+
+    <EditTextPreference
+        android:key="pref_cluster_min_pts"
+        android:title="Minimum points per cluster"
+        android:dialogTitle="Minimum points per cluster"
+        android:defaultValue="3"
+        android:inputType="number" />
+
+    <Preference
+        android:key="pref_reset_defaults"
+        android:title="Reset to defaults"
+        android:summary="Restore default tuning values" />
+
+    <SwitchPreference
+        android:key="pref_prefer_coastal_long_oceanic"
+        android:title="Prefer coastal sets for long oceanic trips"
+        android:defaultValue="true"
+        android:summary="When enabled, long oceanic routes will favor built-in coastal waypoint sets." />
+
+</PreferenceScreen>

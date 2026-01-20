@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "533429423836",
+    "project_id": "lakbay-ciit",
+    "storage_bucket": "lakbay-ciit.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:533429423836:android:399583515a9198186b6e19",
+        "android_client_info": {
+          "package_name": "com.example.scenic_navigation"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJ6EDo3nVJ_pGimI62Wl6z_JOBQxT_zPQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

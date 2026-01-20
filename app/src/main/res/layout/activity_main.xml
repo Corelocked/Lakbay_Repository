@@ -8,6 +8,22 @@
     android:background="@color/background"
     tools:context=".MainActivity">
 
+    <!-- App bar / Toolbar with elevation -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:minHeight="?attr/actionBarSize"
+        android:background="@color/primary"
+        android:contentDescription="App bar"
+        android:elevation="4dp"
+        app:titleTextColor="@color/white"
+        app:titleCentered="true"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:popupTheme="@style/ThemeOverlay.Material3" />
+
     <!-- Fragment Container -->
     <FrameLayout
         android:id="@+id/fragment_container"
@@ -16,15 +32,17 @@
         app:layout_constraintBottom_toTopOf="@+id/bottom_navigation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/toolbar" />
 
-    <!-- Bottom Navigation -->
+    <!-- Bottom Navigation with clean elevation -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@color/surface"
-        app:elevation="8dp"
+        android:elevation="12dp"
+        app:itemIconTint="@color/primary"
+        app:itemTextColor="@color/text_primary"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu"
         app:layout_constraintBottom_toBottomOf="parent"

@@ -10,6 +10,8 @@ data class Poi(
     val municipality: String, // Added for grouping by town/municipality
     val lat: Double? = null,
     val lon: Double? = null
+    ,
+    val scenicScore: Float? = null // Optional scenic score passed from ScenicPoi
 )
 
 /**
@@ -78,4 +80,32 @@ data class CoastalSegment(
     val endIdx: Int,
     val avgDistanceToCoast: Double,
     val coastalLength: Double
+)
+
+/**
+ * Curation intent captures the lightweight trip curation choices from the user.
+ */
+enum class SeeingType {
+    HISTORICAL,
+    OCEANIC,
+    MOUNTAIN
+}
+
+enum class ActivityType {
+    SIGHTSEEING,
+    SHOP_AND_DINE,
+    CULTURAL
+}
+
+data class CurationIntent(
+    val destinationQuery: String,
+    val seeing: SeeingType,
+    val activity: ActivityType
+)
+
+// Extended curation intent with optional UI extras: forced coastal selection and custom subtypes
+data class CurationIntentExtras(
+    val forcedCoastalKey: String? = null,
+    val forceCoastal: Boolean = false,
+    val subtypes: Set<String> = emptySet()
 )

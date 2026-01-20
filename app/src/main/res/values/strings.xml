@@ -10,6 +10,16 @@
     <string name="current_location">Current location</string>
     <string name="current_location_fmt">Current location (%1$.6f, %2$.6f)</string>
     <string name="enter_destination">Please enter a destination</string>
+    <string name="please_enter_start">Please enter a start location</string>
+    <string name="could_not_calculate_route">Could not calculate route</string>
+    <string name="planning_your_scenic_route">Planning your scenic route...</string>
+    <string name="navigate_to">Navigate to %1$s</string>
+    <string name="icon_for">Icon for %1$s, category %2$s</string>
+    <string name="poi_card_desc">%1$s, %2$s</string>
+    <string name="scenic_icon_for">Scenic icon for %1$s</string>
+    <string name="geocoding_status">Geocoding...</string>
+    <string name="routing_status">Calculating route...</string>
+    <string name="finding_pois_status">Finding scenic spots...</string>
     <string name="location_permission_denied">Location permission denied; using manual start input</string>
     <string name="cancel">Cancel</string>
     <string name="geocode_cancelled">Geocoding cancelled</string>

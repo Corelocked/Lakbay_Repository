@@ -8,11 +8,12 @@ import androidx.lifecycle.viewModelScope
 import com.example.scenic_navigation.models.Poi
 import com.example.scenic_navigation.services.PoiService
 import com.example.scenic_navigation.services.MunicipalityService
+import com.example.scenic_navigation.ml.PoiReranker
 import kotlinx.coroutines.launch
 import org.osmdroid.util.GeoPoint
 
 class RecommendationsViewModel(application: Application) : AndroidViewModel(application) {
-    private val poiService = PoiService()
+    private val poiService = PoiService(application.applicationContext)
     private val municipalityService = MunicipalityService()
     private val packageName = application.packageName
 
@@ -21,6 +22,9 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
 
     private val _recommendations = MutableLiveData<List<Poi>>(emptyList())
     val recommendations: LiveData<List<Poi>> = _recommendations
+
+    // Use an ML-based reranker (kept lightweight)
+    private val poiReranker = PoiReranker(application.applicationContext)
 
     fun fetchRecommendations() {
         viewModelScope.launch {
@@ -65,9 +69,14 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
                             else -> 5
                         }
                     }.thenBy { it.name }
-                ).take(20)
+                ).take(50)
 
-                _recommendations.value = sortedPois
+                // Apply ML reranker on the top candidates (run on IO thread via viewModelScope)
+                val center = popularLocations.first()
+                val reranked = poiReranker.rerank(sortedPois, center.latitude, center.longitude, System.currentTimeMillis())
+
+                // Take final top 20 for UI
+                _recommendations.value = reranked.take(20)
             } catch (e: Exception) {
                 // Fallback to some default recommendations if API fails
                 _recommendations.value = listOf(
@@ -204,8 +213,48 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
                         category = "natural",
                         description = "Multi-tiered turquoise waterfalls",
                         municipality = "Badian",
-                        lat = 9.8167,
-                        lon = 123.3833
+                        lat = 9.6111,
+                        lon = 123.7000
+                    ),
+                    Poi(
+                        name = "Pagsanjan Falls",
+                        category = "natural",
+                        description = "Famous waterfall with boat ride",
+                        municipality = "Pagsanjan",
+                        lat = 14.0528,
+                        lon = 121.5695
+                    ),
+                    Poi(
+                        name = "Enchanted River",
+                        category = "natural",
+                        description = "Mystical river with blue water",
+                        municipality = "Hinatuan",
+                        lat = 8.4333,
+                        lon = 126.1611
+                    ),
+                    Poi(
+                        name = "Siquijor Island",
+                        category = "scenic",
+                        description = "Mystical island with beautiful beaches",
+                        municipality = "Siquijor",
+                        lat = 9.2145,
+                        lon = 123.6156
+                    ),
+                    Poi(
+                        name = "Camiguin Island",
+                        category = "scenic",
+                        description = "Island born of fire with hot springs",
+                        municipality = "Camiguin",
+                        lat = 9.2519,
+                        lon = 125.1215
+                    ),
+                    Poi(
+                        name = "Malabon Fish Market",
+                        category = "cultural",
+                        description = "Experience local seafood and market life",
+                        municipality = "Malabon",
+                        lat = 14.6500,
+                        lon = 120.9658
                     ),
                     Poi(
                         name = "Caramoan Islands",

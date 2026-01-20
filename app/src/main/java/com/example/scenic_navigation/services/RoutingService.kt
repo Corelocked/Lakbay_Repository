@@ -2,7 +2,11 @@ package com.example.scenic_navigation.services
 
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.osmdroid.util.GeoPoint
@@ -11,7 +15,22 @@ import org.osmdroid.util.GeoPoint
  * Service for fetching routes using OSRM API
  */
 class RoutingService {
-    private val httpClient: OkHttpClient by lazy { OkHttpClient() }
+    private val httpClient: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
+            .callTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .connectionPool(okhttp3.ConnectionPool(8, 5, java.util.concurrent.TimeUnit.MINUTES))
+            .build()
+    }
+    // Cache for segment routes: key is "fromLon,fromLat;toLon,toLat"
+    private val segmentCache: MutableMap<String, List<org.osmdroid.util.GeoPoint>> = java.util.Collections.synchronizedMap(
+        object : java.util.LinkedHashMap<String, List<org.osmdroid.util.GeoPoint>>(64, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<org.osmdroid.util.GeoPoint>>?): Boolean {
+                return size > 200
+            }
+        }
+    )
 
     // Hardcoded Philippine mountain waypoints
     private val mountainWaypoints = mapOf(
@@ -148,12 +167,24 @@ class RoutingService {
         )
     )
 
+    // Expose a read-only view of known coastal waypoint keys for UI selection
+    fun getCoastalWaypointKeys(): List<String> = coastalWaypoints.keys.toList()
+
+    // Return a coastal waypoint set for a given key, or null if not found
+    fun getCoastalWaypointSet(key: String?): List<GeoPoint>? = key?.let { coastalWaypoints[it] }
+
     suspend fun fetchRoute(
         start: GeoPoint,
         destination: GeoPoint,
         packageName: String,
-        mode: String = "default"
+        mode: String = "default",
+        waypoints: List<GeoPoint>? = null
     ): List<GeoPoint> = withContext(Dispatchers.IO) {
+        // If explicit waypoints are provided, use them to generate a via-waypoint route
+        if (waypoints != null && waypoints.isNotEmpty()) {
+            return@withContext generateRouteViaWaypoints(start, destination, packageName, waypoints)
+        }
+
         when (mode) {
             "oceanic" -> generateCoastalRouteViaWaypoints(start, destination, packageName)
             "mountain" -> generateMountainRouteViaWaypoints(start, destination, packageName)
@@ -189,66 +220,271 @@ class RoutingService {
 
         var bestSet: List<GeoPoint> = emptyList()
         var minAvgDistance = Double.MAX_VALUE
-
-        val routeMidPoint = GeoPoint(
-            (start.latitude + dest.latitude) / 2.0,
-            (start.longitude + dest.longitude) / 2.0
-        )
+        // Compute distances of each waypoint to the projected point on the line segment start->dest.
+        // This avoids misleading average distances to the route midpoint when the route is long or
+        // when coastal waypoints are spread along the coastline.
+        val sx = start.longitude
+        val sy = start.latitude
+        val dx = dest.longitude - sx
+        val dy = dest.latitude - sy
+        val denom = dx * dx + dy * dy
 
         for ((key, waypoints) in allWaypointSets) {
             if (waypoints.isEmpty()) continue
 
-            val avgDistance = waypoints.sumOf { it.distanceToAsDouble(routeMidPoint) } / waypoints.size
+            val avgDistance = if (denom == 0.0) {
+                // fallback to midpoint distance if start==dest
+                val routeMidPoint = GeoPoint(
+                    (start.latitude + dest.latitude) / 2.0,
+                    (start.longitude + dest.longitude) / 2.0
+                )
+                waypoints.sumOf { it.distanceToAsDouble(routeMidPoint) } / waypoints.size
+            } else {
+                waypoints.sumOf { wp ->
+                    val wx = wp.longitude - sx
+                    val wy = wp.latitude - sy
+                    var t = (wx * dx + wy * dy) / denom
+                    if (t < 0.0) t = 0.0
+                    if (t > 1.0) t = 1.0
+                    val projLon = sx + t * dx
+                    val projLat = sy + t * dy
+                    try {
+                        com.example.scenic_navigation.utils.GeoUtils.haversine(wp.latitude, wp.longitude, projLat, projLon)
+                    } catch (_: Exception) {
+                        wp.distanceToAsDouble(GeoPoint(projLat, projLon))
+                    }
+                } / waypoints.size
+            }
 
             if (avgDistance < minAvgDistance) {
                 minAvgDistance = avgDistance
                 bestSet = waypoints
-                Log.d("RoutingService", "New best waypoint set: $key with avg distance $avgDistance")
+                Log.d("RoutingService", "New best waypoint set: $key with avg projected distance=${"%.0f".format(avgDistance)}m")
             }
         }
 
-        val threshold = if (isLongDistanceOceanic) 300_000 else 50_000
+        // Relaxed thresholds: coastal/marine routes can be more spread out; allow more permissive matching.
+        val threshold = if (isLongDistanceOceanic) 400_000 else 100_000
 
-        // If the closest waypoint set is still on average > threshold, it's probably not relevant.
         if (minAvgDistance > threshold) {
-            Log.w("RoutingService", "No relevant waypoint sets found within the ${threshold/1000}km threshold.")
-            return emptyList()
+            Log.w("RoutingService", "Closest waypoint set avg distance ${"%.0f".format(minAvgDistance)}m exceeds threshold ${threshold}m. Falling back to nearest set as a best-effort.")
+            // Return the nearest set anyway as a fallback so oceanic/mountain flows still get waypoints.
+            return bestSet
         }
 
         return bestSet
     }
 
-    private suspend fun generateRouteViaWaypoints(start: GeoPoint, dest: GeoPoint, packageName: String, waypoints: List<GeoPoint>): List<GeoPoint> {
-        val allPoints = listOf(start) + waypoints + listOf(dest)
-        val fullRoute = mutableListOf<GeoPoint>()
-        for (i in 0 until allPoints.size - 1) {
-            val from = allPoints[i]
-            val to = allPoints[i + 1]
-            val segmentUrl = "https://router.project-osrm.org/route/v1/driving/${from.longitude},${from.latitude};${to.longitude},${to.latitude}?overview=full&geometries=geojson"
-            val request = Request.Builder()
-                .url(segmentUrl)
-                .header("User-Agent", packageName)
-                .header("Accept", "application/json")
-                .build()
-            try {
-                val response = httpClient.newCall(request).execute()
-                if (response.isSuccessful) {
-                    val body = response.body?.string() ?: ""
-                    val segmentRoute = parseRouteFromOsrmResponse(body)
-                    if (segmentRoute.isNotEmpty()) {
-                        if (fullRoute.isEmpty()) {
-                            fullRoute.addAll(segmentRoute)
-                        } else {
-                            fullRoute.addAll(segmentRoute.drop(1))
-                        }
-                    }
-                }
-                response.close()
-            } catch (e: Exception) {
-                Log.e("RoutingService", "Error fetching route segment: ${e.message}")
+    /**
+     * Sort waypoints to follow a logical path from start to destination
+     * This prevents routing loops by ordering waypoints by their distance along the start->dest vector
+     * Also filters out waypoints that are too far from the direct path to prevent branching
+     */
+    private fun sortWaypointsAlongPath(start: GeoPoint, dest: GeoPoint, waypoints: List<GeoPoint>): List<GeoPoint> {
+        if (waypoints.isEmpty()) return waypoints
+
+        // Calculate the direction vector from start to dest
+        val dx = dest.longitude - start.longitude
+        val dy = dest.latitude - start.latitude
+        val denom = dx * dx + dy * dy
+
+        if (denom == 0.0) {
+            // Start and dest are the same, just return waypoints as-is
+            return waypoints
+        }
+
+        // Calculate the direct distance for threshold calculation
+        val directDistance = try {
+            com.example.scenic_navigation.utils.GeoUtils.haversine(
+                start.latitude, start.longitude,
+                dest.latitude, dest.longitude
+            )
+        } catch (_: Exception) {
+            start.distanceToAsDouble(dest)
+        }
+
+        // Set maximum perpendicular distance threshold based on route length
+        // For short routes (<50km), allow max 10km deviation
+        // For longer routes, allow up to 20% deviation but cap at 50km
+        val maxPerpendicularDistance = when {
+            directDistance < 50_000 -> 10_000.0 // 10km for short routes
+            directDistance < 200_000 -> directDistance * 0.15 // 15% for medium routes
+            else -> 50_000.0 // 50km max for long routes
+        }
+
+        // For each waypoint, calculate its projection onto the start->dest line
+        // and its perpendicular distance from the line
+        val waypointsWithMetrics = waypoints.mapNotNull { wp ->
+            val wx = wp.longitude - start.longitude
+            val wy = wp.latitude - start.latitude
+
+            // Project waypoint onto start->dest vector (0.0 = at start, 1.0 = at dest)
+            val t = (wx * dx + wy * dy) / denom
+
+            // Calculate perpendicular distance from the line
+            val projLon = start.longitude + t * dx
+            val projLat = start.latitude + t * dy
+            val perpDistance = try {
+                com.example.scenic_navigation.utils.GeoUtils.haversine(
+                    wp.latitude, wp.longitude,
+                    projLat, projLon
+                )
+            } catch (_: Exception) {
+                wp.distanceToAsDouble(GeoPoint(projLat, projLon))
+            }
+
+            // Filter out waypoints that are too far from the path or outside the start-dest range
+            // Allow some flexibility with t (e.g., -0.1 to 1.1) for waypoints slightly outside
+            if (perpDistance <= maxPerpendicularDistance && t >= -0.1 && t <= 1.1) {
+                Triple(wp, t, perpDistance)
+            } else {
+                Log.d("RoutingService", "Filtering out waypoint at (${wp.latitude},${wp.longitude}): " +
+                    "perpDist=${"%.0f".format(perpDistance)}m (max=${"%.0f".format(maxPerpendicularDistance)}m), t=${"%.2f".format(t)}")
+                null
             }
         }
-        return fullRoute
+
+        if (waypointsWithMetrics.isEmpty()) {
+            Log.w("RoutingService", "All waypoints filtered out due to distance from path. Using original waypoints.")
+            // Fallback: just sort by projection without filtering
+            return waypoints.map { wp ->
+                val wx = wp.longitude - start.longitude
+                val wy = wp.latitude - start.latitude
+                val t = (wx * dx + wy * dy) / denom
+                Pair(wp, t)
+            }.sortedBy { it.second }.map { it.first }
+        }
+
+        // Sort by projection value to get waypoints in order from start to dest
+        return waypointsWithMetrics
+            .sortedBy { it.second }
+            .map { it.first }
+    }
+
+    private suspend fun generateRouteViaWaypoints(start: GeoPoint, dest: GeoPoint, packageName: String, waypoints: List<GeoPoint>): List<GeoPoint> {
+        // Sort and filter waypoints to follow logical path from start to dest
+        val sortedWaypoints = sortWaypointsAlongPath(start, dest, waypoints)
+
+        // Limit waypoints to prevent overly complex routes
+        // More waypoints = more chances for branching and routing issues
+        // Keep it at 3 to match mountain routes for consistency
+        val maxWaypoints = 3
+        val limitedWaypoints = if (sortedWaypoints.size > maxWaypoints) {
+            Log.d("RoutingService", "Limiting waypoints from ${sortedWaypoints.size} to $maxWaypoints to prevent route complexity")
+            // Take evenly distributed waypoints
+            val step = sortedWaypoints.size.toDouble() / maxWaypoints
+            (0 until maxWaypoints).map { i ->
+                sortedWaypoints[(i * step).toInt()]
+            }
+        } else {
+            sortedWaypoints
+        }
+
+        val allPoints = listOf(start) + limitedWaypoints + listOf(dest)
+        // Fetch segments in parallel with limited concurrency
+        val semaphore = kotlinx.coroutines.sync.Semaphore(4)
+        val deferred = mutableListOf<kotlinx.coroutines.Deferred<Pair<Int, List<GeoPoint>>>>()
+
+        return kotlinx.coroutines.coroutineScope {
+            for (i in 0 until allPoints.size - 1) {
+                val idx = i
+                val from = allPoints[i]
+                val to = allPoints[i + 1]
+                val key = "${from.longitude},${from.latitude};${to.longitude},${to.latitude}"
+
+                // If cached, return immediately
+                val cached = segmentCache[key]
+                if (cached != null) {
+                    deferred.add(async { Pair(idx, cached) })
+                    continue
+                }
+
+                deferred.add(async {
+                    semaphore.withPermit {
+                        try {
+                            val segmentUrl = "https://router.project-osrm.org/route/v1/driving/${from.longitude},${from.latitude};${to.longitude},${to.latitude}?overview=full&geometries=geojson"
+                            Log.d("RoutingService", "Fetching segment[$idx]: $segmentUrl")
+                            val request = Request.Builder()
+                                .url(segmentUrl)
+                                .header("User-Agent", packageName)
+                                .header("Accept", "application/json")
+                                .build()
+                            val response = httpClient.newCall(request).execute()
+                            Log.d("RoutingService", "Segment[$idx] response code: ${response.code}")
+                            val segmentRoute = if (response.isSuccessful) {
+                                val body = response.body?.string() ?: ""
+                                parseRouteFromOsrmResponse(body)
+                            } else emptyList()
+                            response.close()
+                            // cache route
+                            if (segmentRoute.isNotEmpty()) segmentCache[key] = segmentRoute
+                            Pair(idx, segmentRoute)
+                        } catch (e: Exception) {
+                            Log.e("RoutingService", "Error fetching route segment: ${e.message}")
+                            Pair(idx, emptyList<GeoPoint>())
+                        }
+                    }
+                })
+            }
+
+            // Wait and collect in order
+            val segments = deferred.map { it.await() }.sortedBy { it.first }.map { it.second }
+
+            // Assemble full route while avoiding exact/near-duplicate consecutive points
+            val fullRoute = mutableListOf<GeoPoint>()
+            for (segment in segments) {
+                if (segment.isEmpty()) continue
+                if (fullRoute.isEmpty()) {
+                    fullRoute.addAll(segment)
+                } else {
+                    // Append segment but avoid repeating the first point if it's the same
+                    // as the last point we already have (or extremely close).
+                    val lastExisting = fullRoute.last()
+                    val firstOfSegment = segment.first()
+                    val isSame = try {
+                        // Use a small distance threshold (1 meter) to collapse near-duplicates
+                        val d = com.example.scenic_navigation.utils.GeoUtils.haversine(
+                            lastExisting.latitude, lastExisting.longitude,
+                            firstOfSegment.latitude, firstOfSegment.longitude
+                        )
+                        d < 1.0
+                    } catch (_: Exception) {
+                        // Fallback to exact coordinate compare
+                        lastExisting.latitude == firstOfSegment.latitude && lastExisting.longitude == firstOfSegment.longitude
+                    }
+
+                    if (isSame) {
+                        fullRoute.addAll(segment.drop(1))
+                    } else {
+                        fullRoute.addAll(segment)
+                    }
+                }
+            }
+
+            if (fullRoute.isEmpty()) {
+                Log.w("RoutingService", "Assembled full route is empty after fetching all segments. This may indicate OSRM failed to return segment geometries for the provided waypoints.")
+            }
+
+            // Final pass: remove any remaining consecutive near-duplicates due to OSRM noise
+            val deduped = mutableListOf<GeoPoint>()
+            for (p in fullRoute) {
+                if (deduped.isEmpty()) {
+                    deduped.add(p)
+                } else {
+                    val last = deduped.last()
+                    val dist = try {
+                        com.example.scenic_navigation.utils.GeoUtils.haversine(last.latitude, last.longitude, p.latitude, p.longitude)
+                    } catch (_: Exception) {
+                        0.0
+                    }
+                    if (dist >= 0.5) { // keep points that are at least 0.5m apart
+                        deduped.add(p)
+                    }
+                }
+            }
+
+            deduped
+        }
     }
 
     private suspend fun generateCoastalRouteViaWaypoints(start: GeoPoint, dest: GeoPoint, packageName: String): List<GeoPoint> {
@@ -263,8 +499,15 @@ class RoutingService {
             return fetchRoute(start, dest, packageName, "default")
         }
 
-        Log.d("RoutingService", "Using coastal waypoints. Count: ${bestWaypoints.size}")
-        return generateRouteViaWaypoints(start, dest, packageName, bestWaypoints)
+        // Order the waypoint set along the route direction then sample down to a few representative points
+        val ordered = orderWaypointsAlongRoute(start, dest, bestWaypoints)
+        val sampled = sampleWaypoints(ordered, maxPoints = if (isLongDistance) 5 else 3)
+        Log.d("RoutingService", "Using coastal waypoints. original=${bestWaypoints.size} ordered=${ordered.size} sampled=${sampled.size}")
+        try {
+            Log.d("RoutingService", "Coastal ordered coords: ${ordered.joinToString(";") { "${it.latitude},${it.longitude}" }}")
+            Log.d("RoutingService", "Coastal sampled coords: ${sampled.joinToString(";") { "${it.latitude},${it.longitude}" }}")
+        } catch (_: Exception) {}
+        return generateRouteViaWaypoints(start, dest, packageName, sampled)
     }
 
     private suspend fun generateMountainRouteViaWaypoints(start: GeoPoint, dest: GeoPoint, packageName: String): List<GeoPoint> {
@@ -276,8 +519,55 @@ class RoutingService {
             return fetchRoute(start, dest, packageName, "default")
         }
 
-        Log.d("RoutingService", "Using mountain waypoints. Count: ${bestWaypoints.size}")
-        return generateRouteViaWaypoints(start, dest, packageName, bestWaypoints)
+        // Order mountain waypoints along route then sample down to a small number to avoid creating many segments
+        val ordered = orderWaypointsAlongRoute(start, dest, bestWaypoints)
+        val sampled = sampleWaypoints(ordered, maxPoints = 3)
+        Log.d("RoutingService", "Using mountain waypoints. original=${bestWaypoints.size} ordered=${ordered.size} sampled=${sampled.size}")
+        try {
+            Log.d("RoutingService", "Mountain ordered coords: ${ordered.joinToString(";") { "${it.latitude},${it.longitude}" }}")
+            Log.d("RoutingService", "Mountain sampled coords: ${sampled.joinToString(";") { "${it.latitude},${it.longitude}" }}")
+        } catch (_: Exception) {}
+        return generateRouteViaWaypoints(start, dest, packageName, sampled)
+    }
+
+    // Helper: sample a list of GeoPoints evenly up to maxPoints
+    private fun sampleWaypoints(all: List<GeoPoint>, maxPoints: Int): List<GeoPoint> {
+        if (all.isEmpty()) return emptyList()
+        if (maxPoints <= 0) return listOf(all.first())
+        if (all.size <= maxPoints) return all
+        val out = mutableListOf<GeoPoint>()
+        val n = all.size
+        for (i in 0 until maxPoints) {
+            val idx = ((i.toDouble() / (maxPoints - 1).coerceAtLeast(1)) * (n - 1)).toInt()
+            out.add(all[idx])
+        }
+        // Ensure we don't accidentally include duplicates if indices round the same
+        val distinct = out.distinctBy { Pair(it.latitude, it.longitude) }
+        if (distinct.isEmpty()) {
+            // Fallback: include the first point
+            return listOf(all.first())
+        }
+        return distinct
+    }
+
+    // Helper: order a set of waypoints along the straight line projection from start->dest
+    // This prevents injected waypoint sets from causing back-and-forth routing when used as ordered via-points.
+    private fun orderWaypointsAlongRoute(start: GeoPoint, dest: GeoPoint, waypoints: List<GeoPoint>): List<GeoPoint> {
+        if (waypoints.isEmpty()) return waypoints
+        val sx = start.longitude
+        val sy = start.latitude
+        val dx = dest.longitude - sx
+        val dy = dest.latitude - sy
+        val denom = dx * dx + dy * dy
+        if (denom == 0.0) return waypoints
+
+        return waypoints.map { wp ->
+            val wx = wp.longitude - sx
+            val wy = wp.latitude - sy
+            val t = (wx * dx + wy * dy) / denom
+            Pair(wp, t)
+        }.sortedBy { it.second }
+            .map { it.first }
     }
 
     private fun parseRouteFromOsrmResponse(body: String): List<GeoPoint> {
