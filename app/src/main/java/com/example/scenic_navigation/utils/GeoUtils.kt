@@ -75,5 +75,34 @@ object GeoUtils {
         val lon = parts[1].trim().toDoubleOrNull() ?: return null
         return GeoPoint(lat, lon)
     }
-}
 
+    /**
+     * Calculate perpendicular distance from a point to a line defined by two points
+     * @return distance in meters
+     */
+    fun distanceToLine(px: Double, py: Double, ax: Double, ay: Double, bx: Double, by: Double): Double {
+        val A = px - ax
+        val B = py - ay
+        val C = bx - ax
+        val D = by - ay
+
+        val dot = A * C + B * D
+        val lenSq = C * C + D * D
+        val param = if (lenSq != 0.0) dot / lenSq else -1.0
+
+        val xx: Double
+        val yy: Double
+        if (param < 0) {
+            xx = ax
+            yy = ay
+        } else if (param > 1) {
+            xx = bx
+            yy = by
+        } else {
+            xx = ax + param * C
+            yy = ay + param * D
+        }
+
+        return haversine(px, py, xx, yy)
+    }
+}

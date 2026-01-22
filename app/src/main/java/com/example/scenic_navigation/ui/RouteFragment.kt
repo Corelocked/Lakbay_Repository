@@ -1,6 +1,11 @@
 package com.example.scenic_navigation.ui
 
 import android.Manifest
+import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.location.Location
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -31,7 +36,7 @@ import androidx.recyclerview.widget.RecyclerView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 
-class RouteFragment : Fragment() {
+class RouteFragment : Fragment(), SensorEventListener {
     private var _binding: FragmentRouteBinding? = null
     private val binding get() = _binding!!
     private val viewModel: RouteViewModel by activityViewModels()
@@ -39,6 +44,7 @@ class RouteFragment : Fragment() {
 
     private val routeMarkers = mutableListOf<Marker>()
     private var routePolyline: Polyline? = null
+    private var traveledPolyline: Polyline? = null
     private var startMarker: Marker? = null
     private var destinationMarker: Marker? = null
     private var isInputCollapsed = false
@@ -48,6 +54,11 @@ class RouteFragment : Fragment() {
     private var currentLocationMarker: Marker? = null
     private var offRouteDetector: OffRouteDetector? = null
     private var isNavigating = false
+
+    // Sensor for orientation
+    private lateinit var sensorManager: SensorManager
+    private var rotationVectorSensor: Sensor? = null
+    private var azimuth: Float = 0f
 
 
     override fun onCreateView(
@@ -63,6 +74,9 @@ class RouteFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         locationService = LocationService(requireContext())
+
+        sensorManager = requireContext().getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
 
         setupMap()
         setupInputs()
@@ -124,9 +138,10 @@ class RouteFragment : Fragment() {
     private lateinit var destPlaceAdapter: PlaceSuggestionAdapter
 
     private fun setupInputs() {
-        // Start input is always enabled now
-        binding.etStart.isEnabled = true
-        binding.tilStart.isEnabled = true
+        // Start input is now fixed to current location
+        binding.etStart.setText("Current Location")
+        binding.etStart.isEnabled = false
+        binding.tilStart.isEnabled = false
 
         // Setup autocomplete adapters for place suggestions with typo correction
         val packageName = requireContext().packageName
@@ -367,12 +382,17 @@ class RouteFragment : Fragment() {
                 position = userPosition
                 title = "Current Location"
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-                icon = ResourcesCompat.getDrawable(resources, android.R.drawable.ic_menu_mylocation, null)
+                icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_user_arrow, null)
                 binding.map.overlays.add(this)
             }
         } else {
             currentLocationMarker?.position = userPosition
         }
+
+        // Rotation is now handled by sensor in onSensorChanged
+
+        // Update route visualization to show traveled vs remaining path
+        updateRouteVisualization(userPosition)
 
         // Center map on user location smoothly only if auto-recenter is enabled
         if (sharedViewModel.autoRecenter.value == true) {
@@ -382,45 +402,65 @@ class RouteFragment : Fragment() {
     }
 
     /**
-     * Initialize off-route detector when route is available
+     * Update route visualization to show traveled path in darker blue
      */
-    private fun initializeOffRouteDetector(routePoints: List<GeoPoint>) {
-        if (routePoints.isEmpty()) {
-            offRouteDetector = null
-            return
+    private fun updateRouteVisualization(userPosition: GeoPoint) {
+        val routePoints = viewModel.routePoints.value ?: return
+        if (routePoints.size < 2) return
+
+        // Find the closest point on the route to the user's current location
+        val (closestIndex, _) = findClosestPointOnRoute(userPosition, routePoints)
+
+        // Split route into traveled and remaining parts
+        val traveledPoints = routePoints.take(closestIndex + 1)
+        val remainingPoints = routePoints.drop(closestIndex)
+
+        // Clear previous traveled polyline
+        traveledPolyline?.let { binding.map.overlays.remove(it) }
+
+        // Draw traveled path in darker blue
+        if (traveledPoints.size >= 2) {
+            traveledPolyline = Polyline().apply {
+                setPoints(traveledPoints)
+                outlinePaint.color = android.graphics.Color.parseColor("#0D47A1") // Darker blue
+                outlinePaint.strokeWidth = 14.0f // Slightly thicker
+            }
+            binding.map.overlays.add(traveledPolyline)
+            // Ensure traveled polyline is drawn below the remaining polyline
+            traveledPolyline?.let { binding.map.overlays.remove(it) }
+            binding.map.overlays.add(0, traveledPolyline!!)
         }
 
-        offRouteDetector = OffRouteDetector(
-            routePoints = routePoints,
-            thresholdMeters = 50f, // 50 meters off-route threshold
-            returnThresholdMeters = 30f,
-            requiredConsecutive = 2,
-            cooldownMs = 20000L // 20 seconds cooldown between reroutes
-        ) { location ->
-            // Callback when user goes off route
-            handleOffRoute(location)
+        // Update remaining path (lighter blue, already exists as routePolyline)
+        if (remainingPoints.size >= 2) {
+            routePolyline?.setPoints(remainingPoints)
         }
     }
 
     /**
-     * Handle off-route event - recalculate route
+     * Find the closest point on the route to the given position
+     * Returns the index of the closest point and the distance
      */
-    private fun handleOffRoute(location: Location) {
-        val newStart = GeoPoint(location.latitude, location.longitude)
+    private fun findClosestPointOnRoute(position: GeoPoint, routePoints: List<GeoPoint>): Pair<Int, Double> {
+        var closestIndex = 0
+        var minDistance = Double.MAX_VALUE
 
-        Snackbar.make(
-            binding.root,
-            "You're off route! Recalculating...",
-            Snackbar.LENGTH_LONG
-        ).show()
+        for (i in routePoints.indices) {
+            val point = routePoints[i]
+            val distance = position.distanceToAsDouble(point)
+            if (distance < minDistance) {
+                minDistance = distance
+                closestIndex = i
+            }
+        }
 
-        // Recalculate route from current location
-        viewModel.recalculateRouteFromLocation(newStart)
+        return Pair(closestIndex, minDistance)
     }
 
     private fun updateRoute(points: List<GeoPoint>) {
         // Clear previous route overlays
         routePolyline?.let { binding.map.overlays.remove(it) }
+        traveledPolyline?.let { binding.map.overlays.remove(it) }
         startMarker?.let { binding.map.overlays.remove(it) }
         destinationMarker?.let { binding.map.overlays.remove(it) }
 
@@ -734,14 +774,57 @@ class RouteFragment : Fragment() {
         return bmp
     }
 
+    /**
+     * Initialize off-route detector when route is available
+     */
+    private fun initializeOffRouteDetector(routePoints: List<GeoPoint>) {
+        if (routePoints.isEmpty()) {
+            offRouteDetector = null
+            return
+        }
+
+        offRouteDetector = OffRouteDetector(
+            routePoints = routePoints,
+            thresholdMeters = 50f, // 50 meters off-route threshold
+            returnThresholdMeters = 30f,
+            requiredConsecutive = 2,
+            cooldownMs = 20000L // 20 seconds cooldown between reroutes
+        ) { location ->
+            // Callback when user goes off route
+            handleOffRoute(location)
+        }
+    }
+
+    /**
+     * Handle off-route event - recalculate route
+     */
+    private fun handleOffRoute(location: Location) {
+        val newStart = GeoPoint(location.latitude, location.longitude)
+
+        Snackbar.make(
+            binding.root,
+            "You're off route! Recalculating...",
+            Snackbar.LENGTH_LONG
+        ).show()
+
+        // Recalculate route from current location
+        viewModel.recalculateRouteFromLocation(newStart)
+    }
+
     override fun onResume() {
         super.onResume()
         binding.map.onResume()
+
+        rotationVectorSensor?.let { sensor ->
+            sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI)
+        }
     }
 
     override fun onPause() {
         super.onPause()
         binding.map.onPause()
+
+        sensorManager.unregisterListener(this)
 
         // Save current map position to shared ViewModel
         val center = binding.map.mapCenter as? GeoPoint
@@ -765,5 +848,28 @@ class RouteFragment : Fragment() {
         }
 
         _binding = null
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        // Handle sensor changes for orientation
+        if (event?.sensor?.type == Sensor.TYPE_ROTATION_VECTOR) {
+            // Convert rotation vector to orientation angles (azimuth, pitch, roll)
+            val rotationMatrix = FloatArray(9)
+            SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
+            val orientation = FloatArray(3)
+            SensorManager.getOrientation(rotationMatrix, orientation)
+
+            // Azimuth is the angle around the Z axis (rotation about the vertical axis)
+            azimuth = Math.toDegrees(orientation[0].toDouble()).toFloat()
+            azimuth = (azimuth + 360) % 360
+
+            // Update the marker rotation
+            currentLocationMarker?.rotation = azimuth
+            binding.map.invalidate()
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        // No-op
     }
 }
