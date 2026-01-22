@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.example.scenic_navigation.models.ScenicPoi
 import com.example.scenic_navigation.utils.GeoUtils
+import com.example.scenic_navigation.ml.PoiReranker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
@@ -120,6 +121,11 @@ class ScenicRoutePlanner(
         com.example.scenic_navigation.services.WebSearchService()
     }
 
+    // PoiReranker for ML-based POI re-ranking
+    private val poiReranker: PoiReranker by lazy {
+        PoiReranker(context!!)
+    }
+
     private fun deviceLocaleTag(): String? {
         return try {
             val cfg = context?.resources?.configuration
@@ -177,6 +183,9 @@ class ScenicRoutePlanner(
                 type.contains("wood") -> 70
                 type.contains("historic") -> 65
                 type.contains("museum") -> 60
+                type.contains("restaurant") -> 80
+                type.contains("cafe") -> 75
+                type.contains("food") -> 70
                 type.contains("hotel") -> 25
                 type.contains("camp") -> 40
                 type.contains("picnic") -> 35
@@ -245,8 +254,8 @@ class ScenicRoutePlanner(
                         // Padding in degrees (approx): convert ~radius meters to degrees roughly
                         val padDegrees = when {
                             length < 10_000 -> 0.01 // ~1km for very short routes
-                            length < 50_000 -> 0.03 // ~3km for short routes
-                            else -> 0.05 // ~5km for longer routes
+                            length < 50_000 -> 0.01 // ~1km for short routes
+                            else -> 0.01 // ~1km for longer routes
                         }
                         val bboxMinLat = (minLat - padDegrees)
                         val bboxMaxLat = (maxLat + padDegrees)
@@ -283,7 +292,8 @@ class ScenicRoutePlanner(
                                     type = poi.category,
                                     lat = lat,
                                     lon = lon,
-                                    score = score
+                                    score = score,
+                                    description = poi.description
                                 )
                             }
                             mutex.lock()
@@ -342,10 +352,39 @@ class ScenicRoutePlanner(
             }
         } catch (_: Exception) {}
 
-        // Return top results (capped). We intentionally avoid extra densification rounds
-        // here to keep route planning responsive; dataset merging and segment batching
-        // supply adequate coverage without extra network calls.
-        return@withContext if (list.size > 250) list.subList(0, 250) else list
+        // Apply ML reranker if available
+        try {
+            val centerLat = routePoints.getOrNull(routePoints.size / 2)?.latitude ?: 14.5995
+            val centerLon = routePoints.getOrNull(routePoints.size / 2)?.longitude ?: 120.9842
+            val poisForRerank = list.map { poi ->
+                com.example.scenic_navigation.models.Poi(
+                    name = poi.name,
+                    category = poi.type,
+                    description = poi.description,
+                    municipality = poi.municipality ?: "",
+                    lat = poi.lat,
+                    lon = poi.lon,
+                    scenicScore = poi.score.toFloat()
+                )
+            }
+            val rerankedPois = poiReranker.rerank(poisForRerank, centerLat, centerLon, System.currentTimeMillis())
+            list = rerankedPois.map { poi ->
+                ScenicPoi(
+                    name = poi.name,
+                    type = poi.category,
+                    lat = poi.lat ?: 0.0,
+                    lon = poi.lon ?: 0.0,
+                    score = poi.scenicScore?.toInt() ?: 0,
+                    municipality = poi.municipality.takeIf { it.isNotBlank() },
+                    description = poi.description
+                )
+            }.toMutableList()
+        } catch (e: Exception) {
+            Log.w("ScenicRoutePlanner", "ML reranker failed: ${e.message}")
+        }
+
+        // Return all processed POIs without capping to allow full scenic discovery
+        return@withContext list
     }
 
     private suspend fun fetchScenicPoisAtPoint(
@@ -589,13 +628,14 @@ out center 40;
                                     type.equals("park", true) -> 85
                                     type.equals("wood", true) -> 70
                                     type.equals("historic", true) -> 65
-                                    type.equals("attraction", true) -> 60
-                                    type.equals("museum", true) -> 45
+                                    type.equals("museum", true) -> 60
+                                    type.equals("restaurant", true) -> 80
+                                    type.equals("cafe", true) -> 75
+                                    type.equals("food", true) -> 70
                                     type.equals("hotel", true) -> 25
                                     type.equals("camp_site", true) -> 40
                                     type.equals("picnic_site", true) -> 35
-                                    type.equals("restaurant", true) -> 80
-                                    else -> if (type in listOf("gift", "souvenir", "art", "craft", "bakery", "deli", "cheese", "wine", "farm", "seafood", "books", "clothes")) 70 else 20
+                                    else -> 20
                                 }
                             }
                         } else {
@@ -618,7 +658,8 @@ out center 40;
                         }
 
                         val key = "${"%.5f".format(elLat)}_${"%.5f".format(elLon)}_$name"
-                        m[key] = ScenicPoi(name, type, elLat, elLon, score)
+                        val municipality = tags?.optString("addr:city") ?: tags?.optString("addr:town") ?: tags?.optString("addr:municipality") ?: "Unknown"
+                        m[key] = ScenicPoi(name, type, elLat, elLon, score, municipality = municipality, description = descr ?: "")
                     }
                 }
             } catch (e: Exception) {
@@ -690,7 +731,7 @@ out center 40;
                         val key = "${"%.5f".format(dlat)}_${"%.5f".format(dlon)}_${dp.name}"
                         if (!typeMap.containsKey(key) && !genericMap.containsKey(key)) {
                             // Insert at merged so it will be adjusted by proximity/rarity logic below
-                            merged.add(com.example.scenic_navigation.models.ScenicPoi(dp.name, dp.category, dlat, dlon, score))
+                            merged.add(com.example.scenic_navigation.models.ScenicPoi(dp.name, dp.category, dlat, dlon, score, description = dp.description))
                         }
                     } catch (_: Exception) {}
                 }
@@ -789,6 +830,57 @@ out center 40;
             Log.e("ScenicRoutePlanner", "Error fetching scenic POIs: ${e.message}")
             return@withContext emptyList()
         }
+    }
+
+    suspend fun suggestViaPointsForCuration(
+        startPoint: GeoPoint,
+        destPoint: GeoPoint,
+        packageName: String,
+        curationIntent: com.example.scenic_navigation.models.CurationIntent?
+    ): List<GeoPoint> = withContext(Dispatchers.IO) {
+        if (curationIntent == null) return@withContext emptyList()
+
+        val poiService = com.example.scenic_navigation.services.PoiService(context)
+        val allPois = poiService.getLocalPois()
+
+        // Filter POIs based on curation intent
+        val filteredPois = allPois.filter { poi ->
+            val cat = poi.category?.lowercase(Locale.getDefault()) ?: ""
+            val matchesSeeing = when (curationIntent.seeing) {
+                com.example.scenic_navigation.models.SeeingType.OCEANIC -> cat.contains("beach") || cat.contains("coast") || cat.contains("ocean") || cat.contains("sea")
+                com.example.scenic_navigation.models.SeeingType.MOUNTAIN -> cat.contains("mount") || cat.contains("hike") || cat.contains("view") || cat.contains("mountain")
+            } || cat.contains("historic") || cat.contains("church") || cat.contains("monument") // Always include historical landmarks
+            val matchesActivity = when (curationIntent.activity) {
+                com.example.scenic_navigation.models.ActivityType.SHOP_AND_DINE -> cat.contains("shop") || cat.contains("mall") || cat.contains("market") || cat.contains("restaurant") || cat.contains("food") || cat.contains("cafe")
+                com.example.scenic_navigation.models.ActivityType.CULTURAL -> cat.contains("museum") || cat.contains("historic") || cat.contains("theatre") || cat.contains("gallery") || cat.contains("church") || cat.contains("heritage")
+                com.example.scenic_navigation.models.ActivityType.ADVENTURE -> cat.contains("peak") || cat.contains("waterfall") || cat.contains("hiking") || cat.contains("climbing") || cat.contains("adventure") || cat.contains("sport")
+                com.example.scenic_navigation.models.ActivityType.RELAXATION -> cat.contains("beach") || cat.contains("park") || cat.contains("spa") || cat.contains("resort") || cat.contains("relax") || cat.contains("nature")
+                com.example.scenic_navigation.models.ActivityType.FAMILY_FRIENDLY -> cat.contains("park") || cat.contains("playground") || cat.contains("zoo") || cat.contains("museum") || cat.contains("picnic") || cat.contains("family")
+                com.example.scenic_navigation.models.ActivityType.ROMANTIC -> cat.contains("view") || cat.contains("restaurant") || cat.contains("park") || cat.contains("beach") || cat.contains("sunset") || cat.contains("romantic")
+                else -> true // sightseeing, allow all
+            }
+            matchesSeeing && matchesActivity && poi.lat != null && poi.lon != null
+        }
+
+        // Select POIs close to the straight line from start to dest
+        val linePois = filteredPois.filter { poi ->
+            val dist = com.example.scenic_navigation.utils.GeoUtils.distanceToLine(poi.lat!!, poi.lon!!, startPoint.latitude, startPoint.longitude, destPoint.latitude, destPoint.longitude)
+            dist < 3000.0 // within 3km of the line
+        }
+
+        // Sort by position along the line (from start to dest)
+        val sortedPois = linePois.sortedBy { poi ->
+            val distToStart = com.example.scenic_navigation.utils.GeoUtils.haversine(startPoint.latitude, startPoint.longitude, poi.lat!!, poi.lon!!)
+            val totalDist = com.example.scenic_navigation.utils.GeoUtils.haversine(startPoint.latitude, startPoint.longitude, destPoint.latitude, destPoint.longitude)
+            distToStart / totalDist // fraction along the path
+        }
+
+        // Take top 5 via points
+        val viaPoints = sortedPois.take(5).map { poi ->
+            GeoPoint(poi.lat!!, poi.lon!!)
+        }
+
+        return@withContext viaPoints
     }
 
     private suspend fun fetchScenicPoisInBBox(
@@ -909,6 +1001,7 @@ out center 200;
                         ?: tags?.optString("historic")
                         ?: tags?.optString("waterway")
                         ?: "unknown"
+                    val descr = tags?.optString("description")?.trim().takeUnless { it.isNullOrEmpty() }
 
                     if (!elLat.isNaN() && !elLon.isNaN()) {
                         val isNearCoast = segmentPoints.any { p ->
@@ -956,13 +1049,14 @@ out center 200;
                                     type.equals("park", true) -> 85
                                     type.equals("wood", true) -> 70
                                     type.equals("historic", true) -> 65
-                                    type.equals("attraction", true) -> 60
-                                    type.equals("museum", true) -> 45
+                                    type.equals("museum", true) -> 60
+                                    type.equals("restaurant", true) -> 80
+                                    type.equals("cafe", true) -> 75
+                                    type.equals("food", true) -> 70
                                     type.equals("hotel", true) -> 25
                                     type.equals("camp_site", true) -> 40
                                     type.equals("picnic_site", true) -> 35
-                                    type.equals("restaurant", true) -> 80
-                                    else -> if (type in listOf("gift", "souvenir", "art", "craft", "bakery", "deli", "cheese", "wine", "farm", "seafood", "books", "clothes")) 70 else 20
+                                    else -> 20
                                 }
                             }
                         } else {
@@ -985,7 +1079,8 @@ out center 200;
                         }
 
                         val key = "${"%.5f".format(elLat)}_${"%.5f".format(elLon)}_$name"
-                        m[key] = ScenicPoi(name, type, elLat, elLon, score)
+                        val municipality = tags?.optString("addr:city") ?: tags?.optString("addr:town") ?: tags?.optString("addr:municipality") ?: "Unknown"
+                        m[key] = ScenicPoi(name, type, elLat, elLon, score, municipality = municipality, description = descr ?: "")
                     }
                 }
             } catch (e: Exception) {
@@ -1080,125 +1175,8 @@ out center 200;
     }
 
     /**
-     * Suggest a small set of via-points (GeoPoint) for a curated route between start and dest.
-     * Picks high-scoring POIs within the bounding box between start and dest and returns up to `maxPoints`
-     * points that are sufficiently spatially separated.
-     */
-    suspend fun suggestViaPointsForCuration(
-        start: GeoPoint,
-        dest: GeoPoint,
-        packageName: String,
-        curationIntent: com.example.scenic_navigation.models.CurationIntent?,
-        maxPoints: Int = 3
-    ): List<org.osmdroid.util.GeoPoint> = withContext(Dispatchers.IO) {
-        try {
-            val minLat = minOf(start.latitude, dest.latitude)
-            val maxLat = maxOf(start.latitude, dest.latitude)
-            val minLon = minOf(start.longitude, dest.longitude)
-            val maxLon = maxOf(start.longitude, dest.longitude)
-
-            // padding based on distance
-            val pad = 0.2 // ~20km coarse padding; expands search area for via-points
-            val bboxMinLat = (minLat - pad)
-            val bboxMaxLat = (maxLat + pad)
-            val bboxMinLon = (minLon - pad)
-            val bboxMaxLon = (maxLon + pad)
-
-            val routeType = com.example.scenic_navigation.services.CurationMapper.map(curationIntent, deviceLocaleTag()).routeType
-
-            val candidates = fetchScenicPoisInBBox(bboxMinLat, bboxMinLon, bboxMaxLat, bboxMaxLon, packageName, routeType, listOf(start, dest), curationIntent)
-
-            if (candidates.isEmpty()) return@withContext emptyList()
-
-            // Use a simple DBSCAN-like clustering to pick representative cluster centroids.
-            // This reduces noisy isolated picks and returns spatially representative via-points.
-            // Use instance-level cluster params so preferences passed to the planner take effect.
-            val epsMeters = this@ScenicRoutePlanner.clusterEpsMeters // cluster radius (from constructor or Config)
-            val minPts = this@ScenicRoutePlanner.clusterMinPts
-
-            data class TmpPt(val poi: ScenicPoi, var cluster: Int = -1)
-
-            val pts = candidates.sortedByDescending { it.score }.map { TmpPt(it) }.toMutableList()
-            var clusterId = 0
-
-            fun neighbors(idx: Int): List<Int> {
-                val out = mutableListOf<Int>()
-                val a = pts[idx].poi
-                for (j in pts.indices) {
-                    if (j == idx) continue
-                    val b = pts[j].poi
-                    val d = GeoUtils.haversine(a.lat, a.lon, b.lat, b.lon)
-                    if (d <= epsMeters) out.add(j)
-                }
-                return out
-            }
-
-            for (i in pts.indices) {
-                if (pts[i].cluster != -1) continue
-                val nb = neighbors(i)
-                if (nb.size + 1 < minPts) {
-                    // mark as its own cluster (singleton)
-                    pts[i].cluster = clusterId
-                    clusterId++
-                } else {
-                    // expand cluster
-                    pts[i].cluster = clusterId
-                    val queue = ArrayDeque<Int>()
-                    nb.forEach { queue.add(it) }
-                    while (queue.isNotEmpty()) {
-                        val cur = queue.removeFirst()
-                        if (pts[cur].cluster == -1) {
-                            pts[cur].cluster = clusterId
-                            val curNb = neighbors(cur)
-                            if (curNb.size + 1 >= minPts) curNb.forEach { queue.add(it) }
-                        }
-                    }
-                    clusterId++
-                }
-            }
-
-            // Aggregate clusters to centroids and score
-            val clusters = mutableMapOf<Int, MutableList<ScenicPoi>>()
-            for (p in pts) {
-                val id = p.cluster
-                if (id < 0) continue
-                clusters.getOrPut(id) { mutableListOf() }.add(p.poi)
-            }
-
-            val centroids = clusters.mapNotNull { (id, members) ->
-                if (members.isEmpty()) return@mapNotNull null
-                val avgLat = members.map { it.lat }.average()
-                val avgLon = members.map { it.lon }.average()
-                val clusterScore = members.maxOf { it.score }
-                Triple(clusterScore, avgLat, avgLon)
-            }.sortedByDescending { it.first }
-
-            val chosen = centroids.take(maxPoints).map { Triple -> org.osmdroid.util.GeoPoint(Triple.second, Triple.third) }
-            return@withContext chosen
-        } catch (e: Exception) {
-            Log.w("ScenicRoutePlanner", "Error suggesting via-points: ${e.message}")
-            return@withContext emptyList()
-        }
-    }
-
-    /**
-     * Calculate scenic score for a route based on POIs
-     */
-    fun calculateScenicScore(route: List<GeoPoint>, scenicPois: List<ScenicPoi>): Double {
-        if (route.isEmpty()) return Double.NEGATIVE_INFINITY
-
-        val lengthMeters = GeoUtils.computeRouteLength(route).coerceAtLeast(1.0)
-        val totalScore = scenicPois.sumOf { it.score }
-        val avgScore = if (scenicPois.isNotEmpty()) totalScore.toDouble() / scenicPois.size else 0.0
-        val distinctTypes = scenicPois.map { it.type.lowercase(Locale.getDefault()) }.toSet().size
-        val density = scenicPois.size / (lengthMeters / 1000.0)
-
-        return (totalScore * 1.2) + (avgScore * 15) + (distinctTypes * 90) + (density * 400) +
-                Math.log(lengthMeters) * 25
-    }
-
-    /**
-     * Select the most scenic route from alternatives
+     * Select the most scenic route from a list of alternative routes.
+     * Returns a Pair(bestRoute, poisOnBestRoute).
      */
     suspend fun selectMostScenicRoute(
         alternatives: List<List<GeoPoint>>,
@@ -1213,13 +1191,24 @@ out center 200;
         var mostScenicPois: List<ScenicPoi> = emptyList()
         var highestScore = Double.NEGATIVE_INFINITY
 
-        for (alt in alternatives) {
-            val pois = fetchScenicPois(alt, packageName, routeType, curationIntent, onStatusUpdate)
-            val score = calculateScenicScore(alt, pois)
+        for ((idx, alt) in alternatives.withIndex()) {
+            try {
+                onStatusUpdate?.invoke("Scoring alternative ${idx + 1}/${alternatives.size}…")
+            } catch (_: Exception) {}
 
-            Log.d("ScenicRoutePlanner",
-                "Route length=${GeoUtils.computeRouteLength(alt).toInt()}m " +
-                "scenicCount=${pois.size} score=$score (type=$routeType)")
+            val pois = try {
+                fetchScenicPois(alt, packageName, routeType, curationIntent, onStatusUpdate)
+            } catch (e: Exception) {
+                Log.w("ScenicRoutePlanner", "Error fetching POIs for alternative: ${e.message}")
+                emptyList()
+            }
+
+            val score = try {
+                calculateScenicScore(alt, pois)
+            } catch (e: Exception) {
+                Log.w("ScenicRoutePlanner", "Error scoring alternative: ${e.message}")
+                Double.NEGATIVE_INFINITY
+            }
 
             if (score > highestScore) {
                 highestScore = score
@@ -1230,5 +1219,34 @@ out center 200;
 
         return@withContext Pair(mostScenicRoute, mostScenicPois)
     }
+
+    /**
+     * Calculate a scenic score for a route based on its POIs.
+     * Higher scores indicate more scenic routes.
+     */
+    private fun calculateScenicScore(routePoints: List<GeoPoint>, pois: List<ScenicPoi>): Double {
+        // Basic implementation: sum the scores of all POIs along the route
+        // TODO: Enhance with distance decay, POI density, etc.
+        return pois.sumOf { it.score }.toDouble()
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

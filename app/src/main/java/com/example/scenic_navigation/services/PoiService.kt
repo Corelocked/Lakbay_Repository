@@ -15,6 +15,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.osmdroid.util.GeoPoint
 import java.text.Normalizer
 import java.util.Locale
+import kotlinx.coroutines.runBlocking
 
 /**
  * Service for fetching Points of Interest from Overpass API
@@ -53,6 +54,14 @@ class PoiService(private val context: Context? = null) {
     init {
         try {
             context?.let { ctx ->
+                // Try to initialize Web Search service first
+                try {
+                    webSearchService = WebSearchService()
+                    Log.d("PoiService", "Web Search service initialized")
+                } catch (e: Exception) {
+                    Log.d("PoiService", "Failed to initialize Web Search service: ${e.message}")
+                }
+
                 val am = ctx.assets
                 val datasetPath = "datasets"
                 val files = am.list(datasetPath) ?: emptyArray()
@@ -67,27 +76,23 @@ class PoiService(private val context: Context? = null) {
                                 line = br.readLine() ?: break
                                 if (line.isBlank()) continue
                                 val parts = line.split(csvSplit)
-                                if (parts.size >= 5) {
+                                if (parts.size >= 6) {
                                     val name = parts[0].trim().trim('"')
                                     val category = parts[1].trim().trim('"')
+                                    val location = parts[2].trim().trim('"')
                                     val lat = parts[3].trim().toDoubleOrNull()
                                     val lon = parts[4].trim().toDoubleOrNull()
+                                    val description = parts[5].trim().trim('"')
                                     if (lat != null && lon != null) {
-                                        localPois.add(com.example.scenic_navigation.models.Poi(name, category, "", "", lat, lon))
+                                        // Extract municipality from location (e.g., "Tagaytay, Cavite" -> "Tagaytay")
+                                        val municipality = location.split(",")[0].trim()
+                                        localPois.add(com.example.scenic_navigation.models.Poi(name, category, description, municipality, lat, lon))
                                     }
                                 }
                             }
                         }
                     }
                     Log.d("PoiService", "Loaded ${localPois.size} local dataset POIs")
-                }
-
-                // Try to initialize Web Search service
-                try {
-                    webSearchService = WebSearchService()
-                    Log.d("PoiService", "Web Search service initialized")
-                } catch (e: Exception) {
-                    Log.d("PoiService", "Failed to initialize Web Search service: ${e.message}")
                 }
             }
         } catch (e: Exception) {
@@ -693,4 +698,6 @@ class PoiService(private val context: Context? = null) {
         }
         return matches.distinctBy { poi -> String.format(Locale.US, "%s_%.5f_%.5f", poi.name, poi.lat ?: 0.0, poi.lon ?: 0.0) }
     }
+
+    fun getLocalPois(): List<Poi> = localPois
 }

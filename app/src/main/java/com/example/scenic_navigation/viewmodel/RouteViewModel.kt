@@ -207,27 +207,17 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                 _isGeocoding.value = false
                 _isRouting.value = true
 
-                // Determine routing mode
-                val routingMode = when {
-                    useOceanic -> "oceanic"
-                    useMountain -> "mountain"
-                    else -> "default"
-                }
+                // Calculate direct distance first to determine routing mode
+                val directDistance = startPoint.distanceToAsDouble(destPoint)
+
+                val LONG_OCEANIC_THRESHOLD = 150_000.0 // meters (~150km)
+
+                // Determine routing mode - use oceanic for oceanic routes, default for others
+                val routingMode = if (useOceanic) "oceanic" else "default"
 
                 // Store for recalculation
                 currentDestination = destPoint
                 currentRoutingMode = routingMode
-
-                // Suggest via-points based on curation to bias routing (optional)
-                val suggestedVia = scenicRoutePlanner.suggestViaPointsForCuration(startPoint, destPoint, packageName, curationIntent)
-
-                // Only pass suggested via-points to the routing service when we have an explicit curation intent.
-                // However, for long oceanic drives we prefer the built-in coastal waypoint sets (they are
-                // pre-configured for long coastal routes). So if routingMode is "oceanic" and the direct
-                // distance between start and dest exceeds the LONG_OCEANIC_THRESHOLD, do not pass the
-                // planner-suggested waypoints so `RoutingService` will use its `coastalWaypoints` set.
-                val LONG_OCEANIC_THRESHOLD = 300_000.0 // meters (~300km)
-                val directDistance = startPoint.distanceToAsDouble(destPoint)
 
                 // Read user preference whether to prefer coastal sets for long oceanic trips
                 val preferCoastalPref = prefs.getBoolean(com.example.scenic_navigation.config.Config.PREF_PREFER_COASTAL_LONG_OCEANIC, true)
@@ -239,12 +229,16 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                     routingService.getCoastalWaypointSet(forcedKey)
                 } else null
 
+                // Suggest via-points based on curation to bias routing (optional)
+                // val suggestedVia = scenicRoutePlanner.suggestViaPointsForCuration(startPoint, destPoint, packageName, curationIntent)
+
+                // Calculate direct route first based on scenery mode, then fetch POIs along it to avoid long detours
                 val waypointsToPass = when {
                     // If a forced coastal key is present, use that explicit set
                     forcedCoastalWaypoints != null -> forcedCoastalWaypoints
-                    // Otherwise, for long oceanic routes and user preference enabled, let RoutingService pick its coastal set
+                    // For long oceanic routes to southern destinations, let RoutingService pick its coastal set for scenery
                     routingMode == "oceanic" && directDistance > LONG_OCEANIC_THRESHOLD && preferCoastalPref -> null
-                    else -> if (curationIntent != null && suggestedVia.isNotEmpty() && directDistance >= 50000) suggestedVia else null
+                    else -> null // No additional via-points to avoid detours
                 }
 
                 // Clear transient extras after consuming
@@ -303,7 +297,7 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                     Poi(
                         name = scenic.name,
                         category = scenic.type,
-                        description = "Scenic score: ${scenic.score}",
+                        description = scenic.description.ifBlank { "Scenic score: ${scenic.score}" },
                         municipality = scenic.municipality ?: "Unknown",
                         lat = scenic.lat,
                         lon = scenic.lon,
@@ -397,18 +391,19 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
 
                 // Fetch new route
                 // Reuse last curation intent to suggest via-points for recalculation
-                val suggestedViaForRecalc = scenicRoutePlanner.suggestViaPointsForCuration(newStart, destination, packageName, lastCurationIntent)
-
-                val LONG_OCEANIC_THRESHOLD = 300_000.0 // meters
+                val LONG_OCEANIC_THRESHOLD = 150_000.0 // meters
                 val directDistanceRecalc = newStart.distanceToAsDouble(destination)
 
-                val waypointsToPassForRecalc = if (currentRoutingMode == "oceanic" && directDistanceRecalc > LONG_OCEANIC_THRESHOLD) {
-                    null
+                // Determine routing mode for recalculation - use the same mode as original route
+                val recalcRoutingMode = currentRoutingMode
+
+                val waypointsToPassForRecalc = if (recalcRoutingMode == "oceanic" && directDistanceRecalc > LONG_OCEANIC_THRESHOLD) {
+                    null // Let RoutingService pick coastal set for long oceanic routes
                 } else {
-                    if (lastCurationIntent != null && suggestedViaForRecalc.isNotEmpty() && directDistanceRecalc >= 50000) suggestedViaForRecalc else null
+                    null // No additional via-points to avoid detours
                 }
 
-                val route = routingService.fetchRoute(newStart, destination, packageName, currentRoutingMode, waypointsToPassForRecalc)
+                val route = routingService.fetchRoute(newStart, destination, packageName, recalcRoutingMode, waypointsToPassForRecalc)
 
                 if (route.isEmpty()) {
                     _statusMessage.value = getApplication<Application>().getString(com.example.scenic_navigation.R.string.could_not_calculate_route)
@@ -457,7 +452,7 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                     Poi(
                         name = scenic.name,
                         category = scenic.type,
-                        description = "Scenic score: ${scenic.score}",
+                        description = scenic.description.ifBlank { "Scenic score: ${scenic.score}" },
                         municipality = scenic.municipality ?: "Unknown",
                         lat = scenic.lat,
                         lon = scenic.lon,

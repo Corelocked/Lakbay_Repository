@@ -1,6 +1,11 @@
 package com.example.scenic_navigation.ui
 
 import android.Manifest
+import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.location.Location
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -31,7 +36,7 @@ import androidx.recyclerview.widget.RecyclerView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 
-class RouteFragment : Fragment() {
+class RouteFragment : Fragment(), SensorEventListener {
     private var _binding: FragmentRouteBinding? = null
     private val binding get() = _binding!!
     private val viewModel: RouteViewModel by activityViewModels()
@@ -50,6 +55,11 @@ class RouteFragment : Fragment() {
     private var offRouteDetector: OffRouteDetector? = null
     private var isNavigating = false
 
+    // Sensor for orientation
+    private lateinit var sensorManager: SensorManager
+    private var rotationVectorSensor: Sensor? = null
+    private var azimuth: Float = 0f
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -64,6 +74,9 @@ class RouteFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         locationService = LocationService(requireContext())
+
+        sensorManager = requireContext().getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
 
         setupMap()
         setupInputs()
@@ -368,7 +381,7 @@ class RouteFragment : Fragment() {
             currentLocationMarker = Marker(binding.map).apply {
                 position = userPosition
                 title = "Current Location"
-                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                 icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_user_arrow, null)
                 binding.map.overlays.add(this)
             }
@@ -376,10 +389,7 @@ class RouteFragment : Fragment() {
             currentLocationMarker?.position = userPosition
         }
 
-        // Set rotation based on bearing if available
-        if (location.hasBearing()) {
-            currentLocationMarker?.rotation = location.bearing
-        }
+        // Rotation is now handled by sensor in onSensorChanged
 
         // Update route visualization to show traveled vs remaining path
         updateRouteVisualization(userPosition)
@@ -804,11 +814,17 @@ class RouteFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         binding.map.onResume()
+
+        rotationVectorSensor?.let { sensor ->
+            sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI)
+        }
     }
 
     override fun onPause() {
         super.onPause()
         binding.map.onPause()
+
+        sensorManager.unregisterListener(this)
 
         // Save current map position to shared ViewModel
         val center = binding.map.mapCenter as? GeoPoint
@@ -832,5 +848,28 @@ class RouteFragment : Fragment() {
         }
 
         _binding = null
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        // Handle sensor changes for orientation
+        if (event?.sensor?.type == Sensor.TYPE_ROTATION_VECTOR) {
+            // Convert rotation vector to orientation angles (azimuth, pitch, roll)
+            val rotationMatrix = FloatArray(9)
+            SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
+            val orientation = FloatArray(3)
+            SensorManager.getOrientation(rotationMatrix, orientation)
+
+            // Azimuth is the angle around the Z axis (rotation about the vertical axis)
+            azimuth = Math.toDegrees(orientation[0].toDouble()).toFloat()
+            azimuth = (azimuth + 360) % 360
+
+            // Update the marker rotation
+            currentLocationMarker?.rotation = azimuth
+            binding.map.invalidate()
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        // No-op
     }
 }

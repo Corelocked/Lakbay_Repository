@@ -6,6 +6,8 @@
     android:layout_height="match_parent"
     android:background="@color/background">
 
+    <!-- Discover page deprecated -->
+    <!--
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/app_bar"
         android:layout_width="match_parent"
@@ -21,6 +23,7 @@
             app:titleTextColor="@color/white" />
 
     </com.google.android.material.appbar.AppBarLayout>
+    -->
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
