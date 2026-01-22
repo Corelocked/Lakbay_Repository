@@ -408,4 +408,54 @@ import java.util.concurrent.TimeUnit
 
         return score.coerceIn(0f, 100f)
     }
+
+    /**
+     * Get Wikipedia description for a POI name
+     */
+    suspend fun getDescriptionForPoi(name: String): String? = withContext(Dispatchers.IO) {
+        try {
+            // Search for the page
+            val searchUrl = "https://en.wikipedia.org/w/api.php?" +
+                    "action=query" +
+                    "&list=search" +
+                    "&srsearch=$name" +
+                    "&srlimit=1" +
+                    "&format=json" +
+                    "&origin=*"
+
+            val searchRequest = Request.Builder().url(searchUrl).build()
+            val searchResponse = client.newCall(searchRequest).execute()
+            val searchBody = searchResponse.body?.string()
+            if (searchBody == null) return@withContext null
+
+            val searchJson = JSONObject(searchBody)
+            val searchResults = searchJson.optJSONObject("query")?.optJSONArray("search")
+            if (searchResults == null || searchResults.length() == 0) return@withContext null
+
+            val pageTitle = searchResults.optJSONObject(0)?.optString("title") ?: return@withContext null
+
+            // Get page ID
+            val pageIdUrl = "https://en.wikipedia.org/w/api.php?" +
+                    "action=query" +
+                    "&titles=$pageTitle" +
+                    "&format=json" +
+                    "&origin=*"
+
+            val pageIdRequest = Request.Builder().url(pageIdUrl).build()
+            val pageIdResponse = client.newCall(pageIdRequest).execute()
+            val pageIdBody = pageIdResponse.body?.string()
+            if (pageIdBody == null) return@withContext null
+
+            val pageIdJson = JSONObject(pageIdBody)
+            val pages = pageIdJson.optJSONObject("query")?.optJSONObject("pages")
+            val pageId = pages?.keys()?.next() ?: return@withContext null
+
+            // Fetch extract
+            val extracts = fetchWikipediaExtracts(pageId)
+            return@withContext extracts[pageId]?.take(200) // Limit length
+        } catch (e: Exception) {
+            Log.e("WebSearchService", "Error getting description for $name: ${e.message}")
+            null
+        }
+    }
 }

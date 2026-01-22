@@ -14,8 +14,12 @@ import com.example.scenic_navigation.config.Config
 import androidx.lifecycle.Observer
 import android.content.SharedPreferences
 import com.example.scenic_navigation.services.LocationService
+import com.example.scenic_navigation.services.WebSearchService
+import com.example.scenic_navigation.ml.PoiReranker
 import kotlinx.coroutines.launch
 import org.osmdroid.util.GeoPoint
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 class RouteViewModel(application: Application) : AndroidViewModel(application) {
     private val geocodingService = GeocodingService()
@@ -30,6 +34,37 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
     private val locationService = LocationService(application)
     private val packageName = application.packageName
     private var settingsObserver: Observer<Int>? = null
+    private val webSearchService = WebSearchService()
+    private val poiReranker = PoiReranker(application.applicationContext)
+
+    // Simple CSV parser to handle quoted fields
+    private fun parseCsvLine(line: String): List<String> {
+        val result = mutableListOf<String>()
+        var current = StringBuilder()
+        var inQuotes = false
+        for (char in line) {
+            when {
+                char == '"' -> inQuotes = !inQuotes
+                char == ',' && !inQuotes -> {
+                    result.add(current.toString().trim())
+                    current = StringBuilder()
+                }
+                else -> current.append(char)
+            }
+        }
+        result.add(current.toString().trim())
+        return result
+    }
+
+    // Calculate minimum distance from a point to the route (list of GeoPoints)
+    private fun minDistanceToRoute(point: GeoPoint, route: List<GeoPoint>): Double {
+        var minDist = Double.MAX_VALUE
+        for (routePoint in route) {
+            val dist = point.distanceToAsDouble(routePoint)
+            if (dist < minDist) minDist = dist
+        }
+        return minDist
+    }
 
     // Caches for routes and POIs to avoid redundant calculations
     private val routeCache: MutableMap<String, List<GeoPoint>> = java.util.Collections.synchronizedMap(
@@ -292,20 +327,98 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                     _statusMessage.postValue(status)
                 }
 
+                // Load dataset POIs for descriptions
+                val assetManager = getApplication<Application>().assets
+                val inputStream = assetManager.open("datasets/luzon_dataset.csv")
+                val reader = BufferedReader(InputStreamReader(inputStream))
+                val datasetPois = mutableListOf<Poi>()
+
+                reader.readLine() // Skip header
+                reader.forEachLine { line ->
+                    val parts = parseCsvLine(line)
+                    if (parts.size >= 6) {
+                        val poi = Poi(
+                            name = parts[0].trim().removeSurrounding("\""),
+                            category = parts[1].trim().removeSurrounding("\""),
+                            description = parts[5].trim().removeSurrounding("\""),
+                            municipality = parts[2].trim().removeSurrounding("\""),
+                            lat = parts[3].trim().removeSurrounding("\"").toDoubleOrNull(),
+                            lon = parts[4].trim().removeSurrounding("\"").toDoubleOrNull()
+                        )
+                        if (poi.name.isNotBlank() && poi.lat != null && poi.lon != null && poi.description.isNotBlank()) {
+                            datasetPois.add(poi)
+                        }
+                    }
+                }
+                reader.close()
+                inputStream.close()
+
                 // Convert ScenicPoi to Poi
                 val pois = scenicPois.map { scenic ->
+                    // Find matching dataset POI
+                    val datasetPoi = datasetPois.find { it.name.equals(scenic.name, ignoreCase = true) }
+                    val description = datasetPoi?.description ?: scenic.description.ifBlank { "A scenic location along the route." }
+                    // Boost scenic score for POIs that came from the dataset
+                    val boostedScore = scenic.score.toFloat() + (if (datasetPoi != null) 20f else 0f)
                     Poi(
                         name = scenic.name,
                         category = scenic.type,
-                        description = scenic.description.ifBlank { "Scenic score: ${scenic.score}" },
+                        description = description,
                         municipality = scenic.municipality ?: "Unknown",
                         lat = scenic.lat,
                         lon = scenic.lon,
-                        scenicScore = scenic.score.toFloat()
+                        scenicScore = boostedScore
                     )
+                }.toMutableList()
+
+                // Enhance descriptions with Wikipedia if empty
+                for (i in pois.indices) {
+                    val poi = pois[i]
+                    if (poi.description.isBlank() || poi.description == "A scenic location along the route.") {
+                        val wikiDesc = webSearchService.getDescriptionForPoi(poi.name)
+                        if (wikiDesc != null) {
+                            pois[i] = poi.copy(description = wikiDesc)
+                        }
+                    }
                 }
 
-                _routePois.value = pois
+                // Add additional dataset POIs near the route
+                val scenicNames = scenicPois.map { it.name.lowercase() }.toSet()
+                val additionalPois = datasetPois.filter { datasetPoi ->
+                    !scenicNames.contains(datasetPoi.name.lowercase()) &&
+                    minDistanceToRoute(GeoPoint(datasetPoi.lat!!, datasetPoi.lon!!), route) < 5000.0
+                }
+                for (datasetPoi in additionalPois) {
+                    pois.add(Poi(
+                        name = datasetPoi.name,
+                        category = datasetPoi.category,
+                        description = datasetPoi.description,
+                        municipality = datasetPoi.municipality,
+                        lat = datasetPoi.lat,
+                        lon = datasetPoi.lon,
+                        scenicScore = 50f // High base score for dataset POIs
+                    ))
+                }
+
+                // Sort by category priority and take top recommendations
+                val sortedPois = pois.sortedWith(
+                    compareBy<Poi> { poi ->
+                        when (poi.category) {
+                            "tourism", "scenic" -> 0
+                            "historic" -> 1
+                            "natural" -> 2
+                            "mountain" -> 3
+                            "coastal" -> 4
+                            else -> 5
+                        }
+                    }.thenBy { it.name }
+                ).take(75)
+
+                // Apply ML reranker on the top candidates
+                val reranked = poiReranker.rerank(sortedPois, startPoint.latitude, startPoint.longitude, System.currentTimeMillis())
+
+                // Take final top 20 for UI
+                _routePois.value = reranked.take(50)
                 // Compute average scenic score
                 try {
                     val avgScore = if (scenicPois.isNotEmpty()) scenicPois.map { it.score }.average().toFloat() else 0f
@@ -447,20 +560,98 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                     _statusMessage.postValue(status)
                 }
 
+                // Load dataset POIs for descriptions
+                val assetManager = getApplication<Application>().assets
+                val inputStream = assetManager.open("datasets/luzon_dataset.csv")
+                val reader = BufferedReader(InputStreamReader(inputStream))
+                val datasetPois = mutableListOf<Poi>()
+
+                reader.readLine() // Skip header
+                reader.forEachLine { line ->
+                    val parts = parseCsvLine(line)
+                    if (parts.size >= 6) {
+                        val poi = Poi(
+                            name = parts[0].trim().removeSurrounding("\""),
+                            category = parts[1].trim().removeSurrounding("\""),
+                            description = parts[5].trim().removeSurrounding("\""),
+                            municipality = parts[2].trim().removeSurrounding("\""),
+                            lat = parts[3].trim().removeSurrounding("\"").toDoubleOrNull(),
+                            lon = parts[4].trim().removeSurrounding("\"").toDoubleOrNull()
+                        )
+                        if (poi.name.isNotBlank() && poi.lat != null && poi.lon != null && poi.description.isNotBlank()) {
+                            datasetPois.add(poi)
+                        }
+                    }
+                }
+                reader.close()
+                inputStream.close()
+
                 // Convert ScenicPoi to Poi
                 val pois = scenicPois.map { scenic ->
+                    // Find matching dataset POI
+                    val datasetPoi = datasetPois.find { it.name.equals(scenic.name, ignoreCase = true) }
+                    val description = datasetPoi?.description ?: scenic.description.ifBlank { "A scenic location along the route." }
+                    // Boost scenic score for POIs that came from the dataset
+                    val boostedScore = scenic.score.toFloat() + (if (datasetPoi != null) 20f else 0f)
                     Poi(
                         name = scenic.name,
                         category = scenic.type,
-                        description = scenic.description.ifBlank { "Scenic score: ${scenic.score}" },
+                        description = description,
                         municipality = scenic.municipality ?: "Unknown",
                         lat = scenic.lat,
                         lon = scenic.lon,
-                        scenicScore = scenic.score.toFloat()
+                        scenicScore = boostedScore
                     )
+                }.toMutableList()
+
+                // Enhance descriptions with Wikipedia if empty
+                for (i in pois.indices) {
+                    val poi = pois[i]
+                    if (poi.description.isBlank() || poi.description == "A scenic location along the route.") {
+                        val wikiDesc = webSearchService.getDescriptionForPoi(poi.name)
+                        if (wikiDesc != null) {
+                            pois[i] = poi.copy(description = wikiDesc)
+                        }
+                    }
                 }
 
-                _routePois.value = pois
+                // Add additional dataset POIs near the route
+                val scenicNames = scenicPois.map { it.name.lowercase() }.toSet()
+                val additionalPois = datasetPois.filter { datasetPoi ->
+                    !scenicNames.contains(datasetPoi.name.lowercase()) &&
+                    minDistanceToRoute(GeoPoint(datasetPoi.lat!!, datasetPoi.lon!!), route) < 5000.0
+                }
+                for (datasetPoi in additionalPois) {
+                    pois.add(Poi(
+                        name = datasetPoi.name,
+                        category = datasetPoi.category,
+                        description = datasetPoi.description,
+                        municipality = datasetPoi.municipality,
+                        lat = datasetPoi.lat,
+                        lon = datasetPoi.lon,
+                        scenicScore = 50f // High base score for dataset POIs
+                    ))
+                }
+
+                // Sort by category priority and take top recommendations
+                val sortedPois = pois.sortedWith(
+                    compareBy<Poi> { poi ->
+                        when (poi.category) {
+                            "tourism", "scenic" -> 0
+                            "historic" -> 1
+                            "natural" -> 2
+                            "mountain" -> 3
+                            "coastal" -> 4
+                            else -> 5
+                        }
+                    }.thenBy { it.name }
+                ).take(75)
+
+                // Apply ML reranker on the top candidates
+                val reranked = poiReranker.rerank(sortedPois, newStart.latitude, newStart.longitude, System.currentTimeMillis())
+
+                // Take final top 20 for UI
+                    _routePois.value = reranked.take(50)
                 // Compute average scenic score for recalculated route
                 try {
                     val avgScore = if (scenicPois.isNotEmpty()) scenicPois.map { it.score }.average().toFloat() else 0f

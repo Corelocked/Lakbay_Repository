@@ -25,7 +25,7 @@ class POIDetailBottomSheet(private val poi: Poi) : BottomSheetDialogFragment() {
 
         tvTitle.text = poi.name
         tvCategory.text = poi.category
-        tvDescription.text = poi.description
+        tvDescription.text = if (poi.description.isNotBlank()) poi.description else "No description available for this location."
 
         btnSave.setOnClickListener {
             val key = "${poi.name}_${poi.lat}_${poi.lon}"
