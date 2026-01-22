@@ -75,7 +75,8 @@ class RoadTripPlanner(
             val segmentRoute = if (preferScenicRoutes) {
                 val alternatives = routingService.fetchRouteAlternatives(from.geoPoint, to.geoPoint, packageName)
                 if (alternatives.isNotEmpty()) {
-                    val (bestRoute, _) = scenicRoutePlanner.selectMostScenicRoute(alternatives, packageName)
+                    val result = scenicRoutePlanner.selectMostScenicRoute(alternatives, packageName)
+                    val bestRoute = result.first
                     bestRoute ?: routingService.fetchRoute(from.geoPoint, to.geoPoint, packageName)
                 } else {
                     routingService.fetchRoute(from.geoPoint, to.geoPoint, packageName)

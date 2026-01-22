@@ -124,46 +124,108 @@ object CurationMapper {
             com.example.scenic_navigation.models.ActivityType.SIGHTSEEING -> {
                 boosts["view"] = boosts.getOrDefault("view", 0.0) + 0.6
                 boosts["attraction"] = boosts.getOrDefault("attraction", 0.0) + 0.4
-                // also favor explicit viewpoint tag
-                filters.add(OsmPredicate("tourism", "viewpoint"))
-                // Relaxation focus: prefer restful spots (parks, benches, calm beaches)
-                boosts["relax"] = boosts.getOrDefault("relax", 0.0) + 0.5
+                boosts["historic"] = boosts.getOrDefault("historic", 0.0) + 0.5
+                boosts["museum"] = boosts.getOrDefault("museum", 0.0) + 0.3
+                boosts["monument"] = boosts.getOrDefault("monument", 0.0) + 0.4
+                boosts["park"] = boosts.getOrDefault("park", 0.0) + 0.3
+                boosts["nature"] = boosts.getOrDefault("nature", 0.0) + 0.4
                 filters.addAll(listOf(
+                    OsmPredicate("tourism", "viewpoint"),
+                    OsmPredicate("tourism", "attraction"),
                     OsmPredicate("leisure", "park"),
-                    OsmPredicate("amenity", "bench"),
-                    OsmPredicate("natural", "beach")
+                    OsmPredicate("historic", ""),
+                    OsmPredicate("tourism", "museum")
                 ))
-                // Include historic sites prominently in sightseeing
-                boosts["historic"] = boosts.getOrDefault("historic", 0.0) + 0.6
             }
             com.example.scenic_navigation.models.ActivityType.SHOP_AND_DINE -> {
-                boosts["restaurant"] = boosts.getOrDefault("restaurant", 0.0) + 0.9
+                boosts["restaurant"] = boosts.getOrDefault("restaurant", 0.0) + 1.0
+                boosts["cafe"] = boosts.getOrDefault("cafe", 0.0) + 0.9
+                boosts["food"] = boosts.getOrDefault("food", 0.0) + 0.8
                 boosts["shop"] = boosts.getOrDefault("shop", 0.0) + 0.7
                 boosts["mall"] = boosts.getOrDefault("mall", 0.0) + 0.6
-                // Use a regex predicate for common shop categories to narrow Overpass results
+                boosts["market"] = boosts.getOrDefault("market", 0.0) + 0.5
                 filters.addAll(listOf(
                     OsmPredicate("amenity", "restaurant"),
-                    OsmPredicate("shop", "~gift|souvenir|art|craft|bakery|deli|cheese|wine|farm|seafood|books|clothes")
+                    OsmPredicate("amenity", "cafe"),
+                    OsmPredicate("amenity", "fast_food"),
+                    OsmPredicate("shop", "~gift|souvenir|art|craft|bakery|deli|cheese|wine|farm|seafood|books|clothes|supermarket")
                 ))
             }
             com.example.scenic_navigation.models.ActivityType.CULTURAL -> {
                 boosts["museum"] = boosts.getOrDefault("museum", 0.0) + 0.8
+                boosts["historic"] = boosts.getOrDefault("historic", 0.0) + 0.7
                 boosts["theatre"] = boosts.getOrDefault("theatre", 0.0) + 0.6
-                boosts["historic"] = boosts.getOrDefault("historic", 0.0) + 0.6
+                boosts["gallery"] = boosts.getOrDefault("gallery", 0.0) + 0.5
+                boosts["church"] = boosts.getOrDefault("church", 0.0) + 0.4
+                boosts["heritage"] = boosts.getOrDefault("heritage", 0.0) + 0.6
                 filters.addAll(listOf(
                     OsmPredicate("tourism", "museum"),
                     OsmPredicate("tourism", "gallery"),
-                    OsmPredicate("historic", "church")
+                    OsmPredicate("historic", ""),
+                    OsmPredicate("amenity", "theatre"),
+                    OsmPredicate("amenity", "place_of_worship")
                 ))
-                // Cultural sub-activities: hiking/adventure-oriented cultural experiences
+            }
+            com.example.scenic_navigation.models.ActivityType.ADVENTURE -> {
+                boosts["peak"] = boosts.getOrDefault("peak", 0.0) + 0.8
+                boosts["waterfall"] = boosts.getOrDefault("waterfall", 0.0) + 0.7
                 boosts["hiking"] = boosts.getOrDefault("hiking", 0.0) + 0.9
-                boosts["adventure"] = boosts.getOrDefault("adventure", 0.0) + 0.8
+                boosts["climbing"] = boosts.getOrDefault("climbing", 0.0) + 0.8
+                boosts["adventure"] = boosts.getOrDefault("adventure", 0.0) + 0.6
+                boosts["sport"] = boosts.getOrDefault("sport", 0.0) + 0.5
                 filters.addAll(listOf(
+                    OsmPredicate("natural", "peak"),
+                    OsmPredicate("waterway", "waterfall"),
                     OsmPredicate("route", "hiking"),
-                    OsmPredicate("highway", "path"),
-                    OsmPredicate("sac_scale", "hiking"),
+                    OsmPredicate("sport", "climbing"),
                     OsmPredicate("tourism", "alpine_hut"),
-                    OsmPredicate("sport", "climbing")
+                    OsmPredicate("highway", "path")
+                ))
+            }
+            com.example.scenic_navigation.models.ActivityType.RELAXATION -> {
+                boosts["beach"] = boosts.getOrDefault("beach", 0.0) + 0.8
+                boosts["park"] = boosts.getOrDefault("park", 0.0) + 0.7
+                boosts["spa"] = boosts.getOrDefault("spa", 0.0) + 0.9
+                boosts["resort"] = boosts.getOrDefault("resort", 0.0) + 0.6
+                boosts["relax"] = boosts.getOrDefault("relax", 0.0) + 0.5
+                boosts["nature"] = boosts.getOrDefault("nature", 0.0) + 0.4
+                filters.addAll(listOf(
+                    OsmPredicate("natural", "beach"),
+                    OsmPredicate("leisure", "park"),
+                    OsmPredicate("leisure", "beach_resort"),
+                    OsmPredicate("tourism", "hotel"),
+                    OsmPredicate("amenity", "bench")
+                ))
+            }
+            com.example.scenic_navigation.models.ActivityType.FAMILY_FRIENDLY -> {
+                boosts["park"] = boosts.getOrDefault("park", 0.0) + 0.7
+                boosts["playground"] = boosts.getOrDefault("playground", 0.0) + 0.8
+                boosts["zoo"] = boosts.getOrDefault("zoo", 0.0) + 0.6
+                boosts["museum"] = boosts.getOrDefault("museum", 0.0) + 0.5
+                boosts["picnic"] = boosts.getOrDefault("picnic", 0.0) + 0.6
+                boosts["family"] = boosts.getOrDefault("family", 0.0) + 0.4
+                filters.addAll(listOf(
+                    OsmPredicate("leisure", "park"),
+                    OsmPredicate("leisure", "playground"),
+                    OsmPredicate("tourism", "zoo"),
+                    OsmPredicate("tourism", "museum"),
+                    OsmPredicate("tourism", "picnic_site"),
+                    OsmPredicate("amenity", "restaurant")
+                ))
+            }
+            com.example.scenic_navigation.models.ActivityType.ROMANTIC -> {
+                boosts["view"] = boosts.getOrDefault("view", 0.0) + 0.8
+                boosts["restaurant"] = boosts.getOrDefault("restaurant", 0.0) + 0.7
+                boosts["park"] = boosts.getOrDefault("park", 0.0) + 0.6
+                boosts["beach"] = boosts.getOrDefault("beach", 0.0) + 0.5
+                boosts["sunset"] = boosts.getOrDefault("sunset", 0.0) + 0.9
+                boosts["romantic"] = boosts.getOrDefault("romantic", 0.0) + 0.6
+                filters.addAll(listOf(
+                    OsmPredicate("tourism", "viewpoint"),
+                    OsmPredicate("natural", "beach"),
+                    OsmPredicate("leisure", "park"),
+                    OsmPredicate("amenity", "restaurant"),
+                    OsmPredicate("leisure", "picnic_site")
                 ))
             }
         }

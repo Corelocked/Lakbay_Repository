@@ -120,6 +120,38 @@
                 android:textSize="15sp"
                 android:padding="8dp" />
 
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/rbAdventure"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🏔️ Adventure &amp; Hiking"
+                android:textSize="15sp"
+                android:padding="8dp" />
+
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/rbRelaxation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🧘 Relaxation &amp; Wellness"
+                android:textSize="15sp"
+                android:padding="8dp" />
+
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/rbFamilyFriendly"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="👨‍👩‍👧‍👦 Family Friendly"
+                android:textSize="15sp"
+                android:padding="8dp" />
+
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/rbRomantic"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="💕 Romantic Getaway"
+                android:textSize="15sp"
+                android:padding="8dp" />
+
         </RadioGroup>
     </com.google.android.material.card.MaterialCardView>
 
