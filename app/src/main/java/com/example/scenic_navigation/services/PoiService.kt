@@ -435,6 +435,7 @@ class PoiService(private val context: Context? = null) {
         return out
     }
 
+
     private fun sampleRoute(
         routePoints: List<GeoPoint>,
         sampleDistMeters: Int,
@@ -583,7 +584,7 @@ class PoiService(private val context: Context? = null) {
         }
 
         // Leisure activities
-        if (leisure.isNotBlank()) {
+        if (leisure.trim().isNotEmpty()) {
             return when (leisure.lowercase()) {
                 "park" -> "Park"
                 "garden" -> "Garden"
