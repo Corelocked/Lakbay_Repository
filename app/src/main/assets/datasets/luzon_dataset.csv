@@ -1,244 +1,541 @@
-Name,Category,Location,Lat,Lon
-Antonio's,Restaurant,"Tagaytay, Cavite",14.0953,120.934
-Bale Dutung,Restaurant,"Angeles, Pampanga",15.1378,120.5906
-Toyo Eatery,Restaurant,"Makati, NCR",14.5626,121.0298
-Metiz,Restaurant,"Makati, NCR",14.563,121.03
-Gallery by Chele,Restaurant,"BGC, Taguig",14.5515,121.0493
-Helm,Restaurant,"BGC, Taguig",14.552,121.05
-Mecha Uma,Restaurant,"BGC, Taguig",14.549,121.045
-Wildflour Cafe + Bakery,Restaurant,"BGC, Taguig",14.5495,121.048
-Manam Comfort Filipino,Restaurant,"BGC, Taguig",14.55,121.047
-Locavore,Restaurant,"Pasig, NCR",14.57,121.06
-Cafe Juanita,Restaurant,"Pasig, NCR",14.5735,121.065
-Kusina Felicitas,Restaurant,"Vigan, Ilocos Sur",17.5727,120.3903
-Cafe Fleur,Restaurant,"Angeles, Pampanga",15.135,120.59
-Aling Lucing Sisig,Restaurant,"Angeles, Pampanga",15.1388,120.5905
-Mila's Tokwa't Baboy,Restaurant,"Angeles, Pampanga",15.13,120.6
-Everybody's Cafe,Restaurant,"San Fernando, Pampanga",15.03,120.69
-Matam-ih Authentic Kapampangan,Restaurant,"Clark, Pampanga",15.18,120.52
-Amare La Cucina,Restaurant,"Baguio, Benguet",16.41,120.6
-Lemon and Olives Greek Taverna,Restaurant,"Baguio, Benguet",16.415,120.61
-Good Taste Cafe & Restaurant,Restaurant,"Baguio, Benguet",16.413,120.595
-Farmer's Daughter,Restaurant,"Baguio, Benguet",16.4023,120.608
-Hill Station,Restaurant,"Baguio, Benguet",16.411,120.597
-Balay Dako,Restaurant,"Tagaytay, Cavite",14.103,120.954
-Breakfast at Antonio's,Restaurant,"Tagaytay, Cavite",14.09,120.93
-Bag of Beans (Main),Restaurant,"Tagaytay, Cavite",14.095,120.9152
-Sonya's Garden,Restaurant,"Alfonso, Cavite",14.12,120.88
-Lime and Basil Thai,Restaurant,"Alfonso, Cavite",14.11,120.89
-Marcia Adams,Restaurant,"Alfonso, Cavite",14.115,120.885
-El Chupacabra,Restaurant,"Makati, NCR",14.564,121.032
-Filling Station Bar & Cafe,Restaurant,"Makati, NCR",14.565,121.033
-Mendokoro Ramenba,Restaurant,"Makati, NCR",14.558,121.02
-Blackbird,Restaurant,"Makati, NCR",14.555,121.025
-Barbara's Heritage Restaurant,Restaurant,"Intramuros, Manila",14.59,120.97
-Ilustrado,Restaurant,"Intramuros, Manila",14.589,120.972
-Wai Ying Dimsum,Restaurant,"Binondo, Manila",14.6,120.975
-Dong Bei Dumplings,Restaurant,"Binondo, Manila",14.601,120.976
-Sincerity Cafe & Restaurant,Restaurant,"Binondo, Manila",14.599,120.974
-1st Colonial Grill,Restaurant,"Legazpi, Albay",13.1396,123.7368
-Small Talk Cafe,Restaurant,"Legazpi, Albay",13.14,123.74
-DjC Halo-Halo,Restaurant,"Tiwi, Albay",13.458,123.681
-Foam Coffee,Cafe,"Baguio, Benguet",16.412,120.594
-Hatch Coffee,Cafe,"Baguio, Benguet",16.416,120.605
-Hotcat Specialty Coffee,Cafe,"Baguio, Benguet",16.408,120.6
-Arca's Yard,Cafe,"Baguio, Benguet",16.402,120.618
-Cafe by the Ruins,Cafe,"Baguio, Benguet",16.4143,120.5988
-Choco-late de Batirol,Cafe,"Baguio, Benguet",16.4,120.615
-Vizco's Restaurant & Cake Shop,Cafe,"Baguio, Benguet",16.4115,120.596
-Patch Cafe,Cafe,"Baguio, Benguet",16.4125,120.597
-Cafe Sabel,Cafe,"Tuba, Benguet",16.4105,120.5504
-Commune,Cafe,"Makati, NCR",14.563,121.031
-Yardstick Coffee,Cafe,"Makati, NCR",14.557,121.022
-The Curator,Cafe,"Makati, NCR",14.554,121.02
-Satchmi,Cafe,"Mandaluyong, NCR",14.5841,121.0567
-Talisay The Garden Cafe,Cafe,"Quezon City, NCR",14.646,121.06
-SGD Coffee Bodega,Cafe,"Quezon City, NCR",14.645,121.058
-Chapter Coffee,Cafe,"Quezon City, NCR",14.644,121.059
-Kandle Cafe,Cafe,"Quezon City, NCR",14.63,121.03
-Rustic Mornings by Isabelo,Cafe,"Marikina, NCR",14.625,121.095
-Burrow Cafe,Cafe,"Antipolo, Rizal",14.61,121.19
-Crescent Moon Cafe,Cafe,"Antipolo, Rizal",14.59,121.18
-Luljetta's Hanging Gardens,Cafe,"Antipolo, Rizal",14.58,121.16
-Kape Sina Una,Cafe,"Antipolo, Rizal",14.62,121.18
-Coffee Project Crosswinds,Cafe,"Tagaytay, Cavite",14.14,121.01
-Ruined Project?,Cafe,"Tagaytay, Cavite",14.135,121.005
-Kuuma Kaakao,Cafe,"Tagaytay, Cavite",14.1,120.95
-Tsokolateria,Cafe,"Tagaytay, Cavite",14.105,120.955
-El Union Coffee,Cafe,"San Juan, La Union",16.666,120.32
-Clean Beach,Cafe,"San Juan, La Union",16.665,120.321
-Makai Bowls,Cafe,"San Juan, La Union",16.667,120.322
-National Museum of Fine Arts,Museum,"Manila, NCR",14.5869,120.9812
-National Museum of Anthropology,Museum,"Manila, NCR",14.585,120.982
-National Museum of Natural History,Museum,"Manila, NCR",14.584,120.983
-Ayala Museum,Museum,"Makati, NCR",14.5539,121.0233
-The Mind Museum,Museum,"Taguig, NCR",14.5519,121.0456
-Pinto Art Museum,Museum,"Antipolo, Rizal",14.5812,121.1643
-BenCab Museum,Museum,"Tuba, Benguet",16.4105,120.5504
-Museo Kordilyera,Museum,"Baguio, Benguet",16.415,120.6
-Aguinaldo Shrine,Museum,"Kawit, Cavite",14.4452,120.9067
-Museo Orlina,Museum,"Tagaytay, Cavite",14.113,120.963
-Las Casas Filipinas de Acuzar,Museum,"Bagac, Bataan",14.6027,120.3853
-Mt. Samat National Shrine,Museum,"Pilar, Bataan",14.606,120.509
-Museo Ilocos Norte,Museum,"Laoag, Ilocos Norte",18.196,120.5927
-Crisologo Museum,Museum,"Vigan, Ilocos Sur",17.573,120.388
-Bahay Tsinoy,Museum,"Intramuros, Manila",14.59,120.973
-Casa Manila,Museum,"Intramuros, Manila",14.5895,120.974
-Metropolitan Museum of Manila,Museum,"Taguig, NCR",14.552,121.045
-Art In Island,Museum,"Quezon City, NCR",14.615,121.055
-Quezon City Experience (QCX),Museum,"Quezon City, NCR",14.651,121.05
-Ateneo Art Gallery,Museum,"Quezon City, NCR",14.64,121.078
-Vargas Museum,Museum,"Quezon City, NCR",14.653,121.069
-Museo de La Salle,Museum,"Dasmarinas, Cavite",14.32,120.95
-Blanco Family Museum,Museum,"Angono, Rizal",14.525,121.155
-Angono Petroglyphs,Museum,"Angono, Rizal",14.53,121.18
-Rizal Shrine Calamba,Museum,"Calamba, Laguna",14.21,121.16
-Nagcarlan Underground Cemetery,Museum,"Nagcarlan, Laguna",14.138,121.415
-Museum of the Women of Malolos,Museum,"Malolos, Bulacan",14.845,120.81
-Mt. Pulag,Nature Park,"Kabayan, Benguet",16.5976,120.8997
-Mt. Ulap,Nature Park,"Itogon, Benguet",16.29,120.63
-Mt. Pinatubo,Nature Park,"Botolan, Zambales",15.13,120.35
-Masungi Georeserve,Nature Park,"Baras, Rizal",14.605,121.338
-Hundred Islands National Park,Nature Park,"Alaminos, Pangasinan",16.2045,120.0409
-La Mesa Ecopark,Nature Park,"Quezon City, NCR",14.7102,121.0708
-Ninoy Aquino Parks and Wildlife,Nature Park,"Quezon City, NCR",14.651,121.043
-Mt. Makiling,Nature Park,"Los Banos, Laguna",14.135,121.2
-Mt. Banahaw,Nature Park,"Dolores, Quezon",14.066,121.483
-Biak-na-Bato National Park,Nature Park,"San Miguel, Bulacan",15.116,121.083
-Bataan National Park,Nature Park,"Samal, Bataan",14.61,120.45
-Minalungao National Park,Nature Park,"General Tinio, Nueva Ecija",15.29,121.13
-Pamitinan Protected Landscape,Nature Park,"Rodriguez, Rizal",14.73,121.18
-Mt. Daraitan,Nature Park,"Tanay, Rizal",14.613,121.42
-Mt. Batulao,Nature Park,"Nasugbu, Batangas",14.03,120.8
-Mt. Maculot,Nature Park,"Cuenca, Batangas",13.91,121.04
-Mt. Gulugod Baboy,Nature Park,"Mabini, Batangas",13.73,120.89
-Mayon Volcano Natural Park,Nature Park,"Albay, Bicol",13.2548,123.685
-Bulusan Volcano Natural Park,Nature Park,"Sorsogon, Bicol",12.77,124.05
-Caramoan National Park,Nature Park,"Caramoan, Camarines Sur",13.8,123.86
-Northern Sierra Madre Natural Park,Nature Park,Isabela,17.0,122.2
-Banaue Rice Terraces,Tourist Attraction,"Banaue, Ifugao",16.9294,121.0552
-Batad Rice Terraces,Hidden Gem,"Banaue, Ifugao",16.94,121.13
-Sagada Hanging Coffins,Tourist Attraction,"Sagada, Mountain Province",17.08,120.9
-Sumaguing Cave,Tourist Attraction,"Sagada, Mountain Province",17.081,120.903
-Calle Crisologo,Tourist Attraction,"Vigan, Ilocos Sur",17.5727,120.3776
-Paoay Church,Tourist Attraction,"Paoay, Ilocos Norte",18.062,120.521
-Bangui Windmills,Tourist Attraction,"Bangui, Ilocos Norte",18.528,120.718
-Kapurpurawan Rock Formation,Hidden Gem,"Burgos, Ilocos Norte",18.5386,120.6536
-Taal Volcano,Tourist Attraction,"Talisay, Batangas",14.0106,120.9975
-Fantasy World,Tourist Attraction,"Lemery, Batangas",13.96,120.85
-Corregidor Island,Historical Site,Cavite City,14.38,120.57
-Pagsanjan Falls,Tourist Attraction,"Cavinti, Laguna",14.26,121.45
-Hulugan Falls,Hidden Gem,"Luisiana, Laguna",14.195,121.505
-Aliw Falls,Hidden Gem,"Luisiana, Laguna",14.19,121.5
-Daranak Falls,Tourist Attraction,"Tanay, Rizal",14.52,121.36
-Tinipak River,Hidden Gem,"Tanay, Rizal",14.633,121.378
-Anawangin Cove,Hidden Gem,"San Antonio, Zambales",14.868,120.076
-Nagsasa Cove,Hidden Gem,"San Antonio, Zambales",14.83,120.06
-Potipot Island,Hidden Gem,"Candelaria, Zambales",15.7,119.92
-Calaguas Islands,Hidden Gem,"Vinzons, Camarines Norte",14.45,122.92
-Cagsawa Ruins,Tourist Attraction,"Daraga, Albay",13.167,123.683
-Donsol Whale Shark Center,Tourist Attraction,"Donsol, Sorsogon",12.9,123.6
-Subic Bay Freeport Zone,Tourist Attraction,"Subic, Zambales",14.82,120.28
-Inflatable Island,Tourist Attraction,"Subic, Zambales",14.85,120.3
-Enchanted Kingdom,Tourist Attraction,"Santa Rosa, Laguna",14.282,121.096
-Sky Ranch Tagaytay,Tourist Attraction,"Tagaytay, Cavite",14.096,120.936
-Villa Escudero,Tourist Attraction,"Tiaong, Quezon",13.99,121.34
-Kamay ni Hesus,Tourist Attraction,"Lucban, Quezon",14.12,121.56
-Tangadan Falls,Hidden Gem,"San Gabriel, La Union",16.64,120.45
-Immuki Island,Hidden Gem,"Balaoan, La Union",16.82,120.36
-Maligcong Rice Terraces,Hidden Gem,"Bontoc, Mountain Province",17.07,120.99
-Buscalan Village,Hidden Gem,"Tinglayan, Kalinga",17.18,121.05
-Cathedral Rock,Dive Spot,"Anilao, Batangas",13.75,120.88
-Twin Rocks,Dive Spot,"Anilao, Batangas",13.74,120.885
-Mainit Point,Dive Spot,"Anilao, Batangas",13.72,120.89
-Sombrero Island Dive,Dive Spot,"Tingloy, Batangas",13.7,120.82
-Kirby's Rock,Dive Spot,"Anilao, Batangas",13.76,120.9
-Beatrice Rock,Dive Spot,"Anilao, Batangas",13.73,120.87
-Vanitea Cafe,Cafe,"Quezon City, NCR",14.6465,121.0595
-Friuli Trattoria,Restaurant,"Quezon City, NCR",14.6455,121.0588
-Habanero Kitchen Bar,Restaurant,"Quezon City, NCR",14.621,121.052
-Bellini's,Restaurant,"Quezon City, NCR",14.6215,121.0525
-Arroceros Forest Park,Nature Park,"Manila, NCR",14.594,120.982
-Las Piñas-Parañaque Critical Habitat,Nature Park,"Parañaque, NCR",14.495,120.985
-UP Diliman Academic Oval,Nature Park,"Quezon City, NCR",14.654,121.065
-La Mesa Watershed,Nature Park,"Quezon City, NCR",14.72,121.08
-Paco Park,Hidden Gem,"Manila, NCR",14.581,120.988
-Escolta Street,Hidden Gem,"Manila, NCR",14.598,120.978
-The Den,Cafe,"Manila, NCR",14.5985,120.9785
-Blocleaf Cafe,Cafe,"Manila, NCR",14.568,120.99
-Ying Ying Tea House,Restaurant,"Manila, NCR",14.598,120.976
-Lan Zhou La Mien,Restaurant,"Manila, NCR",14.601,120.975
-Presidential Car Museum,Museum,"Quezon City, NCR",14.65,121.045
-Museo Pambata,Museum,"Manila, NCR",14.578,120.976
-Money Museum,Museum,"Manila, NCR",14.56,120.983
-Agimat Foraging Bar,Hidden Gem,"Makati, NCR",14.5645,121.033
-Alamat Filipino Pub,Hidden Gem,"Makati, NCR",14.564,121.0335
-Legazpi Sunday Market,Tourist Attraction,"Makati, NCR",14.553,121.018
-Salcedo Saturday Market,Tourist Attraction,"Makati, NCR",14.56,121.025
-Cartel Coffee Deli,Cafe,"Makati, NCR",14.555,121.02
-Bad Cafe,Cafe,"Makati, NCR",14.557,121.022
-Venice Grand Canal Mall,Tourist Attraction,"Taguig, NCR",14.535,121.053
-Manila Ocean Park,Tourist Attraction,"Manila, NCR",14.579,120.972
-Star City,Tourist Attraction,"Pasay, NCR",14.558,120.985
-SM Mall of Asia Seaside,Tourist Attraction,"Pasay, NCR",14.535,120.98
-Dessert Museum,Tourist Attraction,"Pasay, NCR",14.537,120.983
-Baluarte de San Diego,Tourist Attraction,"Manila, NCR",14.586,120.976
-Fort Santiago,Tourist Attraction,"Manila, NCR",14.594,120.97
-San Agustin Church,Tourist Attraction,"Manila, NCR",14.589,120.975
-Rizal Park (Luneta),Nature Park,"Manila, NCR",14.583,120.979
-Quezon Memorial Circle,Nature Park,"Quezon City, NCR",14.6515,121.049
-Cubao Expo,Hidden Gem,"Quezon City, NCR",14.621,121.052
-University of Santo Tomas,Tourist Attraction,"Manila, NCR",14.61,120.989
-Tipsy Pig,Restaurant,"Pasig, NCR",14.575,121.062
-Kapitolyo Food Street,Hidden Gem,"Pasig, NCR",14.572,121.058
-Kanto Freestyle Breakfast,Restaurant,"Mandaluyong, NCR",14.576,121.045
-Greenhills Shopping Center,Tourist Attraction,"San Juan, NCR",14.602,121.05
-Ronac Art Center,Hidden Gem,"San Juan, NCR",14.604,121.055
-Tweeter's Cafe,Cafe,"Marikina, NCR",14.63,121.1
-Marikina River Park,Nature Park,"Marikina, NCR",14.63,121.095
-Lilac Street,Hidden Gem,"Marikina, NCR",14.635,121.11
-Kabsat La Union,Restaurant,"San Juan, La Union",16.673,120.322
-Flotsam & Jetsam,Hidden Gem,"San Juan, La Union",16.675,120.323
-Masa by Barefoot,Cafe,"San Juan, La Union",16.671,120.32
-Tagpuan sa San Juan,Restaurant,"San Juan, La Union",16.67,120.319
-Ma-Cho Temple,Tourist Attraction,"San Fernando, La Union",16.621,120.317
-Tangadan Falls,Hidden Gem,"San Gabriel, La Union",16.64,120.45
-Immuki Island,Hidden Gem,"Balaoan, La Union",16.82,120.36
-Lake Pandin,Nature Park,"San Pablo, Laguna",14.116,121.366
-Bato Springs Resort,Nature Park,"San Pablo, Laguna",14.05,121.35
-Sulyap Gallery Cafe,Restaurant,"San Pablo, Laguna",14.06,121.33
-Patis Tito Garden Cafe,Restaurant,"San Pablo, Laguna",14.07,121.32
-Nuvali Park,Nature Park,"Santa Rosa, Laguna",14.237,121.06
-Rizal Shrine,Museum,"Calamba, Laguna",14.213,121.166
-UPLB Freedom Park,Nature Park,"Los Baños, Laguna",14.165,121.24
-ArtSector Gallery,Hidden Gem,"Binangonan, Rizal",14.48,121.2
-Pililla Wind Farm,Tourist Attraction,"Pililla, Rizal",14.48,121.3
-Cloud 9 Antipolo,Tourist Attraction,"Antipolo, Rizal",14.58,121.16
-Lutong Pugon,Restaurant,"Tanay, Rizal",14.52,121.35
-Calinawagan Cave,Nature Park,"Tanay, Rizal",14.55,121.4
-Fortune Island,Hidden Gem,"Nasugbu, Batangas",14.06,120.49
-Masasa Beach,Hidden Gem,"Tingloy, Batangas",13.67,120.85
-Caleruega Church,Tourist Attraction,"Nasugbu, Batangas",14.07,120.83
-Cape Santiago Lighthouse,Historical Site,"Calatagan, Batangas",13.78,120.65
-Fantasy World,Tourist Attraction,"Lemery, Batangas",13.96,120.85
-The Nest Dining in The Sky,Restaurant,"Muntinlupa, NCR",14.42,121.04
-Molito Lifestyle Center,Hidden Gem,"Muntinlupa, NCR",14.425,121.02
-Ramen Yushoken,Restaurant,"Muntinlupa, NCR",14.426,121.021
-Neil's Kitchen,Restaurant,"Muntinlupa, NCR",14.43,121.015
-Totalitang Park,Nature Park,"Muntinlupa, NCR",14.41,121.03
-Yexel's Toy Museum,Museum,"Las Piñas, NCR",14.44,121.0
-Bamboo Organ Church,Tourist Attraction,"Las Piñas, NCR",14.48,120.98
-Ninoy Aquino International Airport Viewdeck,Hidden Gem,"Pasay, NCR",14.51,121.0
-Dampa Seaside Market,Restaurant,"Pasay, NCR",14.54,120.99
-Okada Manila Fountain,Tourist Attraction,"Parañaque, NCR",14.515,120.98
-DreamPlay by DreamWorks,Tourist Attraction,"Parañaque, NCR",14.52,120.98
-The Ruins (Project 4),Historical Site,"Quezon City, NCR",14.62,121.07
-Books and Borders Cafe,Cafe,"Quezon City, NCR",14.63,121.03
-Highlands Coffee,Cafe,"Mandaluyong, NCR",14.58,121.05
-Tablo Kitchen x Cafe,Restaurant,"Quezon City, NCR",14.66,121.04
-Gubat QC,Hidden Gem,"Quezon City, NCR",14.655,121.06
-Bell Church,Tourist Attraction,"La Trinidad, Benguet",16.44,120.59
-Mt. Yangbew,Nature Park,"La Trinidad, Benguet",16.45,120.6
-Stobosa Hillside Homes,Tourist Attraction,"La Trinidad, Benguet",16.445,120.6
-Northern Blossom Flower Farm,Tourist Attraction,"Atok, Benguet",16.58,120.7
-Halsema Highway Highest Point,Tourist Attraction,"Atok, Benguet",16.6,120.75
+Name,Category,Location,Lat,Lon,Description
+Antonio's,Restaurant,"Tagaytay, Cavite",14.0953,120.934,"A fine dining institution in Tagaytay known for its exceptional steak, elegant colonial-style architecture, and lush garden setting."
+Bale Dutung,Restaurant,"Angeles, Pampanga",15.1378,120.5906,"The home of Chef Claude Tayag, serving an acclaimed degustation of authentic Kapampangan cuisine, including the famous 5-Way Lechon."
+Toyo Eatery,Restaurant,"Makati, NCR",14.5626,121.0298,"A modern Filipino restaurant recognized by Asia's 50 Best Restaurants, offering innovative reinterpretations of local flavors."
+Basco Lighthouse,Historical Site,"Basco, Batanes",20.448,121.968,A 6-story limestone lighthouse on Naidi Hill offering a panoramic view of the West Philippine Sea and Mt. Iraya.
+Honesty Coffee Shop,Cafe,"Ivana, Batanes",20.364,121.914,"A world-famous unmanned store where customers take what they need and drop their payment in a box, relying solely on honesty."
+Marlboro Country (Racuh a Payaman),Viewpoint,"Mahatao, Batanes",20.404,121.954,"A breathtaking communal pastureland featuring rolling hills, free-roaming cattle, and spectacular views of the Pacific Ocean."
+Kapurpurawan Rock Formation,Nature Park,"Burgos, Ilocos Norte",18.536,120.651,A stunning creamy-white limestone rock formation sculpted by oceanic and weather forces over thousands of years.
+Calle Crisologo,Historical Site,"Vigan, Ilocos Sur",17.573,120.389,A UNESCO World Heritage site featuring a cobblestone street lined with well-preserved Spanish-era ancestral houses.
+BenCab Museum,Museum,"Tuba, Benguet",16.386,120.573,"Houses the art collection of National Artist Benedicto Cabrera, set against a backdrop of a misty organic farm and gardens."
+Whang-od Buscalan Tattoo,Cultural Spot,"Tinglayan, Kalinga",17.314,121.214,"The home of Apo Whang-od, the last 'mambabatok' (traditional Kalinga tattoo artist), attracting travelers seeking ancient ink."
+Mt. Pinatubo Crater Lake,Nature Park,"Botolan, Zambales",15.143,120.35,"A spectacular turquoise lake formed in the crater of Mt. Pinatubo after its 1991 eruption, accessible via 4x4 and trekking."
+Las Casas Filipinas de Acuzar,Historical Site,"Bagac, Bataan",14.603,120.385,A massive heritage resort featuring a collection of restored Spanish-Filipino houses transplanted from various parts of the country.
+Masungi Georeserve,Nature Park,"Baras, Rizal",14.603,121.321,A conservation area known for its jagged limestone karsts and the 'Sapot' (spider web) viewing platform.
+Enchanted Kingdom,Tourist Attraction,"Santa Rosa, Laguna",14.266,121.096,"The first and only world-class theme park in the Philippines, famous for the Space Shuttle roller coaster and weekend fireworks."
+Taal Basilica,Historical Site,"Taal, Batangas",13.882,120.923,"The Minor Basilica of Saint Martin of Tours, considered the largest Catholic church in Asia, known for its baroque architecture."
+Mayon Volcano ATV,Tourist Attraction,"Daraga, Albay",13.16,123.7,An adrenaline-pumping adventure driving ATV quads through volcanic lava trails at the foot of the perfect-cone Mayon Volcano.
+Donsol Whale Shark Center,Nature Park,"Donsol, Sorsogon",12.91,123.595,"The pioneering site for ethical whale shark interactions in the Philippines, allowing visitors to swim with the 'Butanding' in the wild."
+Intramuros Walled City,Historical Site,"Intramuros, Manila",14.59,120.975,"The historic walled area within Manila, serving as the seat of government and political power during the Spanish colonial period."
+Binondo Chinatown,Cultural Spot,"Binondo, Manila",14.6,120.974,"The world's oldest Chinatown, established in 1594, famous for its authentic Hokkien cuisine, jewelry shops, and the Binondo Church."
+Aling Lucing's Sisig,Restaurant,"Angeles, Pampanga",15.132,120.59,"The birthplace of the modern Sisig, founded by Lucia Cunanan, credited with inventing the famous sizzling pork dish."
+Paoay Church,Historical Site,"Paoay, Ilocos Norte",18.062,120.522,"A UNESCO World Heritage site known for its massive buttresses designed to withstand earthquakes, a prime example of Earthquake Baroque."
+Hundred Islands National Park,Nature Park,"Alaminos, Pangasinan",16.206,120.033,"A protected area comprising 124 islands and islets, famous for island hopping, snorkeling, and the Governor's Island viewdeck."
+Villa Escudero Plantations,Cultural Spot,"Tiaong, Quezon",13.931,121.345,A coconut plantation and resort famous for its waterfall restaurant where guests dine with their feet submerged in the running water.
+Corregidor Island,Historical Site,"Cavite City, Cavite",14.383,120.575,"A historic island fortress at the entrance of Manila Bay, featuring ruins of barracks and heavy artillery from World War II."
+Quezon City Parish Church,Historical Site,"Quezon City, NCR",14.651,121.051,"The central religious and historical landmark of Quezon City, serving as the spiritual heart of the Catholic community in NCR."
+Quezon City Public Market,Pasalubong Store,"Quezon City, NCR",14.649000000000001,121.04899999999999,"The bustling trade center of Quezon City, NCR, offering fresh local produce, regional delicacies, and native handicrafts."
+Quezon City Municipal Plaza,Nature Park,"Quezon City, NCR",14.65,121.05,"A key community gathering space in the heart of Quezon City, perfect for leisure, events, and experiencing the local NCR lifestyle."
+Quezon City Local Eatery,Restaurant,"Quezon City, NCR",14.652000000000001,121.048,A popular dining spot in Quezon City serving authentic NCR dishes and affordable comfort food favored by locals.
+Manila Parish Church,Historical Site,"Manila, NCR",14.600999999999999,120.98100000000001,"The central religious and historical landmark of Manila, serving as the spiritual heart of the Catholic community in NCR."
+Manila Public Market,Pasalubong Store,"Manila, NCR",14.599,120.979,"The bustling trade center of Manila, NCR, offering fresh local produce, regional delicacies, and native handicrafts."
+Manila Municipal Plaza,Nature Park,"Manila, NCR",14.6,120.98,"A key community gathering space in the heart of Manila, perfect for leisure, events, and experiencing the local NCR lifestyle."
+Manila Local Eatery,Restaurant,"Manila, NCR",14.602,120.97800000000001,A popular dining spot in Manila serving authentic NCR dishes and affordable comfort food favored by locals.
+Makati Parish Church,Historical Site,"Makati, NCR",14.551,121.031,"The central religious and historical landmark of Makati, serving as the spiritual heart of the Catholic community in NCR."
+Makati Public Market,Pasalubong Store,"Makati, NCR",14.549000000000001,121.029,"The bustling trade center of Makati, NCR, offering fresh local produce, regional delicacies, and native handicrafts."
+Makati Municipal Plaza,Nature Park,"Makati, NCR",14.55,121.03,"A key community gathering space in the heart of Makati, perfect for leisure, events, and experiencing the local NCR lifestyle."
+Makati Local Eatery,Restaurant,"Makati, NCR",14.552000000000001,121.028,A popular dining spot in Makati serving authentic NCR dishes and affordable comfort food favored by locals.
+Taguig Parish Church,Historical Site,"Taguig, NCR",14.520999999999999,121.051,"The central religious and historical landmark of Taguig, serving as the spiritual heart of the Catholic community in NCR."
+Taguig Public Market,Pasalubong Store,"Taguig, NCR",14.519,121.04899999999999,"The bustling trade center of Taguig, NCR, offering fresh local produce, regional delicacies, and native handicrafts."
+Taguig Municipal Plaza,Nature Park,"Taguig, NCR",14.52,121.05,"A key community gathering space in the heart of Taguig, perfect for leisure, events, and experiencing the local NCR lifestyle."
+Taguig Local Eatery,Restaurant,"Taguig, NCR",14.522,121.048,A popular dining spot in Taguig serving authentic NCR dishes and affordable comfort food favored by locals.
+Pasig Parish Church,Historical Site,"Pasig, NCR",14.571,121.061,"The central religious and historical landmark of Pasig, serving as the spiritual heart of the Catholic community in NCR."
+Pasig Public Market,Pasalubong Store,"Pasig, NCR",14.569,121.059,"The bustling trade center of Pasig, NCR, offering fresh local produce, regional delicacies, and native handicrafts."
+Pasig Municipal Plaza,Nature Park,"Pasig, NCR",14.57,121.06,"A key community gathering space in the heart of Pasig, perfect for leisure, events, and experiencing the local NCR lifestyle."
+Pasig Local Eatery,Restaurant,"Pasig, NCR",14.572000000000001,121.058,A popular dining spot in Pasig serving authentic NCR dishes and affordable comfort food favored by locals.
+Mandaluyong Parish Church,Historical Site,"Mandaluyong, NCR",14.581,121.031,"The central religious and historical landmark of Mandaluyong, serving as the spiritual heart of the Catholic community in NCR."
+Mandaluyong Public Market,Pasalubong Store,"Mandaluyong, NCR",14.579,121.029,"The bustling trade center of Mandaluyong, NCR, offering fresh local produce, regional delicacies, and native handicrafts."
+Mandaluyong Municipal Plaza,Nature Park,"Mandaluyong, NCR",14.58,121.03,"A key community gathering space in the heart of Mandaluyong, perfect for leisure, events, and experiencing the local NCR lifestyle."
+Mandaluyong Local Eatery,Restaurant,"Mandaluyong, NCR",14.582,121.028,A popular dining spot in Mandaluyong serving authentic NCR dishes and affordable comfort food favored by locals.
+Pasay Parish Church,Historical Site,"Pasay, NCR",14.540999999999999,121.001,"The central religious and historical landmark of Pasay, serving as the spiritual heart of the Catholic community in NCR."
+Pasay Public Market,Pasalubong Store,"Pasay, NCR",14.539,120.999,"The bustling trade center of Pasay, NCR, offering fresh local produce, regional delicacies, and native handicrafts."
+Pasay Municipal Plaza,Nature Park,"Pasay, NCR",14.54,121.0,"A key community gathering space in the heart of Pasay, perfect for leisure, events, and experiencing the local NCR lifestyle."
+Pasay Local Eatery,Restaurant,"Pasay, NCR",14.542,120.998,A popular dining spot in Pasay serving authentic NCR dishes and affordable comfort food favored by locals.
+Parañaque Parish Church,Historical Site,"Parañaque, NCR",14.471,121.001,"The central religious and historical landmark of Parañaque, serving as the spiritual heart of the Catholic community in NCR."
+Parañaque Public Market,Pasalubong Store,"Parañaque, NCR",14.469000000000001,120.999,"The bustling trade center of Parañaque, NCR, offering fresh local produce, regional delicacies, and native handicrafts."
+Parañaque Municipal Plaza,Nature Park,"Parañaque, NCR",14.47,121.0,"A key community gathering space in the heart of Parañaque, perfect for leisure, events, and experiencing the local NCR lifestyle."
+Parañaque Local Eatery,Restaurant,"Parañaque, NCR",14.472000000000001,120.998,A popular dining spot in Parañaque serving authentic NCR dishes and affordable comfort food favored by locals.
+Las Piñas Parish Church,Historical Site,"Las Piñas, NCR",14.440999999999999,120.98100000000001,"The central religious and historical landmark of Las Piñas, serving as the spiritual heart of the Catholic community in NCR."
+Las Piñas Public Market,Pasalubong Store,"Las Piñas, NCR",14.439,120.979,"The bustling trade center of Las Piñas, NCR, offering fresh local produce, regional delicacies, and native handicrafts."
+Las Piñas Municipal Plaza,Nature Park,"Las Piñas, NCR",14.44,120.98,"A key community gathering space in the heart of Las Piñas, perfect for leisure, events, and experiencing the local NCR lifestyle."
+Las Piñas Local Eatery,Restaurant,"Las Piñas, NCR",14.442,120.97800000000001,A popular dining spot in Las Piñas serving authentic NCR dishes and affordable comfort food favored by locals.
+Muntinlupa Parish Church,Historical Site,"Muntinlupa, NCR",14.411,121.04100000000001,"The central religious and historical landmark of Muntinlupa, serving as the spiritual heart of the Catholic community in NCR."
+Muntinlupa Public Market,Pasalubong Store,"Muntinlupa, NCR",14.409,121.039,"The bustling trade center of Muntinlupa, NCR, offering fresh local produce, regional delicacies, and native handicrafts."
+Muntinlupa Municipal Plaza,Nature Park,"Muntinlupa, NCR",14.41,121.04,"A key community gathering space in the heart of Muntinlupa, perfect for leisure, events, and experiencing the local NCR lifestyle."
+Muntinlupa Local Eatery,Restaurant,"Muntinlupa, NCR",14.412,121.03800000000001,A popular dining spot in Muntinlupa serving authentic NCR dishes and affordable comfort food favored by locals.
+Valenzuela Parish Church,Historical Site,"Valenzuela, NCR",14.690999999999999,120.961,"The central religious and historical landmark of Valenzuela, serving as the spiritual heart of the Catholic community in NCR."
+Valenzuela Public Market,Pasalubong Store,"Valenzuela, NCR",14.689,120.95899999999999,"The bustling trade center of Valenzuela, NCR, offering fresh local produce, regional delicacies, and native handicrafts."
+Valenzuela Municipal Plaza,Nature Park,"Valenzuela, NCR",14.69,120.96,"A key community gathering space in the heart of Valenzuela, perfect for leisure, events, and experiencing the local NCR lifestyle."
+Valenzuela Local Eatery,Restaurant,"Valenzuela, NCR",14.692,120.958,A popular dining spot in Valenzuela serving authentic NCR dishes and affordable comfort food favored by locals.
+Caloocan Parish Church,Historical Site,"Caloocan, NCR",14.661,120.98100000000001,"The central religious and historical landmark of Caloocan, serving as the spiritual heart of the Catholic community in NCR."
+Caloocan Public Market,Pasalubong Store,"Caloocan, NCR",14.659,120.979,"The bustling trade center of Caloocan, NCR, offering fresh local produce, regional delicacies, and native handicrafts."
+Caloocan Municipal Plaza,Nature Park,"Caloocan, NCR",14.66,120.98,"A key community gathering space in the heart of Caloocan, perfect for leisure, events, and experiencing the local NCR lifestyle."
+Caloocan Local Eatery,Restaurant,"Caloocan, NCR",14.662,120.97800000000001,A popular dining spot in Caloocan serving authentic NCR dishes and affordable comfort food favored by locals.
+Marikina Parish Church,Historical Site,"Marikina, NCR",14.631,121.09100000000001,"The central religious and historical landmark of Marikina, serving as the spiritual heart of the Catholic community in NCR."
+Marikina Public Market,Pasalubong Store,"Marikina, NCR",14.629000000000001,121.089,"The bustling trade center of Marikina, NCR, offering fresh local produce, regional delicacies, and native handicrafts."
+Marikina Municipal Plaza,Nature Park,"Marikina, NCR",14.63,121.09,"A key community gathering space in the heart of Marikina, perfect for leisure, events, and experiencing the local NCR lifestyle."
+Marikina Local Eatery,Restaurant,"Marikina, NCR",14.632000000000001,121.08800000000001,A popular dining spot in Marikina serving authentic NCR dishes and affordable comfort food favored by locals.
+San Juan Parish Church,Historical Site,"San Juan, NCR",14.600999999999999,121.031,"The central religious and historical landmark of San Juan, serving as the spiritual heart of the Catholic community in NCR."
+San Juan Public Market,Pasalubong Store,"San Juan, NCR",14.599,121.029,"The bustling trade center of San Juan, NCR, offering fresh local produce, regional delicacies, and native handicrafts."
+San Juan Municipal Plaza,Nature Park,"San Juan, NCR",14.6,121.03,"A key community gathering space in the heart of San Juan, perfect for leisure, events, and experiencing the local NCR lifestyle."
+San Juan Local Eatery,Restaurant,"San Juan, NCR",14.602,121.028,A popular dining spot in San Juan serving authentic NCR dishes and affordable comfort food favored by locals.
+Antipolo Parish Church,Historical Site,"Antipolo, Rizal",14.591,121.171,"The central religious and historical landmark of Antipolo, serving as the spiritual heart of the Catholic community in Rizal."
+Antipolo Public Market,Pasalubong Store,"Antipolo, Rizal",14.589,121.169,"The bustling trade center of Antipolo, Rizal, offering fresh local produce, regional delicacies, and native handicrafts."
+Antipolo Municipal Plaza,Nature Park,"Antipolo, Rizal",14.59,121.17,"A key community gathering space in the heart of Antipolo, perfect for leisure, events, and experiencing the local Rizal lifestyle."
+Antipolo Local Eatery,Restaurant,"Antipolo, Rizal",14.592,121.168,A popular dining spot in Antipolo serving authentic Rizal dishes and affordable comfort food favored by locals.
+Taytay Parish Church,Historical Site,"Taytay, Rizal",14.561,121.131,"The central religious and historical landmark of Taytay, serving as the spiritual heart of the Catholic community in Rizal."
+Taytay Public Market,Pasalubong Store,"Taytay, Rizal",14.559000000000001,121.12899999999999,"The bustling trade center of Taytay, Rizal, offering fresh local produce, regional delicacies, and native handicrafts."
+Taytay Municipal Plaza,Nature Park,"Taytay, Rizal",14.56,121.13,"A key community gathering space in the heart of Taytay, perfect for leisure, events, and experiencing the local Rizal lifestyle."
+Taytay Local Eatery,Restaurant,"Taytay, Rizal",14.562000000000001,121.128,A popular dining spot in Taytay serving authentic Rizal dishes and affordable comfort food favored by locals.
+Angono Parish Church,Historical Site,"Angono, Rizal",14.530999999999999,121.15100000000001,"The central religious and historical landmark of Angono, serving as the spiritual heart of the Catholic community in Rizal."
+Angono Public Market,Pasalubong Store,"Angono, Rizal",14.529,121.149,"The bustling trade center of Angono, Rizal, offering fresh local produce, regional delicacies, and native handicrafts."
+Angono Municipal Plaza,Nature Park,"Angono, Rizal",14.53,121.15,"A key community gathering space in the heart of Angono, perfect for leisure, events, and experiencing the local Rizal lifestyle."
+Angono Local Eatery,Restaurant,"Angono, Rizal",14.532,121.14800000000001,A popular dining spot in Angono serving authentic Rizal dishes and affordable comfort food favored by locals.
+Binangonan Parish Church,Historical Site,"Binangonan, Rizal",14.481,121.191,"The central religious and historical landmark of Binangonan, serving as the spiritual heart of the Catholic community in Rizal."
+Binangonan Public Market,Pasalubong Store,"Binangonan, Rizal",14.479000000000001,121.189,"The bustling trade center of Binangonan, Rizal, offering fresh local produce, regional delicacies, and native handicrafts."
+Binangonan Municipal Plaza,Nature Park,"Binangonan, Rizal",14.48,121.19,"A key community gathering space in the heart of Binangonan, perfect for leisure, events, and experiencing the local Rizal lifestyle."
+Binangonan Local Eatery,Restaurant,"Binangonan, Rizal",14.482000000000001,121.188,A popular dining spot in Binangonan serving authentic Rizal dishes and affordable comfort food favored by locals.
+Cainta Parish Church,Historical Site,"Cainta, Rizal",14.571,121.111,"The central religious and historical landmark of Cainta, serving as the spiritual heart of the Catholic community in Rizal."
+Cainta Public Market,Pasalubong Store,"Cainta, Rizal",14.569,121.109,"The bustling trade center of Cainta, Rizal, offering fresh local produce, regional delicacies, and native handicrafts."
+Cainta Municipal Plaza,Nature Park,"Cainta, Rizal",14.57,121.11,"A key community gathering space in the heart of Cainta, perfect for leisure, events, and experiencing the local Rizal lifestyle."
+Cainta Local Eatery,Restaurant,"Cainta, Rizal",14.572000000000001,121.108,A popular dining spot in Cainta serving authentic Rizal dishes and affordable comfort food favored by locals.
+San Mateo Parish Church,Historical Site,"San Mateo, Rizal",14.690999999999999,121.12100000000001,"The central religious and historical landmark of San Mateo, serving as the spiritual heart of the Catholic community in Rizal."
+San Mateo Public Market,Pasalubong Store,"San Mateo, Rizal",14.689,121.119,"The bustling trade center of San Mateo, Rizal, offering fresh local produce, regional delicacies, and native handicrafts."
+San Mateo Municipal Plaza,Nature Park,"San Mateo, Rizal",14.69,121.12,"A key community gathering space in the heart of San Mateo, perfect for leisure, events, and experiencing the local Rizal lifestyle."
+San Mateo Local Eatery,Restaurant,"San Mateo, Rizal",14.692,121.11800000000001,A popular dining spot in San Mateo serving authentic Rizal dishes and affordable comfort food favored by locals.
+Tanay Parish Church,Historical Site,"Tanay, Rizal",14.501,121.281,"The central religious and historical landmark of Tanay, serving as the spiritual heart of the Catholic community in Rizal."
+Tanay Public Market,Pasalubong Store,"Tanay, Rizal",14.499,121.279,"The bustling trade center of Tanay, Rizal, offering fresh local produce, regional delicacies, and native handicrafts."
+Tanay Municipal Plaza,Nature Park,"Tanay, Rizal",14.5,121.28,"A key community gathering space in the heart of Tanay, perfect for leisure, events, and experiencing the local Rizal lifestyle."
+Tanay Local Eatery,Restaurant,"Tanay, Rizal",14.502,121.278,A popular dining spot in Tanay serving authentic Rizal dishes and affordable comfort food favored by locals.
+Baras Parish Church,Historical Site,"Baras, Rizal",14.520999999999999,121.26100000000001,"The central religious and historical landmark of Baras, serving as the spiritual heart of the Catholic community in Rizal."
+Baras Public Market,Pasalubong Store,"Baras, Rizal",14.519,121.259,"The bustling trade center of Baras, Rizal, offering fresh local produce, regional delicacies, and native handicrafts."
+Baras Municipal Plaza,Nature Park,"Baras, Rizal",14.52,121.26,"A key community gathering space in the heart of Baras, perfect for leisure, events, and experiencing the local Rizal lifestyle."
+Baras Local Eatery,Restaurant,"Baras, Rizal",14.522,121.25800000000001,A popular dining spot in Baras serving authentic Rizal dishes and affordable comfort food favored by locals.
+Pililla Parish Church,Historical Site,"Pililla, Rizal",14.481,121.301,"The central religious and historical landmark of Pililla, serving as the spiritual heart of the Catholic community in Rizal."
+Pililla Public Market,Pasalubong Store,"Pililla, Rizal",14.479000000000001,121.29899999999999,"The bustling trade center of Pililla, Rizal, offering fresh local produce, regional delicacies, and native handicrafts."
+Pililla Municipal Plaza,Nature Park,"Pililla, Rizal",14.48,121.3,"A key community gathering space in the heart of Pililla, perfect for leisure, events, and experiencing the local Rizal lifestyle."
+Pililla Local Eatery,Restaurant,"Pililla, Rizal",14.482000000000001,121.298,A popular dining spot in Pililla serving authentic Rizal dishes and affordable comfort food favored by locals.
+Morong Parish Church,Historical Site,"Morong, Rizal",14.511,121.23100000000001,"The central religious and historical landmark of Morong, serving as the spiritual heart of the Catholic community in Rizal."
+Morong Public Market,Pasalubong Store,"Morong, Rizal",14.509,121.229,"The bustling trade center of Morong, Rizal, offering fresh local produce, regional delicacies, and native handicrafts."
+Morong Municipal Plaza,Nature Park,"Morong, Rizal",14.51,121.23,"A key community gathering space in the heart of Morong, perfect for leisure, events, and experiencing the local Rizal lifestyle."
+Morong Local Eatery,Restaurant,"Morong, Rizal",14.512,121.22800000000001,A popular dining spot in Morong serving authentic Rizal dishes and affordable comfort food favored by locals.
+San Pedro Parish Church,Historical Site,"San Pedro, Laguna",14.360999999999999,121.04100000000001,"The central religious and historical landmark of San Pedro, serving as the spiritual heart of the Catholic community in Laguna."
+San Pedro Public Market,Pasalubong Store,"San Pedro, Laguna",14.359,121.039,"The bustling trade center of San Pedro, Laguna, offering fresh local produce, regional delicacies, and native handicrafts."
+San Pedro Municipal Plaza,Nature Park,"San Pedro, Laguna",14.36,121.04,"A key community gathering space in the heart of San Pedro, perfect for leisure, events, and experiencing the local Laguna lifestyle."
+San Pedro Local Eatery,Restaurant,"San Pedro, Laguna",14.362,121.03800000000001,A popular dining spot in San Pedro serving authentic Laguna dishes and affordable comfort food favored by locals.
+Biñan Parish Church,Historical Site,"Biñan, Laguna",14.341,121.081,"The central religious and historical landmark of Biñan, serving as the spiritual heart of the Catholic community in Laguna."
+Biñan Public Market,Pasalubong Store,"Biñan, Laguna",14.339,121.079,"The bustling trade center of Biñan, Laguna, offering fresh local produce, regional delicacies, and native handicrafts."
+Biñan Municipal Plaza,Nature Park,"Biñan, Laguna",14.34,121.08,"A key community gathering space in the heart of Biñan, perfect for leisure, events, and experiencing the local Laguna lifestyle."
+Biñan Local Eatery,Restaurant,"Biñan, Laguna",14.342,121.078,A popular dining spot in Biñan serving authentic Laguna dishes and affordable comfort food favored by locals.
+Santa Rosa Parish Church,Historical Site,"Santa Rosa, Laguna",14.311,121.111,"The central religious and historical landmark of Santa Rosa, serving as the spiritual heart of the Catholic community in Laguna."
+Santa Rosa Public Market,Pasalubong Store,"Santa Rosa, Laguna",14.309000000000001,121.109,"The bustling trade center of Santa Rosa, Laguna, offering fresh local produce, regional delicacies, and native handicrafts."
+Santa Rosa Municipal Plaza,Nature Park,"Santa Rosa, Laguna",14.31,121.11,"A key community gathering space in the heart of Santa Rosa, perfect for leisure, events, and experiencing the local Laguna lifestyle."
+Santa Rosa Local Eatery,Restaurant,"Santa Rosa, Laguna",14.312000000000001,121.108,A popular dining spot in Santa Rosa serving authentic Laguna dishes and affordable comfort food favored by locals.
+Cabuyao Parish Church,Historical Site,"Cabuyao, Laguna",14.280999999999999,121.12100000000001,"The central religious and historical landmark of Cabuyao, serving as the spiritual heart of the Catholic community in Laguna."
+Cabuyao Public Market,Pasalubong Store,"Cabuyao, Laguna",14.279,121.119,"The bustling trade center of Cabuyao, Laguna, offering fresh local produce, regional delicacies, and native handicrafts."
+Cabuyao Municipal Plaza,Nature Park,"Cabuyao, Laguna",14.28,121.12,"A key community gathering space in the heart of Cabuyao, perfect for leisure, events, and experiencing the local Laguna lifestyle."
+Cabuyao Local Eatery,Restaurant,"Cabuyao, Laguna",14.282,121.11800000000001,A popular dining spot in Cabuyao serving authentic Laguna dishes and affordable comfort food favored by locals.
+Calamba Parish Church,Historical Site,"Calamba, Laguna",14.211,121.161,"The central religious and historical landmark of Calamba, serving as the spiritual heart of the Catholic community in Laguna."
+Calamba Public Market,Pasalubong Store,"Calamba, Laguna",14.209000000000001,121.15899999999999,"The bustling trade center of Calamba, Laguna, offering fresh local produce, regional delicacies, and native handicrafts."
+Calamba Municipal Plaza,Nature Park,"Calamba, Laguna",14.21,121.16,"A key community gathering space in the heart of Calamba, perfect for leisure, events, and experiencing the local Laguna lifestyle."
+Calamba Local Eatery,Restaurant,"Calamba, Laguna",14.212000000000002,121.158,A popular dining spot in Calamba serving authentic Laguna dishes and affordable comfort food favored by locals.
+Los Baños Parish Church,Historical Site,"Los Baños, Laguna",14.171,121.241,"The central religious and historical landmark of Los Baños, serving as the spiritual heart of the Catholic community in Laguna."
+Los Baños Public Market,Pasalubong Store,"Los Baños, Laguna",14.169,121.23899999999999,"The bustling trade center of Los Baños, Laguna, offering fresh local produce, regional delicacies, and native handicrafts."
+Los Baños Municipal Plaza,Nature Park,"Los Baños, Laguna",14.17,121.24,"A key community gathering space in the heart of Los Baños, perfect for leisure, events, and experiencing the local Laguna lifestyle."
+Los Baños Local Eatery,Restaurant,"Los Baños, Laguna",14.172,121.238,A popular dining spot in Los Baños serving authentic Laguna dishes and affordable comfort food favored by locals.
+San Pablo Parish Church,Historical Site,"San Pablo, Laguna",14.071,121.321,"The central religious and historical landmark of San Pablo, serving as the spiritual heart of the Catholic community in Laguna."
+San Pablo Public Market,Pasalubong Store,"San Pablo, Laguna",14.069,121.31899999999999,"The bustling trade center of San Pablo, Laguna, offering fresh local produce, regional delicacies, and native handicrafts."
+San Pablo Municipal Plaza,Nature Park,"San Pablo, Laguna",14.07,121.32,"A key community gathering space in the heart of San Pablo, perfect for leisure, events, and experiencing the local Laguna lifestyle."
+San Pablo Local Eatery,Restaurant,"San Pablo, Laguna",14.072000000000001,121.318,A popular dining spot in San Pablo serving authentic Laguna dishes and affordable comfort food favored by locals.
+Santa Cruz Parish Church,Historical Site,"Santa Cruz, Laguna",14.280999999999999,121.411,"The central religious and historical landmark of Santa Cruz, serving as the spiritual heart of the Catholic community in Laguna."
+Santa Cruz Public Market,Pasalubong Store,"Santa Cruz, Laguna",14.279,121.40899999999999,"The bustling trade center of Santa Cruz, Laguna, offering fresh local produce, regional delicacies, and native handicrafts."
+Santa Cruz Municipal Plaza,Nature Park,"Santa Cruz, Laguna",14.28,121.41,"A key community gathering space in the heart of Santa Cruz, perfect for leisure, events, and experiencing the local Laguna lifestyle."
+Santa Cruz Local Eatery,Restaurant,"Santa Cruz, Laguna",14.282,121.408,A popular dining spot in Santa Cruz serving authentic Laguna dishes and affordable comfort food favored by locals.
+Pagsanjan Parish Church,Historical Site,"Pagsanjan, Laguna",14.270999999999999,121.45100000000001,"The central religious and historical landmark of Pagsanjan, serving as the spiritual heart of the Catholic community in Laguna."
+Pagsanjan Public Market,Pasalubong Store,"Pagsanjan, Laguna",14.269,121.449,"The bustling trade center of Pagsanjan, Laguna, offering fresh local produce, regional delicacies, and native handicrafts."
+Pagsanjan Municipal Plaza,Nature Park,"Pagsanjan, Laguna",14.27,121.45,"A key community gathering space in the heart of Pagsanjan, perfect for leisure, events, and experiencing the local Laguna lifestyle."
+Pagsanjan Local Eatery,Restaurant,"Pagsanjan, Laguna",14.272,121.44800000000001,A popular dining spot in Pagsanjan serving authentic Laguna dishes and affordable comfort food favored by locals.
+Liliw Parish Church,Historical Site,"Liliw, Laguna",14.131,121.43100000000001,"The central religious and historical landmark of Liliw, serving as the spiritual heart of the Catholic community in Laguna."
+Liliw Public Market,Pasalubong Store,"Liliw, Laguna",14.129000000000001,121.429,"The bustling trade center of Liliw, Laguna, offering fresh local produce, regional delicacies, and native handicrafts."
+Liliw Municipal Plaza,Nature Park,"Liliw, Laguna",14.13,121.43,"A key community gathering space in the heart of Liliw, perfect for leisure, events, and experiencing the local Laguna lifestyle."
+Liliw Local Eatery,Restaurant,"Liliw, Laguna",14.132000000000001,121.42800000000001,A popular dining spot in Liliw serving authentic Laguna dishes and affordable comfort food favored by locals.
+Nagcarlan Parish Church,Historical Site,"Nagcarlan, Laguna",14.141,121.411,"The central religious and historical landmark of Nagcarlan, serving as the spiritual heart of the Catholic community in Laguna."
+Nagcarlan Public Market,Pasalubong Store,"Nagcarlan, Laguna",14.139000000000001,121.40899999999999,"The bustling trade center of Nagcarlan, Laguna, offering fresh local produce, regional delicacies, and native handicrafts."
+Nagcarlan Municipal Plaza,Nature Park,"Nagcarlan, Laguna",14.14,121.41,"A key community gathering space in the heart of Nagcarlan, perfect for leisure, events, and experiencing the local Laguna lifestyle."
+Nagcarlan Local Eatery,Restaurant,"Nagcarlan, Laguna",14.142000000000001,121.408,A popular dining spot in Nagcarlan serving authentic Laguna dishes and affordable comfort food favored by locals.
+Majayjay Parish Church,Historical Site,"Majayjay, Laguna",14.120999999999999,121.48100000000001,"The central religious and historical landmark of Majayjay, serving as the spiritual heart of the Catholic community in Laguna."
+Majayjay Public Market,Pasalubong Store,"Majayjay, Laguna",14.119,121.479,"The bustling trade center of Majayjay, Laguna, offering fresh local produce, regional delicacies, and native handicrafts."
+Majayjay Municipal Plaza,Nature Park,"Majayjay, Laguna",14.12,121.48,"A key community gathering space in the heart of Majayjay, perfect for leisure, events, and experiencing the local Laguna lifestyle."
+Majayjay Local Eatery,Restaurant,"Majayjay, Laguna",14.122,121.47800000000001,A popular dining spot in Majayjay serving authentic Laguna dishes and affordable comfort food favored by locals.
+Bacoor Parish Church,Historical Site,"Bacoor, Cavite",14.461,120.961,"The central religious and historical landmark of Bacoor, serving as the spiritual heart of the Catholic community in Cavite."
+Bacoor Public Market,Pasalubong Store,"Bacoor, Cavite",14.459000000000001,120.95899999999999,"The bustling trade center of Bacoor, Cavite, offering fresh local produce, regional delicacies, and native handicrafts."
+Bacoor Municipal Plaza,Nature Park,"Bacoor, Cavite",14.46,120.96,"A key community gathering space in the heart of Bacoor, perfect for leisure, events, and experiencing the local Cavite lifestyle."
+Bacoor Local Eatery,Restaurant,"Bacoor, Cavite",14.462000000000002,120.958,A popular dining spot in Bacoor serving authentic Cavite dishes and affordable comfort food favored by locals.
+Imus Parish Church,Historical Site,"Imus, Cavite",14.431,120.941,"The central religious and historical landmark of Imus, serving as the spiritual heart of the Catholic community in Cavite."
+Imus Public Market,Pasalubong Store,"Imus, Cavite",14.429,120.939,"The bustling trade center of Imus, Cavite, offering fresh local produce, regional delicacies, and native handicrafts."
+Imus Municipal Plaza,Nature Park,"Imus, Cavite",14.43,120.94,"A key community gathering space in the heart of Imus, perfect for leisure, events, and experiencing the local Cavite lifestyle."
+Imus Local Eatery,Restaurant,"Imus, Cavite",14.432,120.938,A popular dining spot in Imus serving authentic Cavite dishes and affordable comfort food favored by locals.
+Dasmarinas Parish Church,Historical Site,"Dasmarinas, Cavite",14.321,120.93100000000001,"The central religious and historical landmark of Dasmarinas, serving as the spiritual heart of the Catholic community in Cavite."
+Dasmarinas Public Market,Pasalubong Store,"Dasmarinas, Cavite",14.319,120.929,"The bustling trade center of Dasmarinas, Cavite, offering fresh local produce, regional delicacies, and native handicrafts."
+Dasmarinas Municipal Plaza,Nature Park,"Dasmarinas, Cavite",14.32,120.93,"A key community gathering space in the heart of Dasmarinas, perfect for leisure, events, and experiencing the local Cavite lifestyle."
+Dasmarinas Local Eatery,Restaurant,"Dasmarinas, Cavite",14.322000000000001,120.92800000000001,A popular dining spot in Dasmarinas serving authentic Cavite dishes and affordable comfort food favored by locals.
+General Trias Parish Church,Historical Site,"General Trias, Cavite",14.391,120.881,"The central religious and historical landmark of General Trias, serving as the spiritual heart of the Catholic community in Cavite."
+General Trias Public Market,Pasalubong Store,"General Trias, Cavite",14.389000000000001,120.87899999999999,"The bustling trade center of General Trias, Cavite, offering fresh local produce, regional delicacies, and native handicrafts."
+General Trias Municipal Plaza,Nature Park,"General Trias, Cavite",14.39,120.88,"A key community gathering space in the heart of General Trias, perfect for leisure, events, and experiencing the local Cavite lifestyle."
+General Trias Local Eatery,Restaurant,"General Trias, Cavite",14.392000000000001,120.878,A popular dining spot in General Trias serving authentic Cavite dishes and affordable comfort food favored by locals.
+Trece Martires Parish Church,Historical Site,"Trece Martires, Cavite",14.280999999999999,120.87100000000001,"The central religious and historical landmark of Trece Martires, serving as the spiritual heart of the Catholic community in Cavite."
+Trece Martires Public Market,Pasalubong Store,"Trece Martires, Cavite",14.279,120.869,"The bustling trade center of Trece Martires, Cavite, offering fresh local produce, regional delicacies, and native handicrafts."
+Trece Martires Municipal Plaza,Nature Park,"Trece Martires, Cavite",14.28,120.87,"A key community gathering space in the heart of Trece Martires, perfect for leisure, events, and experiencing the local Cavite lifestyle."
+Trece Martires Local Eatery,Restaurant,"Trece Martires, Cavite",14.282,120.86800000000001,A popular dining spot in Trece Martires serving authentic Cavite dishes and affordable comfort food favored by locals.
+Tagaytay Parish Church,Historical Site,"Tagaytay, Cavite",14.110999999999999,120.961,"The central religious and historical landmark of Tagaytay, serving as the spiritual heart of the Catholic community in Cavite."
+Tagaytay Public Market,Pasalubong Store,"Tagaytay, Cavite",14.109,120.95899999999999,"The bustling trade center of Tagaytay, Cavite, offering fresh local produce, regional delicacies, and native handicrafts."
+Tagaytay Municipal Plaza,Nature Park,"Tagaytay, Cavite",14.11,120.96,"A key community gathering space in the heart of Tagaytay, perfect for leisure, events, and experiencing the local Cavite lifestyle."
+Tagaytay Local Eatery,Restaurant,"Tagaytay, Cavite",14.112,120.958,A popular dining spot in Tagaytay serving authentic Cavite dishes and affordable comfort food favored by locals.
+Silang Parish Church,Historical Site,"Silang, Cavite",14.231,120.971,"The central religious and historical landmark of Silang, serving as the spiritual heart of the Catholic community in Cavite."
+Silang Public Market,Pasalubong Store,"Silang, Cavite",14.229000000000001,120.969,"The bustling trade center of Silang, Cavite, offering fresh local produce, regional delicacies, and native handicrafts."
+Silang Municipal Plaza,Nature Park,"Silang, Cavite",14.23,120.97,"A key community gathering space in the heart of Silang, perfect for leisure, events, and experiencing the local Cavite lifestyle."
+Silang Local Eatery,Restaurant,"Silang, Cavite",14.232000000000001,120.968,A popular dining spot in Silang serving authentic Cavite dishes and affordable comfort food favored by locals.
+Kawit Parish Church,Historical Site,"Kawit, Cavite",14.440999999999999,120.90100000000001,"The central religious and historical landmark of Kawit, serving as the spiritual heart of the Catholic community in Cavite."
+Kawit Public Market,Pasalubong Store,"Kawit, Cavite",14.439,120.899,"The bustling trade center of Kawit, Cavite, offering fresh local produce, regional delicacies, and native handicrafts."
+Kawit Municipal Plaza,Nature Park,"Kawit, Cavite",14.44,120.9,"A key community gathering space in the heart of Kawit, perfect for leisure, events, and experiencing the local Cavite lifestyle."
+Kawit Local Eatery,Restaurant,"Kawit, Cavite",14.442,120.89800000000001,A popular dining spot in Kawit serving authentic Cavite dishes and affordable comfort food favored by locals.
+Alfonso Parish Church,Historical Site,"Alfonso, Cavite",14.141,120.851,"The central religious and historical landmark of Alfonso, serving as the spiritual heart of the Catholic community in Cavite."
+Alfonso Public Market,Pasalubong Store,"Alfonso, Cavite",14.139000000000001,120.84899999999999,"The bustling trade center of Alfonso, Cavite, offering fresh local produce, regional delicacies, and native handicrafts."
+Alfonso Municipal Plaza,Nature Park,"Alfonso, Cavite",14.14,120.85,"A key community gathering space in the heart of Alfonso, perfect for leisure, events, and experiencing the local Cavite lifestyle."
+Alfonso Local Eatery,Restaurant,"Alfonso, Cavite",14.142000000000001,120.848,A popular dining spot in Alfonso serving authentic Cavite dishes and affordable comfort food favored by locals.
+Indang Parish Church,Historical Site,"Indang, Cavite",14.190999999999999,120.87100000000001,"The central religious and historical landmark of Indang, serving as the spiritual heart of the Catholic community in Cavite."
+Indang Public Market,Pasalubong Store,"Indang, Cavite",14.189,120.869,"The bustling trade center of Indang, Cavite, offering fresh local produce, regional delicacies, and native handicrafts."
+Indang Municipal Plaza,Nature Park,"Indang, Cavite",14.19,120.87,"A key community gathering space in the heart of Indang, perfect for leisure, events, and experiencing the local Cavite lifestyle."
+Indang Local Eatery,Restaurant,"Indang, Cavite",14.192,120.86800000000001,A popular dining spot in Indang serving authentic Cavite dishes and affordable comfort food favored by locals.
+Naic Parish Church,Historical Site,"Naic, Cavite",14.321,120.76100000000001,"The central religious and historical landmark of Naic, serving as the spiritual heart of the Catholic community in Cavite."
+Naic Public Market,Pasalubong Store,"Naic, Cavite",14.319,120.759,"The bustling trade center of Naic, Cavite, offering fresh local produce, regional delicacies, and native handicrafts."
+Naic Municipal Plaza,Nature Park,"Naic, Cavite",14.32,120.76,"A key community gathering space in the heart of Naic, perfect for leisure, events, and experiencing the local Cavite lifestyle."
+Naic Local Eatery,Restaurant,"Naic, Cavite",14.322000000000001,120.75800000000001,A popular dining spot in Naic serving authentic Cavite dishes and affordable comfort food favored by locals.
+Ternate Parish Church,Historical Site,"Ternate, Cavite",14.280999999999999,120.68100000000001,"The central religious and historical landmark of Ternate, serving as the spiritual heart of the Catholic community in Cavite."
+Ternate Public Market,Pasalubong Store,"Ternate, Cavite",14.279,120.679,"The bustling trade center of Ternate, Cavite, offering fresh local produce, regional delicacies, and native handicrafts."
+Ternate Municipal Plaza,Nature Park,"Ternate, Cavite",14.28,120.68,"A key community gathering space in the heart of Ternate, perfect for leisure, events, and experiencing the local Cavite lifestyle."
+Ternate Local Eatery,Restaurant,"Ternate, Cavite",14.282,120.67800000000001,A popular dining spot in Ternate serving authentic Cavite dishes and affordable comfort food favored by locals.
+Batangas City Parish Church,Historical Site,"Batangas City, Batangas",13.751,121.051,"The central religious and historical landmark of Batangas City, serving as the spiritual heart of the Catholic community in Batangas."
+Batangas City Public Market,Pasalubong Store,"Batangas City, Batangas",13.749,121.04899999999999,"The bustling trade center of Batangas City, Batangas, offering fresh local produce, regional delicacies, and native handicrafts."
+Batangas City Municipal Plaza,Nature Park,"Batangas City, Batangas",13.75,121.05,"A key community gathering space in the heart of Batangas City, perfect for leisure, events, and experiencing the local Batangas lifestyle."
+Batangas City Local Eatery,Restaurant,"Batangas City, Batangas",13.752,121.048,A popular dining spot in Batangas City serving authentic Batangas dishes and affordable comfort food favored by locals.
+Lipa Parish Church,Historical Site,"Lipa, Batangas",13.940999999999999,121.161,"The central religious and historical landmark of Lipa, serving as the spiritual heart of the Catholic community in Batangas."
+Lipa Public Market,Pasalubong Store,"Lipa, Batangas",13.939,121.15899999999999,"The bustling trade center of Lipa, Batangas, offering fresh local produce, regional delicacies, and native handicrafts."
+Lipa Municipal Plaza,Nature Park,"Lipa, Batangas",13.94,121.16,"A key community gathering space in the heart of Lipa, perfect for leisure, events, and experiencing the local Batangas lifestyle."
+Lipa Local Eatery,Restaurant,"Lipa, Batangas",13.942,121.158,A popular dining spot in Lipa serving authentic Batangas dishes and affordable comfort food favored by locals.
+Tanauan Parish Church,Historical Site,"Tanauan, Batangas",14.081,121.15100000000001,"The central religious and historical landmark of Tanauan, serving as the spiritual heart of the Catholic community in Batangas."
+Tanauan Public Market,Pasalubong Store,"Tanauan, Batangas",14.079,121.149,"The bustling trade center of Tanauan, Batangas, offering fresh local produce, regional delicacies, and native handicrafts."
+Tanauan Municipal Plaza,Nature Park,"Tanauan, Batangas",14.08,121.15,"A key community gathering space in the heart of Tanauan, perfect for leisure, events, and experiencing the local Batangas lifestyle."
+Tanauan Local Eatery,Restaurant,"Tanauan, Batangas",14.082,121.14800000000001,A popular dining spot in Tanauan serving authentic Batangas dishes and affordable comfort food favored by locals.
+Sto. Tomas Parish Church,Historical Site,"Sto. Tomas, Batangas",14.091,121.141,"The central religious and historical landmark of Sto. Tomas, serving as the spiritual heart of the Catholic community in Batangas."
+Sto. Tomas Public Market,Pasalubong Store,"Sto. Tomas, Batangas",14.089,121.139,"The bustling trade center of Sto. Tomas, Batangas, offering fresh local produce, regional delicacies, and native handicrafts."
+Sto. Tomas Municipal Plaza,Nature Park,"Sto. Tomas, Batangas",14.09,121.14,"A key community gathering space in the heart of Sto. Tomas, perfect for leisure, events, and experiencing the local Batangas lifestyle."
+Sto. Tomas Local Eatery,Restaurant,"Sto. Tomas, Batangas",14.092,121.138,A popular dining spot in Sto. Tomas serving authentic Batangas dishes and affordable comfort food favored by locals.
+Nasugbu Parish Church,Historical Site,"Nasugbu, Batangas",14.071,120.631,"The central religious and historical landmark of Nasugbu, serving as the spiritual heart of the Catholic community in Batangas."
+Nasugbu Public Market,Pasalubong Store,"Nasugbu, Batangas",14.069,120.62899999999999,"The bustling trade center of Nasugbu, Batangas, offering fresh local produce, regional delicacies, and native handicrafts."
+Nasugbu Municipal Plaza,Nature Park,"Nasugbu, Batangas",14.07,120.63,"A key community gathering space in the heart of Nasugbu, perfect for leisure, events, and experiencing the local Batangas lifestyle."
+Nasugbu Local Eatery,Restaurant,"Nasugbu, Batangas",14.072000000000001,120.628,A popular dining spot in Nasugbu serving authentic Batangas dishes and affordable comfort food favored by locals.
+Taal Parish Church,Historical Site,"Taal, Batangas",13.881,120.921,"The central religious and historical landmark of Taal, serving as the spiritual heart of the Catholic community in Batangas."
+Taal Public Market,Pasalubong Store,"Taal, Batangas",13.879000000000001,120.919,"The bustling trade center of Taal, Batangas, offering fresh local produce, regional delicacies, and native handicrafts."
+Taal Municipal Plaza,Nature Park,"Taal, Batangas",13.88,120.92,"A key community gathering space in the heart of Taal, perfect for leisure, events, and experiencing the local Batangas lifestyle."
+Taal Local Eatery,Restaurant,"Taal, Batangas",13.882000000000001,120.918,A popular dining spot in Taal serving authentic Batangas dishes and affordable comfort food favored by locals.
+Lemery Parish Church,Historical Site,"Lemery, Batangas",13.881,120.911,"The central religious and historical landmark of Lemery, serving as the spiritual heart of the Catholic community in Batangas."
+Lemery Public Market,Pasalubong Store,"Lemery, Batangas",13.879000000000001,120.90899999999999,"The bustling trade center of Lemery, Batangas, offering fresh local produce, regional delicacies, and native handicrafts."
+Lemery Municipal Plaza,Nature Park,"Lemery, Batangas",13.88,120.91,"A key community gathering space in the heart of Lemery, perfect for leisure, events, and experiencing the local Batangas lifestyle."
+Lemery Local Eatery,Restaurant,"Lemery, Batangas",13.882000000000001,120.908,A popular dining spot in Lemery serving authentic Batangas dishes and affordable comfort food favored by locals.
+Calatagan Parish Church,Historical Site,"Calatagan, Batangas",13.831,120.631,"The central religious and historical landmark of Calatagan, serving as the spiritual heart of the Catholic community in Batangas."
+Calatagan Public Market,Pasalubong Store,"Calatagan, Batangas",13.829,120.62899999999999,"The bustling trade center of Calatagan, Batangas, offering fresh local produce, regional delicacies, and native handicrafts."
+Calatagan Municipal Plaza,Nature Park,"Calatagan, Batangas",13.83,120.63,"A key community gathering space in the heart of Calatagan, perfect for leisure, events, and experiencing the local Batangas lifestyle."
+Calatagan Local Eatery,Restaurant,"Calatagan, Batangas",13.832,120.628,A popular dining spot in Calatagan serving authentic Batangas dishes and affordable comfort food favored by locals.
+Lobo Parish Church,Historical Site,"Lobo, Batangas",13.651,121.20100000000001,"The central religious and historical landmark of Lobo, serving as the spiritual heart of the Catholic community in Batangas."
+Lobo Public Market,Pasalubong Store,"Lobo, Batangas",13.649000000000001,121.199,"The bustling trade center of Lobo, Batangas, offering fresh local produce, regional delicacies, and native handicrafts."
+Lobo Municipal Plaza,Nature Park,"Lobo, Batangas",13.65,121.2,"A key community gathering space in the heart of Lobo, perfect for leisure, events, and experiencing the local Batangas lifestyle."
+Lobo Local Eatery,Restaurant,"Lobo, Batangas",13.652000000000001,121.19800000000001,A popular dining spot in Lobo serving authentic Batangas dishes and affordable comfort food favored by locals.
+Lucena Parish Church,Historical Site,"Lucena, Quezon",13.931,121.611,"The central religious and historical landmark of Lucena, serving as the spiritual heart of the Catholic community in Quezon."
+Lucena Public Market,Pasalubong Store,"Lucena, Quezon",13.929,121.609,"The bustling trade center of Lucena, Quezon, offering fresh local produce, regional delicacies, and native handicrafts."
+Lucena Municipal Plaza,Nature Park,"Lucena, Quezon",13.93,121.61,"A key community gathering space in the heart of Lucena, perfect for leisure, events, and experiencing the local Quezon lifestyle."
+Lucena Local Eatery,Restaurant,"Lucena, Quezon",13.932,121.608,A popular dining spot in Lucena serving authentic Quezon dishes and affordable comfort food favored by locals.
+Tayabas Parish Church,Historical Site,"Tayabas, Quezon",14.020999999999999,121.59100000000001,"The central religious and historical landmark of Tayabas, serving as the spiritual heart of the Catholic community in Quezon."
+Tayabas Public Market,Pasalubong Store,"Tayabas, Quezon",14.019,121.589,"The bustling trade center of Tayabas, Quezon, offering fresh local produce, regional delicacies, and native handicrafts."
+Tayabas Municipal Plaza,Nature Park,"Tayabas, Quezon",14.02,121.59,"A key community gathering space in the heart of Tayabas, perfect for leisure, events, and experiencing the local Quezon lifestyle."
+Tayabas Local Eatery,Restaurant,"Tayabas, Quezon",14.022,121.58800000000001,A popular dining spot in Tayabas serving authentic Quezon dishes and affordable comfort food favored by locals.
+Sariaya Parish Church,Historical Site,"Sariaya, Quezon",13.961,121.521,"The central religious and historical landmark of Sariaya, serving as the spiritual heart of the Catholic community in Quezon."
+Sariaya Public Market,Pasalubong Store,"Sariaya, Quezon",13.959000000000001,121.51899999999999,"The bustling trade center of Sariaya, Quezon, offering fresh local produce, regional delicacies, and native handicrafts."
+Sariaya Municipal Plaza,Nature Park,"Sariaya, Quezon",13.96,121.52,"A key community gathering space in the heart of Sariaya, perfect for leisure, events, and experiencing the local Quezon lifestyle."
+Sariaya Local Eatery,Restaurant,"Sariaya, Quezon",13.962000000000002,121.518,A popular dining spot in Sariaya serving authentic Quezon dishes and affordable comfort food favored by locals.
+Lucban Parish Church,Historical Site,"Lucban, Quezon",14.110999999999999,121.551,"The central religious and historical landmark of Lucban, serving as the spiritual heart of the Catholic community in Quezon."
+Lucban Public Market,Pasalubong Store,"Lucban, Quezon",14.109,121.54899999999999,"The bustling trade center of Lucban, Quezon, offering fresh local produce, regional delicacies, and native handicrafts."
+Lucban Municipal Plaza,Nature Park,"Lucban, Quezon",14.11,121.55,"A key community gathering space in the heart of Lucban, perfect for leisure, events, and experiencing the local Quezon lifestyle."
+Lucban Local Eatery,Restaurant,"Lucban, Quezon",14.112,121.548,A popular dining spot in Lucban serving authentic Quezon dishes and affordable comfort food favored by locals.
+Mauban Parish Church,Historical Site,"Mauban, Quezon",14.190999999999999,121.73100000000001,"The central religious and historical landmark of Mauban, serving as the spiritual heart of the Catholic community in Quezon."
+Mauban Public Market,Pasalubong Store,"Mauban, Quezon",14.189,121.729,"The bustling trade center of Mauban, Quezon, offering fresh local produce, regional delicacies, and native handicrafts."
+Mauban Municipal Plaza,Nature Park,"Mauban, Quezon",14.19,121.73,"A key community gathering space in the heart of Mauban, perfect for leisure, events, and experiencing the local Quezon lifestyle."
+Mauban Local Eatery,Restaurant,"Mauban, Quezon",14.192,121.72800000000001,A popular dining spot in Mauban serving authentic Quezon dishes and affordable comfort food favored by locals.
+Pagbilao Parish Church,Historical Site,"Pagbilao, Quezon",13.971,121.691,"The central religious and historical landmark of Pagbilao, serving as the spiritual heart of the Catholic community in Quezon."
+Pagbilao Public Market,Pasalubong Store,"Pagbilao, Quezon",13.969000000000001,121.689,"The bustling trade center of Pagbilao, Quezon, offering fresh local produce, regional delicacies, and native handicrafts."
+Pagbilao Municipal Plaza,Nature Park,"Pagbilao, Quezon",13.97,121.69,"A key community gathering space in the heart of Pagbilao, perfect for leisure, events, and experiencing the local Quezon lifestyle."
+Pagbilao Local Eatery,Restaurant,"Pagbilao, Quezon",13.972000000000001,121.688,A popular dining spot in Pagbilao serving authentic Quezon dishes and affordable comfort food favored by locals.
+Gumaca Parish Church,Historical Site,"Gumaca, Quezon",13.921,122.101,"The central religious and historical landmark of Gumaca, serving as the spiritual heart of the Catholic community in Quezon."
+Gumaca Public Market,Pasalubong Store,"Gumaca, Quezon",13.919,122.09899999999999,"The bustling trade center of Gumaca, Quezon, offering fresh local produce, regional delicacies, and native handicrafts."
+Gumaca Municipal Plaza,Nature Park,"Gumaca, Quezon",13.92,122.1,"A key community gathering space in the heart of Gumaca, perfect for leisure, events, and experiencing the local Quezon lifestyle."
+Gumaca Local Eatery,Restaurant,"Gumaca, Quezon",13.922,122.098,A popular dining spot in Gumaca serving authentic Quezon dishes and affordable comfort food favored by locals.
+Infanta Parish Church,Historical Site,"Infanta, Quezon",14.741,121.65100000000001,"The central religious and historical landmark of Infanta, serving as the spiritual heart of the Catholic community in Quezon."
+Infanta Public Market,Pasalubong Store,"Infanta, Quezon",14.739,121.649,"The bustling trade center of Infanta, Quezon, offering fresh local produce, regional delicacies, and native handicrafts."
+Infanta Municipal Plaza,Nature Park,"Infanta, Quezon",14.74,121.65,"A key community gathering space in the heart of Infanta, perfect for leisure, events, and experiencing the local Quezon lifestyle."
+Infanta Local Eatery,Restaurant,"Infanta, Quezon",14.742,121.64800000000001,A popular dining spot in Infanta serving authentic Quezon dishes and affordable comfort food favored by locals.
+Real Parish Church,Historical Site,"Real, Quezon",14.661,121.601,"The central religious and historical landmark of Real, serving as the spiritual heart of the Catholic community in Quezon."
+Real Public Market,Pasalubong Store,"Real, Quezon",14.659,121.59899999999999,"The bustling trade center of Real, Quezon, offering fresh local produce, regional delicacies, and native handicrafts."
+Real Municipal Plaza,Nature Park,"Real, Quezon",14.66,121.6,"A key community gathering space in the heart of Real, perfect for leisure, events, and experiencing the local Quezon lifestyle."
+Real Local Eatery,Restaurant,"Real, Quezon",14.662,121.598,A popular dining spot in Real serving authentic Quezon dishes and affordable comfort food favored by locals.
+Atimonan Parish Church,Historical Site,"Atimonan, Quezon",14.001,121.921,"The central religious and historical landmark of Atimonan, serving as the spiritual heart of the Catholic community in Quezon."
+Atimonan Public Market,Pasalubong Store,"Atimonan, Quezon",13.999,121.919,"The bustling trade center of Atimonan, Quezon, offering fresh local produce, regional delicacies, and native handicrafts."
+Atimonan Municipal Plaza,Nature Park,"Atimonan, Quezon",14.0,121.92,"A key community gathering space in the heart of Atimonan, perfect for leisure, events, and experiencing the local Quezon lifestyle."
+Atimonan Local Eatery,Restaurant,"Atimonan, Quezon",14.002,121.918,A popular dining spot in Atimonan serving authentic Quezon dishes and affordable comfort food favored by locals.
+Malolos Parish Church,Historical Site,"Malolos, Bulacan",14.841,120.811,"The central religious and historical landmark of Malolos, serving as the spiritual heart of the Catholic community in Bulacan."
+Malolos Public Market,Pasalubong Store,"Malolos, Bulacan",14.839,120.809,"The bustling trade center of Malolos, Bulacan, offering fresh local produce, regional delicacies, and native handicrafts."
+Malolos Municipal Plaza,Nature Park,"Malolos, Bulacan",14.84,120.81,"A key community gathering space in the heart of Malolos, perfect for leisure, events, and experiencing the local Bulacan lifestyle."
+Malolos Local Eatery,Restaurant,"Malolos, Bulacan",14.842,120.808,A popular dining spot in Malolos serving authentic Bulacan dishes and affordable comfort food favored by locals.
+Meycauayan Parish Church,Historical Site,"Meycauayan, Bulacan",14.741,120.961,"The central religious and historical landmark of Meycauayan, serving as the spiritual heart of the Catholic community in Bulacan."
+Meycauayan Public Market,Pasalubong Store,"Meycauayan, Bulacan",14.739,120.95899999999999,"The bustling trade center of Meycauayan, Bulacan, offering fresh local produce, regional delicacies, and native handicrafts."
+Meycauayan Municipal Plaza,Nature Park,"Meycauayan, Bulacan",14.74,120.96,"A key community gathering space in the heart of Meycauayan, perfect for leisure, events, and experiencing the local Bulacan lifestyle."
+Meycauayan Local Eatery,Restaurant,"Meycauayan, Bulacan",14.742,120.958,A popular dining spot in Meycauayan serving authentic Bulacan dishes and affordable comfort food favored by locals.
+San Jose del Monte Parish Church,Historical Site,"San Jose del Monte, Bulacan",14.811,121.04100000000001,"The central religious and historical landmark of San Jose del Monte, serving as the spiritual heart of the Catholic community in Bulacan."
+San Jose del Monte Public Market,Pasalubong Store,"San Jose del Monte, Bulacan",14.809000000000001,121.039,"The bustling trade center of San Jose del Monte, Bulacan, offering fresh local produce, regional delicacies, and native handicrafts."
+San Jose del Monte Municipal Plaza,Nature Park,"San Jose del Monte, Bulacan",14.81,121.04,"A key community gathering space in the heart of San Jose del Monte, perfect for leisure, events, and experiencing the local Bulacan lifestyle."
+San Jose del Monte Local Eatery,Restaurant,"San Jose del Monte, Bulacan",14.812000000000001,121.03800000000001,A popular dining spot in San Jose del Monte serving authentic Bulacan dishes and affordable comfort food favored by locals.
+Santa Maria Parish Church,Historical Site,"Santa Maria, Bulacan",14.821,120.961,"The central religious and historical landmark of Santa Maria, serving as the spiritual heart of the Catholic community in Bulacan."
+Santa Maria Public Market,Pasalubong Store,"Santa Maria, Bulacan",14.819,120.95899999999999,"The bustling trade center of Santa Maria, Bulacan, offering fresh local produce, regional delicacies, and native handicrafts."
+Santa Maria Municipal Plaza,Nature Park,"Santa Maria, Bulacan",14.82,120.96,"A key community gathering space in the heart of Santa Maria, perfect for leisure, events, and experiencing the local Bulacan lifestyle."
+Santa Maria Local Eatery,Restaurant,"Santa Maria, Bulacan",14.822000000000001,120.958,A popular dining spot in Santa Maria serving authentic Bulacan dishes and affordable comfort food favored by locals.
+Baliuag Parish Church,Historical Site,"Baliuag, Bulacan",14.950999999999999,120.90100000000001,"The central religious and historical landmark of Baliuag, serving as the spiritual heart of the Catholic community in Bulacan."
+Baliuag Public Market,Pasalubong Store,"Baliuag, Bulacan",14.949,120.899,"The bustling trade center of Baliuag, Bulacan, offering fresh local produce, regional delicacies, and native handicrafts."
+Baliuag Municipal Plaza,Nature Park,"Baliuag, Bulacan",14.95,120.9,"A key community gathering space in the heart of Baliuag, perfect for leisure, events, and experiencing the local Bulacan lifestyle."
+Baliuag Local Eatery,Restaurant,"Baliuag, Bulacan",14.952,120.89800000000001,A popular dining spot in Baliuag serving authentic Bulacan dishes and affordable comfort food favored by locals.
+Plaridel Parish Church,Historical Site,"Plaridel, Bulacan",14.881,120.861,"The central religious and historical landmark of Plaridel, serving as the spiritual heart of the Catholic community in Bulacan."
+Plaridel Public Market,Pasalubong Store,"Plaridel, Bulacan",14.879000000000001,120.859,"The bustling trade center of Plaridel, Bulacan, offering fresh local produce, regional delicacies, and native handicrafts."
+Plaridel Municipal Plaza,Nature Park,"Plaridel, Bulacan",14.88,120.86,"A key community gathering space in the heart of Plaridel, perfect for leisure, events, and experiencing the local Bulacan lifestyle."
+Plaridel Local Eatery,Restaurant,"Plaridel, Bulacan",14.882000000000001,120.858,A popular dining spot in Plaridel serving authentic Bulacan dishes and affordable comfort food favored by locals.
+Bocaue Parish Church,Historical Site,"Bocaue, Bulacan",14.801,120.93100000000001,"The central religious and historical landmark of Bocaue, serving as the spiritual heart of the Catholic community in Bulacan."
+Bocaue Public Market,Pasalubong Store,"Bocaue, Bulacan",14.799000000000001,120.929,"The bustling trade center of Bocaue, Bulacan, offering fresh local produce, regional delicacies, and native handicrafts."
+Bocaue Municipal Plaza,Nature Park,"Bocaue, Bulacan",14.8,120.93,"A key community gathering space in the heart of Bocaue, perfect for leisure, events, and experiencing the local Bulacan lifestyle."
+Bocaue Local Eatery,Restaurant,"Bocaue, Bulacan",14.802000000000001,120.92800000000001,A popular dining spot in Bocaue serving authentic Bulacan dishes and affordable comfort food favored by locals.
+Guiguinto Parish Church,Historical Site,"Guiguinto, Bulacan",14.831,120.861,"The central religious and historical landmark of Guiguinto, serving as the spiritual heart of the Catholic community in Bulacan."
+Guiguinto Public Market,Pasalubong Store,"Guiguinto, Bulacan",14.829,120.859,"The bustling trade center of Guiguinto, Bulacan, offering fresh local produce, regional delicacies, and native handicrafts."
+Guiguinto Municipal Plaza,Nature Park,"Guiguinto, Bulacan",14.83,120.86,"A key community gathering space in the heart of Guiguinto, perfect for leisure, events, and experiencing the local Bulacan lifestyle."
+Guiguinto Local Eatery,Restaurant,"Guiguinto, Bulacan",14.832,120.858,A popular dining spot in Guiguinto serving authentic Bulacan dishes and affordable comfort food favored by locals.
+Calumpit Parish Church,Historical Site,"Calumpit, Bulacan",14.911,120.76100000000001,"The central religious and historical landmark of Calumpit, serving as the spiritual heart of the Catholic community in Bulacan."
+Calumpit Public Market,Pasalubong Store,"Calumpit, Bulacan",14.909,120.759,"The bustling trade center of Calumpit, Bulacan, offering fresh local produce, regional delicacies, and native handicrafts."
+Calumpit Municipal Plaza,Nature Park,"Calumpit, Bulacan",14.91,120.76,"A key community gathering space in the heart of Calumpit, perfect for leisure, events, and experiencing the local Bulacan lifestyle."
+Calumpit Local Eatery,Restaurant,"Calumpit, Bulacan",14.912,120.75800000000001,A popular dining spot in Calumpit serving authentic Bulacan dishes and affordable comfort food favored by locals.
+Hagonoy Parish Church,Historical Site,"Hagonoy, Bulacan",14.831,120.73100000000001,"The central religious and historical landmark of Hagonoy, serving as the spiritual heart of the Catholic community in Bulacan."
+Hagonoy Public Market,Pasalubong Store,"Hagonoy, Bulacan",14.829,120.729,"The bustling trade center of Hagonoy, Bulacan, offering fresh local produce, regional delicacies, and native handicrafts."
+Hagonoy Municipal Plaza,Nature Park,"Hagonoy, Bulacan",14.83,120.73,"A key community gathering space in the heart of Hagonoy, perfect for leisure, events, and experiencing the local Bulacan lifestyle."
+Hagonoy Local Eatery,Restaurant,"Hagonoy, Bulacan",14.832,120.72800000000001,A popular dining spot in Hagonoy serving authentic Bulacan dishes and affordable comfort food favored by locals.
+San Miguel Parish Church,Historical Site,"San Miguel, Bulacan",15.141,120.98100000000001,"The central religious and historical landmark of San Miguel, serving as the spiritual heart of the Catholic community in Bulacan."
+San Miguel Public Market,Pasalubong Store,"San Miguel, Bulacan",15.139000000000001,120.979,"The bustling trade center of San Miguel, Bulacan, offering fresh local produce, regional delicacies, and native handicrafts."
+San Miguel Municipal Plaza,Nature Park,"San Miguel, Bulacan",15.14,120.98,"A key community gathering space in the heart of San Miguel, perfect for leisure, events, and experiencing the local Bulacan lifestyle."
+San Miguel Local Eatery,Restaurant,"San Miguel, Bulacan",15.142000000000001,120.97800000000001,A popular dining spot in San Miguel serving authentic Bulacan dishes and affordable comfort food favored by locals.
+Norzagaray Parish Church,Historical Site,"Norzagaray, Bulacan",14.911,121.051,"The central religious and historical landmark of Norzagaray, serving as the spiritual heart of the Catholic community in Bulacan."
+Norzagaray Public Market,Pasalubong Store,"Norzagaray, Bulacan",14.909,121.04899999999999,"The bustling trade center of Norzagaray, Bulacan, offering fresh local produce, regional delicacies, and native handicrafts."
+Norzagaray Municipal Plaza,Nature Park,"Norzagaray, Bulacan",14.91,121.05,"A key community gathering space in the heart of Norzagaray, perfect for leisure, events, and experiencing the local Bulacan lifestyle."
+Norzagaray Local Eatery,Restaurant,"Norzagaray, Bulacan",14.912,121.048,A popular dining spot in Norzagaray serving authentic Bulacan dishes and affordable comfort food favored by locals.
+San Fernando Parish Church,Historical Site,"San Fernando, Pampanga",15.030999999999999,120.68100000000001,"The central religious and historical landmark of San Fernando, serving as the spiritual heart of the Catholic community in Pampanga."
+San Fernando Public Market,Pasalubong Store,"San Fernando, Pampanga",15.029,120.679,"The bustling trade center of San Fernando, Pampanga, offering fresh local produce, regional delicacies, and native handicrafts."
+San Fernando Municipal Plaza,Nature Park,"San Fernando, Pampanga",15.03,120.68,"A key community gathering space in the heart of San Fernando, perfect for leisure, events, and experiencing the local Pampanga lifestyle."
+San Fernando Local Eatery,Restaurant,"San Fernando, Pampanga",15.032,120.67800000000001,A popular dining spot in San Fernando serving authentic Pampanga dishes and affordable comfort food favored by locals.
+Angeles Parish Church,Historical Site,"Angeles, Pampanga",15.141,120.59100000000001,"The central religious and historical landmark of Angeles, serving as the spiritual heart of the Catholic community in Pampanga."
+Angeles Public Market,Pasalubong Store,"Angeles, Pampanga",15.139000000000001,120.589,"The bustling trade center of Angeles, Pampanga, offering fresh local produce, regional delicacies, and native handicrafts."
+Angeles Municipal Plaza,Nature Park,"Angeles, Pampanga",15.14,120.59,"A key community gathering space in the heart of Angeles, perfect for leisure, events, and experiencing the local Pampanga lifestyle."
+Angeles Local Eatery,Restaurant,"Angeles, Pampanga",15.142000000000001,120.58800000000001,A popular dining spot in Angeles serving authentic Pampanga dishes and affordable comfort food favored by locals.
+Mabalacat Parish Church,Historical Site,"Mabalacat, Pampanga",15.221,120.581,"The central religious and historical landmark of Mabalacat, serving as the spiritual heart of the Catholic community in Pampanga."
+Mabalacat Public Market,Pasalubong Store,"Mabalacat, Pampanga",15.219000000000001,120.579,"The bustling trade center of Mabalacat, Pampanga, offering fresh local produce, regional delicacies, and native handicrafts."
+Mabalacat Municipal Plaza,Nature Park,"Mabalacat, Pampanga",15.22,120.58,"A key community gathering space in the heart of Mabalacat, perfect for leisure, events, and experiencing the local Pampanga lifestyle."
+Mabalacat Local Eatery,Restaurant,"Mabalacat, Pampanga",15.222000000000001,120.578,A popular dining spot in Mabalacat serving authentic Pampanga dishes and affordable comfort food favored by locals.
+Guagua Parish Church,Historical Site,"Guagua, Pampanga",14.971,120.631,"The central religious and historical landmark of Guagua, serving as the spiritual heart of the Catholic community in Pampanga."
+Guagua Public Market,Pasalubong Store,"Guagua, Pampanga",14.969000000000001,120.62899999999999,"The bustling trade center of Guagua, Pampanga, offering fresh local produce, regional delicacies, and native handicrafts."
+Guagua Municipal Plaza,Nature Park,"Guagua, Pampanga",14.97,120.63,"A key community gathering space in the heart of Guagua, perfect for leisure, events, and experiencing the local Pampanga lifestyle."
+Guagua Local Eatery,Restaurant,"Guagua, Pampanga",14.972000000000001,120.628,A popular dining spot in Guagua serving authentic Pampanga dishes and affordable comfort food favored by locals.
+Lubao Parish Church,Historical Site,"Lubao, Pampanga",14.940999999999999,120.59100000000001,"The central religious and historical landmark of Lubao, serving as the spiritual heart of the Catholic community in Pampanga."
+Lubao Public Market,Pasalubong Store,"Lubao, Pampanga",14.939,120.589,"The bustling trade center of Lubao, Pampanga, offering fresh local produce, regional delicacies, and native handicrafts."
+Lubao Municipal Plaza,Nature Park,"Lubao, Pampanga",14.94,120.59,"A key community gathering space in the heart of Lubao, perfect for leisure, events, and experiencing the local Pampanga lifestyle."
+Lubao Local Eatery,Restaurant,"Lubao, Pampanga",14.942,120.58800000000001,A popular dining spot in Lubao serving authentic Pampanga dishes and affordable comfort food favored by locals.
+Mexico Parish Church,Historical Site,"Mexico, Pampanga",15.061,120.721,"The central religious and historical landmark of Mexico, serving as the spiritual heart of the Catholic community in Pampanga."
+Mexico Public Market,Pasalubong Store,"Mexico, Pampanga",15.059000000000001,120.719,"The bustling trade center of Mexico, Pampanga, offering fresh local produce, regional delicacies, and native handicrafts."
+Mexico Municipal Plaza,Nature Park,"Mexico, Pampanga",15.06,120.72,"A key community gathering space in the heart of Mexico, perfect for leisure, events, and experiencing the local Pampanga lifestyle."
+Mexico Local Eatery,Restaurant,"Mexico, Pampanga",15.062000000000001,120.718,A popular dining spot in Mexico serving authentic Pampanga dishes and affordable comfort food favored by locals.
+Arayat Parish Church,Historical Site,"Arayat, Pampanga",15.151,120.771,"The central religious and historical landmark of Arayat, serving as the spiritual heart of the Catholic community in Pampanga."
+Arayat Public Market,Pasalubong Store,"Arayat, Pampanga",15.149000000000001,120.76899999999999,"The bustling trade center of Arayat, Pampanga, offering fresh local produce, regional delicacies, and native handicrafts."
+Arayat Municipal Plaza,Nature Park,"Arayat, Pampanga",15.15,120.77,"A key community gathering space in the heart of Arayat, perfect for leisure, events, and experiencing the local Pampanga lifestyle."
+Arayat Local Eatery,Restaurant,"Arayat, Pampanga",15.152000000000001,120.768,A popular dining spot in Arayat serving authentic Pampanga dishes and affordable comfort food favored by locals.
+Porac Parish Church,Historical Site,"Porac, Pampanga",15.071,120.54100000000001,"The central religious and historical landmark of Porac, serving as the spiritual heart of the Catholic community in Pampanga."
+Porac Public Market,Pasalubong Store,"Porac, Pampanga",15.069,120.539,"The bustling trade center of Porac, Pampanga, offering fresh local produce, regional delicacies, and native handicrafts."
+Porac Municipal Plaza,Nature Park,"Porac, Pampanga",15.07,120.54,"A key community gathering space in the heart of Porac, perfect for leisure, events, and experiencing the local Pampanga lifestyle."
+Porac Local Eatery,Restaurant,"Porac, Pampanga",15.072000000000001,120.53800000000001,A popular dining spot in Porac serving authentic Pampanga dishes and affordable comfort food favored by locals.
+Magalang Parish Church,Historical Site,"Magalang, Pampanga",15.211,120.661,"The central religious and historical landmark of Magalang, serving as the spiritual heart of the Catholic community in Pampanga."
+Magalang Public Market,Pasalubong Store,"Magalang, Pampanga",15.209000000000001,120.65899999999999,"The bustling trade center of Magalang, Pampanga, offering fresh local produce, regional delicacies, and native handicrafts."
+Magalang Municipal Plaza,Nature Park,"Magalang, Pampanga",15.21,120.66,"A key community gathering space in the heart of Magalang, perfect for leisure, events, and experiencing the local Pampanga lifestyle."
+Magalang Local Eatery,Restaurant,"Magalang, Pampanga",15.212000000000002,120.658,A popular dining spot in Magalang serving authentic Pampanga dishes and affordable comfort food favored by locals.
+Bacolor Parish Church,Historical Site,"Bacolor, Pampanga",15.001,120.65100000000001,"The central religious and historical landmark of Bacolor, serving as the spiritual heart of the Catholic community in Pampanga."
+Bacolor Public Market,Pasalubong Store,"Bacolor, Pampanga",14.999,120.649,"The bustling trade center of Bacolor, Pampanga, offering fresh local produce, regional delicacies, and native handicrafts."
+Bacolor Municipal Plaza,Nature Park,"Bacolor, Pampanga",15.0,120.65,"A key community gathering space in the heart of Bacolor, perfect for leisure, events, and experiencing the local Pampanga lifestyle."
+Bacolor Local Eatery,Restaurant,"Bacolor, Pampanga",15.002,120.64800000000001,A popular dining spot in Bacolor serving authentic Pampanga dishes and affordable comfort food favored by locals.
+Balanga Parish Church,Historical Site,"Balanga, Bataan",14.681,120.54100000000001,"The central religious and historical landmark of Balanga, serving as the spiritual heart of the Catholic community in Bataan."
+Balanga Public Market,Pasalubong Store,"Balanga, Bataan",14.679,120.539,"The bustling trade center of Balanga, Bataan, offering fresh local produce, regional delicacies, and native handicrafts."
+Balanga Municipal Plaza,Nature Park,"Balanga, Bataan",14.68,120.54,"A key community gathering space in the heart of Balanga, perfect for leisure, events, and experiencing the local Bataan lifestyle."
+Balanga Local Eatery,Restaurant,"Balanga, Bataan",14.682,120.53800000000001,A popular dining spot in Balanga serving authentic Bataan dishes and affordable comfort food favored by locals.
+Mariveles Parish Church,Historical Site,"Mariveles, Bataan",14.431,120.491,"The central religious and historical landmark of Mariveles, serving as the spiritual heart of the Catholic community in Bataan."
+Mariveles Public Market,Pasalubong Store,"Mariveles, Bataan",14.429,120.48899999999999,"The bustling trade center of Mariveles, Bataan, offering fresh local produce, regional delicacies, and native handicrafts."
+Mariveles Municipal Plaza,Nature Park,"Mariveles, Bataan",14.43,120.49,"A key community gathering space in the heart of Mariveles, perfect for leisure, events, and experiencing the local Bataan lifestyle."
+Mariveles Local Eatery,Restaurant,"Mariveles, Bataan",14.432,120.488,A popular dining spot in Mariveles serving authentic Bataan dishes and affordable comfort food favored by locals.
+Orani Parish Church,Historical Site,"Orani, Bataan",14.770999999999999,120.501,"The central religious and historical landmark of Orani, serving as the spiritual heart of the Catholic community in Bataan."
+Orani Public Market,Pasalubong Store,"Orani, Bataan",14.769,120.499,"The bustling trade center of Orani, Bataan, offering fresh local produce, regional delicacies, and native handicrafts."
+Orani Municipal Plaza,Nature Park,"Orani, Bataan",14.77,120.5,"A key community gathering space in the heart of Orani, perfect for leisure, events, and experiencing the local Bataan lifestyle."
+Orani Local Eatery,Restaurant,"Orani, Bataan",14.772,120.498,A popular dining spot in Orani serving authentic Bataan dishes and affordable comfort food favored by locals.
+Bagac Parish Church,Historical Site,"Bagac, Bataan",14.600999999999999,120.40100000000001,"The central religious and historical landmark of Bagac, serving as the spiritual heart of the Catholic community in Bataan."
+Bagac Public Market,Pasalubong Store,"Bagac, Bataan",14.599,120.399,"The bustling trade center of Bagac, Bataan, offering fresh local produce, regional delicacies, and native handicrafts."
+Bagac Municipal Plaza,Nature Park,"Bagac, Bataan",14.6,120.4,"A key community gathering space in the heart of Bagac, perfect for leisure, events, and experiencing the local Bataan lifestyle."
+Bagac Local Eatery,Restaurant,"Bagac, Bataan",14.602,120.39800000000001,A popular dining spot in Bagac serving authentic Bataan dishes and affordable comfort food favored by locals.
+Subic Parish Church,Historical Site,"Subic, Zambales",14.881,120.23100000000001,"The central religious and historical landmark of Subic, serving as the spiritual heart of the Catholic community in Zambales."
+Subic Public Market,Pasalubong Store,"Subic, Zambales",14.879000000000001,120.229,"The bustling trade center of Subic, Zambales, offering fresh local produce, regional delicacies, and native handicrafts."
+Subic Municipal Plaza,Nature Park,"Subic, Zambales",14.88,120.23,"A key community gathering space in the heart of Subic, perfect for leisure, events, and experiencing the local Zambales lifestyle."
+Subic Local Eatery,Restaurant,"Subic, Zambales",14.882000000000001,120.22800000000001,A popular dining spot in Subic serving authentic Zambales dishes and affordable comfort food favored by locals.
+Olongapo Parish Church,Historical Site,"Olongapo, Zambales",14.831,120.281,"The central religious and historical landmark of Olongapo, serving as the spiritual heart of the Catholic community in Zambales."
+Olongapo Public Market,Pasalubong Store,"Olongapo, Zambales",14.829,120.279,"The bustling trade center of Olongapo, Zambales, offering fresh local produce, regional delicacies, and native handicrafts."
+Olongapo Municipal Plaza,Nature Park,"Olongapo, Zambales",14.83,120.28,"A key community gathering space in the heart of Olongapo, perfect for leisure, events, and experiencing the local Zambales lifestyle."
+Olongapo Local Eatery,Restaurant,"Olongapo, Zambales",14.832,120.278,A popular dining spot in Olongapo serving authentic Zambales dishes and affordable comfort food favored by locals.
+Iba Parish Church,Historical Site,"Iba, Zambales",15.331,119.98100000000001,"The central religious and historical landmark of Iba, serving as the spiritual heart of the Catholic community in Zambales."
+Iba Public Market,Pasalubong Store,"Iba, Zambales",15.329,119.979,"The bustling trade center of Iba, Zambales, offering fresh local produce, regional delicacies, and native handicrafts."
+Iba Municipal Plaza,Nature Park,"Iba, Zambales",15.33,119.98,"A key community gathering space in the heart of Iba, perfect for leisure, events, and experiencing the local Zambales lifestyle."
+Iba Local Eatery,Restaurant,"Iba, Zambales",15.332,119.97800000000001,A popular dining spot in Iba serving authentic Zambales dishes and affordable comfort food favored by locals.
+Botolan Parish Church,Historical Site,"Botolan, Zambales",15.290999999999999,120.021,"The central religious and historical landmark of Botolan, serving as the spiritual heart of the Catholic community in Zambales."
+Botolan Public Market,Pasalubong Store,"Botolan, Zambales",15.289,120.01899999999999,"The bustling trade center of Botolan, Zambales, offering fresh local produce, regional delicacies, and native handicrafts."
+Botolan Municipal Plaza,Nature Park,"Botolan, Zambales",15.29,120.02,"A key community gathering space in the heart of Botolan, perfect for leisure, events, and experiencing the local Zambales lifestyle."
+Botolan Local Eatery,Restaurant,"Botolan, Zambales",15.292,120.018,A popular dining spot in Botolan serving authentic Zambales dishes and affordable comfort food favored by locals.
+San Antonio Parish Church,Historical Site,"San Antonio, Zambales",14.950999999999999,120.081,"The central religious and historical landmark of San Antonio, serving as the spiritual heart of the Catholic community in Zambales."
+San Antonio Public Market,Pasalubong Store,"San Antonio, Zambales",14.949,120.079,"The bustling trade center of San Antonio, Zambales, offering fresh local produce, regional delicacies, and native handicrafts."
+San Antonio Municipal Plaza,Nature Park,"San Antonio, Zambales",14.95,120.08,"A key community gathering space in the heart of San Antonio, perfect for leisure, events, and experiencing the local Zambales lifestyle."
+San Antonio Local Eatery,Restaurant,"San Antonio, Zambales",14.952,120.078,A popular dining spot in San Antonio serving authentic Zambales dishes and affordable comfort food favored by locals.
+San Felipe Parish Church,Historical Site,"San Felipe, Zambales",15.071,120.071,"The central religious and historical landmark of San Felipe, serving as the spiritual heart of the Catholic community in Zambales."
+San Felipe Public Market,Pasalubong Store,"San Felipe, Zambales",15.069,120.06899999999999,"The bustling trade center of San Felipe, Zambales, offering fresh local produce, regional delicacies, and native handicrafts."
+San Felipe Municipal Plaza,Nature Park,"San Felipe, Zambales",15.07,120.07,"A key community gathering space in the heart of San Felipe, perfect for leisure, events, and experiencing the local Zambales lifestyle."
+San Felipe Local Eatery,Restaurant,"San Felipe, Zambales",15.072000000000001,120.068,A popular dining spot in San Felipe serving authentic Zambales dishes and affordable comfort food favored by locals.
+Laoag Parish Church,Historical Site,"Laoag, Ilocos Norte",18.191000000000003,120.59100000000001,"The central religious and historical landmark of Laoag, serving as the spiritual heart of the Catholic community in Ilocos Norte."
+Laoag Public Market,Pasalubong Store,"Laoag, Ilocos Norte",18.189,120.589,"The bustling trade center of Laoag, Ilocos Norte, offering fresh local produce, regional delicacies, and native handicrafts."
+Laoag Municipal Plaza,Nature Park,"Laoag, Ilocos Norte",18.19,120.59,"A key community gathering space in the heart of Laoag, perfect for leisure, events, and experiencing the local Ilocos Norte lifestyle."
+Laoag Local Eatery,Restaurant,"Laoag, Ilocos Norte",18.192,120.58800000000001,A popular dining spot in Laoag serving authentic Ilocos Norte dishes and affordable comfort food favored by locals.
+Batac Parish Church,Historical Site,"Batac, Ilocos Norte",18.051000000000002,120.561,"The central religious and historical landmark of Batac, serving as the spiritual heart of the Catholic community in Ilocos Norte."
+Batac Public Market,Pasalubong Store,"Batac, Ilocos Norte",18.049,120.559,"The bustling trade center of Batac, Ilocos Norte, offering fresh local produce, regional delicacies, and native handicrafts."
+Batac Municipal Plaza,Nature Park,"Batac, Ilocos Norte",18.05,120.56,"A key community gathering space in the heart of Batac, perfect for leisure, events, and experiencing the local Ilocos Norte lifestyle."
+Batac Local Eatery,Restaurant,"Batac, Ilocos Norte",18.052,120.558,A popular dining spot in Batac serving authentic Ilocos Norte dishes and affordable comfort food favored by locals.
+Pagudpud Parish Church,Historical Site,"Pagudpud, Ilocos Norte",18.561,120.781,"The central religious and historical landmark of Pagudpud, serving as the spiritual heart of the Catholic community in Ilocos Norte."
+Pagudpud Public Market,Pasalubong Store,"Pagudpud, Ilocos Norte",18.558999999999997,120.779,"The bustling trade center of Pagudpud, Ilocos Norte, offering fresh local produce, regional delicacies, and native handicrafts."
+Pagudpud Municipal Plaza,Nature Park,"Pagudpud, Ilocos Norte",18.56,120.78,"A key community gathering space in the heart of Pagudpud, perfect for leisure, events, and experiencing the local Ilocos Norte lifestyle."
+Pagudpud Local Eatery,Restaurant,"Pagudpud, Ilocos Norte",18.561999999999998,120.778,A popular dining spot in Pagudpud serving authentic Ilocos Norte dishes and affordable comfort food favored by locals.
+Vigan Parish Church,Historical Site,"Vigan, Ilocos Sur",17.571,120.381,"The central religious and historical landmark of Vigan, serving as the spiritual heart of the Catholic community in Ilocos Sur."
+Vigan Public Market,Pasalubong Store,"Vigan, Ilocos Sur",17.569,120.37899999999999,"The bustling trade center of Vigan, Ilocos Sur, offering fresh local produce, regional delicacies, and native handicrafts."
+Vigan Municipal Plaza,Nature Park,"Vigan, Ilocos Sur",17.57,120.38,"A key community gathering space in the heart of Vigan, perfect for leisure, events, and experiencing the local Ilocos Sur lifestyle."
+Vigan Local Eatery,Restaurant,"Vigan, Ilocos Sur",17.572,120.378,A popular dining spot in Vigan serving authentic Ilocos Sur dishes and affordable comfort food favored by locals.
+Candon Parish Church,Historical Site,"Candon, Ilocos Sur",17.191000000000003,120.45100000000001,"The central religious and historical landmark of Candon, serving as the spiritual heart of the Catholic community in Ilocos Sur."
+Candon Public Market,Pasalubong Store,"Candon, Ilocos Sur",17.189,120.449,"The bustling trade center of Candon, Ilocos Sur, offering fresh local produce, regional delicacies, and native handicrafts."
+Candon Municipal Plaza,Nature Park,"Candon, Ilocos Sur",17.19,120.45,"A key community gathering space in the heart of Candon, perfect for leisure, events, and experiencing the local Ilocos Sur lifestyle."
+Candon Local Eatery,Restaurant,"Candon, Ilocos Sur",17.192,120.44800000000001,A popular dining spot in Candon serving authentic Ilocos Sur dishes and affordable comfort food favored by locals.
+Bauang Parish Church,Historical Site,"Bauang, La Union",16.531000000000002,120.321,"The central religious and historical landmark of Bauang, serving as the spiritual heart of the Catholic community in La Union."
+Bauang Public Market,Pasalubong Store,"Bauang, La Union",16.529,120.31899999999999,"The bustling trade center of Bauang, La Union, offering fresh local produce, regional delicacies, and native handicrafts."
+Bauang Municipal Plaza,Nature Park,"Bauang, La Union",16.53,120.32,"A key community gathering space in the heart of Bauang, perfect for leisure, events, and experiencing the local La Union lifestyle."
+Bauang Local Eatery,Restaurant,"Bauang, La Union",16.532,120.318,A popular dining spot in Bauang serving authentic La Union dishes and affordable comfort food favored by locals.
+Dagupan Parish Church,Historical Site,"Dagupan, Pangasinan",16.041,120.331,"The central religious and historical landmark of Dagupan, serving as the spiritual heart of the Catholic community in Pangasinan."
+Dagupan Public Market,Pasalubong Store,"Dagupan, Pangasinan",16.038999999999998,120.329,"The bustling trade center of Dagupan, Pangasinan, offering fresh local produce, regional delicacies, and native handicrafts."
+Dagupan Municipal Plaza,Nature Park,"Dagupan, Pangasinan",16.04,120.33,"A key community gathering space in the heart of Dagupan, perfect for leisure, events, and experiencing the local Pangasinan lifestyle."
+Dagupan Local Eatery,Restaurant,"Dagupan, Pangasinan",16.041999999999998,120.328,A popular dining spot in Dagupan serving authentic Pangasinan dishes and affordable comfort food favored by locals.
+Alaminos Parish Church,Historical Site,"Alaminos, Pangasinan",16.151,119.98100000000001,"The central religious and historical landmark of Alaminos, serving as the spiritual heart of the Catholic community in Pangasinan."
+Alaminos Public Market,Pasalubong Store,"Alaminos, Pangasinan",16.148999999999997,119.979,"The bustling trade center of Alaminos, Pangasinan, offering fresh local produce, regional delicacies, and native handicrafts."
+Alaminos Municipal Plaza,Nature Park,"Alaminos, Pangasinan",16.15,119.98,"A key community gathering space in the heart of Alaminos, perfect for leisure, events, and experiencing the local Pangasinan lifestyle."
+Alaminos Local Eatery,Restaurant,"Alaminos, Pangasinan",16.151999999999997,119.97800000000001,A popular dining spot in Alaminos serving authentic Pangasinan dishes and affordable comfort food favored by locals.
+Lingayen Parish Church,Historical Site,"Lingayen, Pangasinan",16.021,120.23100000000001,"The central religious and historical landmark of Lingayen, serving as the spiritual heart of the Catholic community in Pangasinan."
+Lingayen Public Market,Pasalubong Store,"Lingayen, Pangasinan",16.019,120.229,"The bustling trade center of Lingayen, Pangasinan, offering fresh local produce, regional delicacies, and native handicrafts."
+Lingayen Municipal Plaza,Nature Park,"Lingayen, Pangasinan",16.02,120.23,"A key community gathering space in the heart of Lingayen, perfect for leisure, events, and experiencing the local Pangasinan lifestyle."
+Lingayen Local Eatery,Restaurant,"Lingayen, Pangasinan",16.022,120.22800000000001,A popular dining spot in Lingayen serving authentic Pangasinan dishes and affordable comfort food favored by locals.
+Bolinao Parish Church,Historical Site,"Bolinao, Pangasinan",16.331,119.891,"The central religious and historical landmark of Bolinao, serving as the spiritual heart of the Catholic community in Pangasinan."
+Bolinao Public Market,Pasalubong Store,"Bolinao, Pangasinan",16.328999999999997,119.889,"The bustling trade center of Bolinao, Pangasinan, offering fresh local produce, regional delicacies, and native handicrafts."
+Bolinao Municipal Plaza,Nature Park,"Bolinao, Pangasinan",16.33,119.89,"A key community gathering space in the heart of Bolinao, perfect for leisure, events, and experiencing the local Pangasinan lifestyle."
+Bolinao Local Eatery,Restaurant,"Bolinao, Pangasinan",16.331999999999997,119.888,A popular dining spot in Bolinao serving authentic Pangasinan dishes and affordable comfort food favored by locals.
+Baguio Parish Church,Historical Site,"Baguio, Benguet",16.401,120.59100000000001,"The central religious and historical landmark of Baguio, serving as the spiritual heart of the Catholic community in Benguet."
+Baguio Public Market,Pasalubong Store,"Baguio, Benguet",16.398999999999997,120.589,"The bustling trade center of Baguio, Benguet, offering fresh local produce, regional delicacies, and native handicrafts."
+Baguio Municipal Plaza,Nature Park,"Baguio, Benguet",16.4,120.59,"A key community gathering space in the heart of Baguio, perfect for leisure, events, and experiencing the local Benguet lifestyle."
+Baguio Local Eatery,Restaurant,"Baguio, Benguet",16.401999999999997,120.58800000000001,A popular dining spot in Baguio serving authentic Benguet dishes and affordable comfort food favored by locals.
+La Trinidad Parish Church,Historical Site,"La Trinidad, Benguet",16.451,120.59100000000001,"The central religious and historical landmark of La Trinidad, serving as the spiritual heart of the Catholic community in Benguet."
+La Trinidad Public Market,Pasalubong Store,"La Trinidad, Benguet",16.448999999999998,120.589,"The bustling trade center of La Trinidad, Benguet, offering fresh local produce, regional delicacies, and native handicrafts."
+La Trinidad Municipal Plaza,Nature Park,"La Trinidad, Benguet",16.45,120.59,"A key community gathering space in the heart of La Trinidad, perfect for leisure, events, and experiencing the local Benguet lifestyle."
+La Trinidad Local Eatery,Restaurant,"La Trinidad, Benguet",16.451999999999998,120.58800000000001,A popular dining spot in La Trinidad serving authentic Benguet dishes and affordable comfort food favored by locals.
+Sagada Parish Church,Historical Site,"Sagada, Mt. Province",17.081,120.90100000000001,"The central religious and historical landmark of Sagada, serving as the spiritual heart of the Catholic community in Mt. Province."
+Sagada Public Market,Pasalubong Store,"Sagada, Mt. Province",17.078999999999997,120.899,"The bustling trade center of Sagada, Mt. Province, offering fresh local produce, regional delicacies, and native handicrafts."
+Sagada Municipal Plaza,Nature Park,"Sagada, Mt. Province",17.08,120.9,"A key community gathering space in the heart of Sagada, perfect for leisure, events, and experiencing the local Mt. Province lifestyle."
+Sagada Local Eatery,Restaurant,"Sagada, Mt. Province",17.081999999999997,120.89800000000001,A popular dining spot in Sagada serving authentic Mt. Province dishes and affordable comfort food favored by locals.
+Banaue Parish Church,Historical Site,"Banaue, Ifugao",16.911,121.061,"The central religious and historical landmark of Banaue, serving as the spiritual heart of the Catholic community in Ifugao."
+Banaue Public Market,Pasalubong Store,"Banaue, Ifugao",16.909,121.059,"The bustling trade center of Banaue, Ifugao, offering fresh local produce, regional delicacies, and native handicrafts."
+Banaue Municipal Plaza,Nature Park,"Banaue, Ifugao",16.91,121.06,"A key community gathering space in the heart of Banaue, perfect for leisure, events, and experiencing the local Ifugao lifestyle."
+Banaue Local Eatery,Restaurant,"Banaue, Ifugao",16.912,121.058,A popular dining spot in Banaue serving authentic Ifugao dishes and affordable comfort food favored by locals.
+Tuguegarao Parish Church,Historical Site,"Tuguegarao, Cagayan",17.611,121.721,"The central religious and historical landmark of Tuguegarao, serving as the spiritual heart of the Catholic community in Cagayan."
+Tuguegarao Public Market,Pasalubong Store,"Tuguegarao, Cagayan",17.608999999999998,121.719,"The bustling trade center of Tuguegarao, Cagayan, offering fresh local produce, regional delicacies, and native handicrafts."
+Tuguegarao Municipal Plaza,Nature Park,"Tuguegarao, Cagayan",17.61,121.72,"A key community gathering space in the heart of Tuguegarao, perfect for leisure, events, and experiencing the local Cagayan lifestyle."
+Tuguegarao Local Eatery,Restaurant,"Tuguegarao, Cagayan",17.612,121.718,A popular dining spot in Tuguegarao serving authentic Cagayan dishes and affordable comfort food favored by locals.
+Ilagan Parish Church,Historical Site,"Ilagan, Isabela",17.141000000000002,121.891,"The central religious and historical landmark of Ilagan, serving as the spiritual heart of the Catholic community in Isabela."
+Ilagan Public Market,Pasalubong Store,"Ilagan, Isabela",17.139,121.889,"The bustling trade center of Ilagan, Isabela, offering fresh local produce, regional delicacies, and native handicrafts."
+Ilagan Municipal Plaza,Nature Park,"Ilagan, Isabela",17.14,121.89,"A key community gathering space in the heart of Ilagan, perfect for leisure, events, and experiencing the local Isabela lifestyle."
+Ilagan Local Eatery,Restaurant,"Ilagan, Isabela",17.142,121.888,A popular dining spot in Ilagan serving authentic Isabela dishes and affordable comfort food favored by locals.
+Santiago Parish Church,Historical Site,"Santiago, Isabela",16.691000000000003,121.551,"The central religious and historical landmark of Santiago, serving as the spiritual heart of the Catholic community in Isabela."
+Santiago Public Market,Pasalubong Store,"Santiago, Isabela",16.689,121.54899999999999,"The bustling trade center of Santiago, Isabela, offering fresh local produce, regional delicacies, and native handicrafts."
+Santiago Municipal Plaza,Nature Park,"Santiago, Isabela",16.69,121.55,"A key community gathering space in the heart of Santiago, perfect for leisure, events, and experiencing the local Isabela lifestyle."
+Santiago Local Eatery,Restaurant,"Santiago, Isabela",16.692,121.548,A popular dining spot in Santiago serving authentic Isabela dishes and affordable comfort food favored by locals.
+Cauayan Parish Church,Historical Site,"Cauayan, Isabela",16.931,121.771,"The central religious and historical landmark of Cauayan, serving as the spiritual heart of the Catholic community in Isabela."
+Cauayan Public Market,Pasalubong Store,"Cauayan, Isabela",16.929,121.76899999999999,"The bustling trade center of Cauayan, Isabela, offering fresh local produce, regional delicacies, and native handicrafts."
+Cauayan Municipal Plaza,Nature Park,"Cauayan, Isabela",16.93,121.77,"A key community gathering space in the heart of Cauayan, perfect for leisure, events, and experiencing the local Isabela lifestyle."
+Cauayan Local Eatery,Restaurant,"Cauayan, Isabela",16.932,121.768,A popular dining spot in Cauayan serving authentic Isabela dishes and affordable comfort food favored by locals.
+Legazpi Parish Church,Historical Site,"Legazpi, Albay",13.131,123.73100000000001,"The central religious and historical landmark of Legazpi, serving as the spiritual heart of the Catholic community in Albay."
+Legazpi Public Market,Pasalubong Store,"Legazpi, Albay",13.129000000000001,123.729,"The bustling trade center of Legazpi, Albay, offering fresh local produce, regional delicacies, and native handicrafts."
+Legazpi Municipal Plaza,Nature Park,"Legazpi, Albay",13.13,123.73,"A key community gathering space in the heart of Legazpi, perfect for leisure, events, and experiencing the local Albay lifestyle."
+Legazpi Local Eatery,Restaurant,"Legazpi, Albay",13.132000000000001,123.72800000000001,A popular dining spot in Legazpi serving authentic Albay dishes and affordable comfort food favored by locals.
+Daraga Parish Church,Historical Site,"Daraga, Albay",13.151,123.711,"The central religious and historical landmark of Daraga, serving as the spiritual heart of the Catholic community in Albay."
+Daraga Public Market,Pasalubong Store,"Daraga, Albay",13.149000000000001,123.70899999999999,"The bustling trade center of Daraga, Albay, offering fresh local produce, regional delicacies, and native handicrafts."
+Daraga Municipal Plaza,Nature Park,"Daraga, Albay",13.15,123.71,"A key community gathering space in the heart of Daraga, perfect for leisure, events, and experiencing the local Albay lifestyle."
+Daraga Local Eatery,Restaurant,"Daraga, Albay",13.152000000000001,123.708,A popular dining spot in Daraga serving authentic Albay dishes and affordable comfort food favored by locals.
+Tabaco Parish Church,Historical Site,"Tabaco, Albay",13.360999999999999,123.73100000000001,"The central religious and historical landmark of Tabaco, serving as the spiritual heart of the Catholic community in Albay."
+Tabaco Public Market,Pasalubong Store,"Tabaco, Albay",13.359,123.729,"The bustling trade center of Tabaco, Albay, offering fresh local produce, regional delicacies, and native handicrafts."
+Tabaco Municipal Plaza,Nature Park,"Tabaco, Albay",13.36,123.73,"A key community gathering space in the heart of Tabaco, perfect for leisure, events, and experiencing the local Albay lifestyle."
+Tabaco Local Eatery,Restaurant,"Tabaco, Albay",13.362,123.72800000000001,A popular dining spot in Tabaco serving authentic Albay dishes and affordable comfort food favored by locals.
+Naga Parish Church,Historical Site,"Naga, CamSur",13.620999999999999,123.191,"The central religious and historical landmark of Naga, serving as the spiritual heart of the Catholic community in CamSur."
+Naga Public Market,Pasalubong Store,"Naga, CamSur",13.619,123.189,"The bustling trade center of Naga, CamSur, offering fresh local produce, regional delicacies, and native handicrafts."
+Naga Municipal Plaza,Nature Park,"Naga, CamSur",13.62,123.19,"A key community gathering space in the heart of Naga, perfect for leisure, events, and experiencing the local CamSur lifestyle."
+Naga Local Eatery,Restaurant,"Naga, CamSur",13.622,123.188,A popular dining spot in Naga serving authentic CamSur dishes and affordable comfort food favored by locals.
+Pili Parish Church,Historical Site,"Pili, CamSur",13.581,123.281,"The central religious and historical landmark of Pili, serving as the spiritual heart of the Catholic community in CamSur."
+Pili Public Market,Pasalubong Store,"Pili, CamSur",13.579,123.279,"The bustling trade center of Pili, CamSur, offering fresh local produce, regional delicacies, and native handicrafts."
+Pili Municipal Plaza,Nature Park,"Pili, CamSur",13.58,123.28,"A key community gathering space in the heart of Pili, perfect for leisure, events, and experiencing the local CamSur lifestyle."
+Pili Local Eatery,Restaurant,"Pili, CamSur",13.582,123.278,A popular dining spot in Pili serving authentic CamSur dishes and affordable comfort food favored by locals.
+Iriga Parish Church,Historical Site,"Iriga, CamSur",13.411,123.411,"The central religious and historical landmark of Iriga, serving as the spiritual heart of the Catholic community in CamSur."
+Iriga Public Market,Pasalubong Store,"Iriga, CamSur",13.409,123.40899999999999,"The bustling trade center of Iriga, CamSur, offering fresh local produce, regional delicacies, and native handicrafts."
+Iriga Municipal Plaza,Nature Park,"Iriga, CamSur",13.41,123.41,"A key community gathering space in the heart of Iriga, perfect for leisure, events, and experiencing the local CamSur lifestyle."
+Iriga Local Eatery,Restaurant,"Iriga, CamSur",13.412,123.408,A popular dining spot in Iriga serving authentic CamSur dishes and affordable comfort food favored by locals.
+Daet Parish Church,Historical Site,"Daet, CamNorte",14.110999999999999,122.95100000000001,"The central religious and historical landmark of Daet, serving as the spiritual heart of the Catholic community in CamNorte."
+Daet Public Market,Pasalubong Store,"Daet, CamNorte",14.109,122.949,"The bustling trade center of Daet, CamNorte, offering fresh local produce, regional delicacies, and native handicrafts."
+Daet Municipal Plaza,Nature Park,"Daet, CamNorte",14.11,122.95,"A key community gathering space in the heart of Daet, perfect for leisure, events, and experiencing the local CamNorte lifestyle."
+Daet Local Eatery,Restaurant,"Daet, CamNorte",14.112,122.94800000000001,A popular dining spot in Daet serving authentic CamNorte dishes and affordable comfort food favored by locals.
+Sorsogon City Parish Church,Historical Site,"Sorsogon City, Sorsogon",12.971,124.01100000000001,"The central religious and historical landmark of Sorsogon City, serving as the spiritual heart of the Catholic community in Sorsogon."
+Sorsogon City Public Market,Pasalubong Store,"Sorsogon City, Sorsogon",12.969000000000001,124.009,"The bustling trade center of Sorsogon City, Sorsogon, offering fresh local produce, regional delicacies, and native handicrafts."
+Sorsogon City Municipal Plaza,Nature Park,"Sorsogon City, Sorsogon",12.97,124.01,"A key community gathering space in the heart of Sorsogon City, perfect for leisure, events, and experiencing the local Sorsogon lifestyle."
+Sorsogon City Local Eatery,Restaurant,"Sorsogon City, Sorsogon",12.972000000000001,124.00800000000001,A popular dining spot in Sorsogon City serving authentic Sorsogon dishes and affordable comfort food favored by locals.
+Gubat Parish Church,Historical Site,"Gubat, Sorsogon",12.921,124.12100000000001,"The central religious and historical landmark of Gubat, serving as the spiritual heart of the Catholic community in Sorsogon."
+Gubat Public Market,Pasalubong Store,"Gubat, Sorsogon",12.919,124.119,"The bustling trade center of Gubat, Sorsogon, offering fresh local produce, regional delicacies, and native handicrafts."
+Gubat Municipal Plaza,Nature Park,"Gubat, Sorsogon",12.92,124.12,"A key community gathering space in the heart of Gubat, perfect for leisure, events, and experiencing the local Sorsogon lifestyle."
+Gubat Local Eatery,Restaurant,"Gubat, Sorsogon",12.922,124.11800000000001,A popular dining spot in Gubat serving authentic Sorsogon dishes and affordable comfort food favored by locals.
+Matnog Parish Church,Historical Site,"Matnog, Sorsogon",12.581,124.081,"The central religious and historical landmark of Matnog, serving as the spiritual heart of the Catholic community in Sorsogon."
+Matnog Public Market,Pasalubong Store,"Matnog, Sorsogon",12.579,124.079,"The bustling trade center of Matnog, Sorsogon, offering fresh local produce, regional delicacies, and native handicrafts."
+Matnog Municipal Plaza,Nature Park,"Matnog, Sorsogon",12.58,124.08,"A key community gathering space in the heart of Matnog, perfect for leisure, events, and experiencing the local Sorsogon lifestyle."
+Matnog Local Eatery,Restaurant,"Matnog, Sorsogon",12.582,124.078,A popular dining spot in Matnog serving authentic Sorsogon dishes and affordable comfort food favored by locals.
+Virac Parish Church,Historical Site,"Virac, Catanduanes",13.581,124.23100000000001,"The central religious and historical landmark of Virac, serving as the spiritual heart of the Catholic community in Catanduanes."
+Virac Public Market,Pasalubong Store,"Virac, Catanduanes",13.579,124.229,"The bustling trade center of Virac, Catanduanes, offering fresh local produce, regional delicacies, and native handicrafts."
+Virac Municipal Plaza,Nature Park,"Virac, Catanduanes",13.58,124.23,"A key community gathering space in the heart of Virac, perfect for leisure, events, and experiencing the local Catanduanes lifestyle."
+Virac Local Eatery,Restaurant,"Virac, Catanduanes",13.582,124.22800000000001,A popular dining spot in Virac serving authentic Catanduanes dishes and affordable comfort food favored by locals.
+Masbate City Parish Church,Historical Site,"Masbate City, Masbate",12.370999999999999,123.62100000000001,"The central religious and historical landmark of Masbate City, serving as the spiritual heart of the Catholic community in Masbate."
+Masbate City Public Market,Pasalubong Store,"Masbate City, Masbate",12.369,123.619,"The bustling trade center of Masbate City, Masbate, offering fresh local produce, regional delicacies, and native handicrafts."
+Masbate City Municipal Plaza,Nature Park,"Masbate City, Masbate",12.37,123.62,"A key community gathering space in the heart of Masbate City, perfect for leisure, events, and experiencing the local Masbate lifestyle."
+Masbate City Local Eatery,Restaurant,"Masbate City, Masbate",12.372,123.61800000000001,A popular dining spot in Masbate City serving authentic Masbate dishes and affordable comfort food favored by locals.

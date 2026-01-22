@@ -27,6 +27,8 @@ import com.example.scenic_navigation.viewmodel.SharedRouteViewModel
 import com.google.android.material.slider.Slider
 import kotlin.math.roundToInt
 
+// RecommendationsFragment is deprecated and no longer used
+@Deprecated("Discover page is no longer used", ReplaceWith(""))
 class RecommendationsFragment : Fragment() {
     private var _binding: FragmentRecommendationsBinding? = null
     private val binding get() = _binding!!

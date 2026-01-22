@@ -14,8 +14,12 @@ import com.example.scenic_navigation.config.Config
 import androidx.lifecycle.Observer
 import android.content.SharedPreferences
 import com.example.scenic_navigation.services.LocationService
+import com.example.scenic_navigation.services.WebSearchService
+import com.example.scenic_navigation.ml.PoiReranker
 import kotlinx.coroutines.launch
 import org.osmdroid.util.GeoPoint
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 class RouteViewModel(application: Application) : AndroidViewModel(application) {
     private val geocodingService = GeocodingService()
@@ -30,6 +34,74 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
     private val locationService = LocationService(application)
     private val packageName = application.packageName
     private var settingsObserver: Observer<Int>? = null
+    private val webSearchService = WebSearchService()
+    private val poiReranker = PoiReranker(application.applicationContext)
+
+    // Simple CSV parser to handle quoted fields
+    private fun parseCsvLine(line: String): List<String> {
+        val result = mutableListOf<String>()
+        var current = StringBuilder()
+        var inQuotes = false
+        for (char in line) {
+            when {
+                char == '"' -> inQuotes = !inQuotes
+                char == ',' && !inQuotes -> {
+                    result.add(current.toString().trim())
+                    current = StringBuilder()
+                }
+                else -> current.append(char)
+            }
+        }
+        result.add(current.toString().trim())
+        return result
+    }
+
+    // Calculate minimum distance from a point to the route (list of GeoPoints)
+    private fun minDistanceToRoute(point: GeoPoint, route: List<GeoPoint>): Double {
+        var minDist = Double.MAX_VALUE
+        for (routePoint in route) {
+            val dist = point.distanceToAsDouble(routePoint)
+            if (dist < minDist) minDist = dist
+        }
+        return minDist
+    }
+
+    // Caches for routes and POIs to avoid redundant calculations
+    private val routeCache: MutableMap<String, List<GeoPoint>> = java.util.Collections.synchronizedMap(
+        object : java.util.LinkedHashMap<String, List<GeoPoint>>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<GeoPoint>>?): Boolean {
+                return size > 32
+            }
+        }
+    )
+    private val poiCache: MutableMap<String, List<Poi>> = java.util.Collections.synchronizedMap(
+        object : java.util.LinkedHashMap<String, List<Poi>>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<Poi>>?): Boolean {
+                return size > 32
+            }
+        }
+    )
+    private val distanceCache: MutableMap<String, Double> = java.util.Collections.synchronizedMap(
+        object : java.util.LinkedHashMap<String, Double>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Double>?): Boolean {
+                return size > 32
+            }
+        }
+    )
+    private val durationCache: MutableMap<String, Long> = java.util.Collections.synchronizedMap(
+        object : java.util.LinkedHashMap<String, Long>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Long>?): Boolean {
+                return size > 32
+            }
+        }
+    )
+    private val scoreCache: MutableMap<String, Float> = java.util.Collections.synchronizedMap(
+        object : java.util.LinkedHashMap<String, Float>(16, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Float>?): Boolean {
+                return size > 32
+            }
+        }
+    )
 
     init {
         // Initialize prefs and planner from application context
@@ -41,7 +113,7 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
             refreshPlannerFromPrefs()
         }
         com.example.scenic_navigation.events.SettingsBus.events.observeForever(obs)
-        this.settingsObserver = obs
+        settingsObserver = obs
     }
 
 
@@ -170,27 +242,17 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                 _isGeocoding.value = false
                 _isRouting.value = true
 
-                // Determine routing mode
-                val routingMode = when {
-                    useOceanic -> "oceanic"
-                    useMountain -> "mountain"
-                    else -> "default"
-                }
+                // Calculate direct distance first to determine routing mode
+                val directDistance = startPoint.distanceToAsDouble(destPoint)
+
+                val LONG_OCEANIC_THRESHOLD = 150_000.0 // meters (~150km)
+
+                // Determine routing mode - use oceanic for oceanic routes, default for others
+                val routingMode = if (useOceanic) "oceanic" else "default"
 
                 // Store for recalculation
                 currentDestination = destPoint
                 currentRoutingMode = routingMode
-
-                // Suggest via-points based on curation to bias routing (optional)
-                val suggestedVia = scenicRoutePlanner.suggestViaPointsForCuration(startPoint, destPoint, packageName, curationIntent)
-
-                // Only pass suggested via-points to the routing service when we have an explicit curation intent.
-                // However, for long oceanic drives we prefer the built-in coastal waypoint sets (they are
-                // pre-configured for long coastal routes). So if routingMode is "oceanic" and the direct
-                // distance between start and dest exceeds the LONG_OCEANIC_THRESHOLD, do not pass the
-                // planner-suggested waypoints so `RoutingService` will use its `coastalWaypoints` set.
-                val LONG_OCEANIC_THRESHOLD = 300_000.0 // meters (~300km)
-                val directDistance = startPoint.distanceToAsDouble(destPoint)
 
                 // Read user preference whether to prefer coastal sets for long oceanic trips
                 val preferCoastalPref = prefs.getBoolean(com.example.scenic_navigation.config.Config.PREF_PREFER_COASTAL_LONG_OCEANIC, true)
@@ -202,12 +264,16 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                     routingService.getCoastalWaypointSet(forcedKey)
                 } else null
 
+                // Suggest via-points based on curation to bias routing (optional)
+                // val suggestedVia = scenicRoutePlanner.suggestViaPointsForCuration(startPoint, destPoint, packageName, curationIntent)
+
+                // Calculate direct route first based on scenery mode, then fetch POIs along it to avoid long detours
                 val waypointsToPass = when {
                     // If a forced coastal key is present, use that explicit set
                     forcedCoastalWaypoints != null -> forcedCoastalWaypoints
-                    // Otherwise, for long oceanic routes and user preference enabled, let RoutingService pick its coastal set
+                    // For long oceanic routes to southern destinations, let RoutingService pick its coastal set for scenery
                     routingMode == "oceanic" && directDistance > LONG_OCEANIC_THRESHOLD && preferCoastalPref -> null
-                    else -> if (curationIntent != null && suggestedVia.isNotEmpty()) suggestedVia else null
+                    else -> null // No additional via-points to avoid detours
                 }
 
                 // Clear transient extras after consuming
@@ -261,20 +327,98 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                     _statusMessage.postValue(status)
                 }
 
+                // Load dataset POIs for descriptions
+                val assetManager = getApplication<Application>().assets
+                val inputStream = assetManager.open("datasets/luzon_dataset.csv")
+                val reader = BufferedReader(InputStreamReader(inputStream))
+                val datasetPois = mutableListOf<Poi>()
+
+                reader.readLine() // Skip header
+                reader.forEachLine { line ->
+                    val parts = parseCsvLine(line)
+                    if (parts.size >= 6) {
+                        val poi = Poi(
+                            name = parts[0].trim().removeSurrounding("\""),
+                            category = parts[1].trim().removeSurrounding("\""),
+                            description = parts[5].trim().removeSurrounding("\""),
+                            municipality = parts[2].trim().removeSurrounding("\""),
+                            lat = parts[3].trim().removeSurrounding("\"").toDoubleOrNull(),
+                            lon = parts[4].trim().removeSurrounding("\"").toDoubleOrNull()
+                        )
+                        if (poi.name.isNotBlank() && poi.lat != null && poi.lon != null && poi.description.isNotBlank()) {
+                            datasetPois.add(poi)
+                        }
+                    }
+                }
+                reader.close()
+                inputStream.close()
+
                 // Convert ScenicPoi to Poi
                 val pois = scenicPois.map { scenic ->
+                    // Find matching dataset POI
+                    val datasetPoi = datasetPois.find { it.name.equals(scenic.name, ignoreCase = true) }
+                    val description = datasetPoi?.description ?: scenic.description.ifBlank { "A scenic location along the route." }
+                    // Boost scenic score for POIs that came from the dataset
+                    val boostedScore = scenic.score.toFloat() + (if (datasetPoi != null) 20f else 0f)
                     Poi(
                         name = scenic.name,
                         category = scenic.type,
-                        description = "Scenic score: ${scenic.score}",
+                        description = description,
                         municipality = scenic.municipality ?: "Unknown",
                         lat = scenic.lat,
                         lon = scenic.lon,
-                        scenicScore = scenic.score.toFloat()
+                        scenicScore = boostedScore
                     )
+                }.toMutableList()
+
+                // Enhance descriptions with Wikipedia if empty
+                for (i in pois.indices) {
+                    val poi = pois[i]
+                    if (poi.description.isBlank() || poi.description == "A scenic location along the route.") {
+                        val wikiDesc = webSearchService.getDescriptionForPoi(poi.name)
+                        if (wikiDesc != null) {
+                            pois[i] = poi.copy(description = wikiDesc)
+                        }
+                    }
                 }
 
-                _routePois.value = pois
+                // Add additional dataset POIs near the route
+                val scenicNames = scenicPois.map { it.name.lowercase() }.toSet()
+                val additionalPois = datasetPois.filter { datasetPoi ->
+                    !scenicNames.contains(datasetPoi.name.lowercase()) &&
+                    minDistanceToRoute(GeoPoint(datasetPoi.lat!!, datasetPoi.lon!!), route) < 5000.0
+                }
+                for (datasetPoi in additionalPois) {
+                    pois.add(Poi(
+                        name = datasetPoi.name,
+                        category = datasetPoi.category,
+                        description = datasetPoi.description,
+                        municipality = datasetPoi.municipality,
+                        lat = datasetPoi.lat,
+                        lon = datasetPoi.lon,
+                        scenicScore = 50f // High base score for dataset POIs
+                    ))
+                }
+
+                // Sort by category priority and take top recommendations
+                val sortedPois = pois.sortedWith(
+                    compareBy<Poi> { poi ->
+                        when (poi.category) {
+                            "tourism", "scenic" -> 0
+                            "historic" -> 1
+                            "natural" -> 2
+                            "mountain" -> 3
+                            "coastal" -> 4
+                            else -> 5
+                        }
+                    }.thenBy { it.name }
+                ).take(75)
+
+                // Apply ML reranker on the top candidates
+                val reranked = poiReranker.rerank(sortedPois, startPoint.latitude, startPoint.longitude, System.currentTimeMillis())
+
+                // Take final top 20 for UI
+                _routePois.value = reranked.take(50)
                 // Compute average scenic score
                 try {
                     val avgScore = if (scenicPois.isNotEmpty()) scenicPois.map { it.score }.average().toFloat() else 0f
@@ -285,6 +429,14 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
 
                 _statusMessage.value = getApplication<Application>().getString(com.example.scenic_navigation.R.string.planning_your_scenic_route) + " Found ${scenicPois.size} scenic spots."
                 _isFetchingPois.value = false
+
+                // Cache the results for future use
+                val cacheKey = "${startPoint.latitude},${startPoint.longitude};${destPoint.latitude},${destPoint.longitude};$routingMode;${curationIntent?.hashCode() ?: 0}"
+                routeCache[cacheKey] = route
+                distanceCache[cacheKey] = _routeDistanceMeters.value ?: 0.0
+                durationCache[cacheKey] = _routeDurationSeconds.value ?: 0L
+                scoreCache[cacheKey] = _scenicScore.value ?: 0f
+                poiCache[cacheKey] = pois
             } catch (e: Exception) {
                 _statusMessage.value = "Error planning route: ${e.message}"
                 _routePoints.value = emptyList()
@@ -331,7 +483,7 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
         super.onCleared()
         prefs.unregisterOnSharedPreferenceChangeListener(prefsListener)
         try {
-            this.settingsObserver?.let { com.example.scenic_navigation.events.SettingsBus.events.removeObserver(it) }
+            settingsObserver?.let { com.example.scenic_navigation.events.SettingsBus.events.removeObserver(it) }
         } catch (_: Exception) {
         }
     }
@@ -352,18 +504,19 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
 
                 // Fetch new route
                 // Reuse last curation intent to suggest via-points for recalculation
-                val suggestedViaForRecalc = scenicRoutePlanner.suggestViaPointsForCuration(newStart, destination, packageName, lastCurationIntent)
-
-                val LONG_OCEANIC_THRESHOLD = 300_000.0 // meters
+                val LONG_OCEANIC_THRESHOLD = 150_000.0 // meters
                 val directDistanceRecalc = newStart.distanceToAsDouble(destination)
 
-                val waypointsToPassForRecalc = if (currentRoutingMode == "oceanic" && directDistanceRecalc > LONG_OCEANIC_THRESHOLD) {
-                    null
+                // Determine routing mode for recalculation - use the same mode as original route
+                val recalcRoutingMode = currentRoutingMode
+
+                val waypointsToPassForRecalc = if (recalcRoutingMode == "oceanic" && directDistanceRecalc > LONG_OCEANIC_THRESHOLD) {
+                    null // Let RoutingService pick coastal set for long oceanic routes
                 } else {
-                    if (lastCurationIntent != null && suggestedViaForRecalc.isNotEmpty()) suggestedViaForRecalc else null
+                    null // No additional via-points to avoid detours
                 }
 
-                val route = routingService.fetchRoute(newStart, destination, packageName, currentRoutingMode, waypointsToPassForRecalc)
+                val route = routingService.fetchRoute(newStart, destination, packageName, recalcRoutingMode, waypointsToPassForRecalc)
 
                 if (route.isEmpty()) {
                     _statusMessage.value = getApplication<Application>().getString(com.example.scenic_navigation.R.string.could_not_calculate_route)
@@ -373,6 +526,24 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 _routePoints.value = route
+
+                // Compute approximate route distance (meters) and estimated duration
+                try {
+                    var totalMeters = 0.0
+                    for (i in 0 until route.size - 1) {
+                        val a = route[i]
+                        val b = route[i + 1]
+                        totalMeters += com.example.scenic_navigation.utils.GeoUtils.haversine(a.latitude, a.longitude, b.latitude, b.longitude)
+                    }
+                    _routeDistanceMeters.value = totalMeters
+                    // Estimate duration using average speed 60 km/h -> 16.6667 m/s
+                    val avgSpeedMps = 16.6667
+                    val seconds = (totalMeters / avgSpeedMps).toLong()
+                    _routeDurationSeconds.value = seconds
+                } catch (_: Exception) {
+                    _routeDistanceMeters.value = 0.0
+                    _routeDurationSeconds.value = 0L
+                }
 
                 // Fetch scenic POIs along the new route
                 val routeType = when (currentRoutingMode) {
@@ -389,19 +560,98 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                     _statusMessage.postValue(status)
                 }
 
+                // Load dataset POIs for descriptions
+                val assetManager = getApplication<Application>().assets
+                val inputStream = assetManager.open("datasets/luzon_dataset.csv")
+                val reader = BufferedReader(InputStreamReader(inputStream))
+                val datasetPois = mutableListOf<Poi>()
+
+                reader.readLine() // Skip header
+                reader.forEachLine { line ->
+                    val parts = parseCsvLine(line)
+                    if (parts.size >= 6) {
+                        val poi = Poi(
+                            name = parts[0].trim().removeSurrounding("\""),
+                            category = parts[1].trim().removeSurrounding("\""),
+                            description = parts[5].trim().removeSurrounding("\""),
+                            municipality = parts[2].trim().removeSurrounding("\""),
+                            lat = parts[3].trim().removeSurrounding("\"").toDoubleOrNull(),
+                            lon = parts[4].trim().removeSurrounding("\"").toDoubleOrNull()
+                        )
+                        if (poi.name.isNotBlank() && poi.lat != null && poi.lon != null && poi.description.isNotBlank()) {
+                            datasetPois.add(poi)
+                        }
+                    }
+                }
+                reader.close()
+                inputStream.close()
+
                 // Convert ScenicPoi to Poi
                 val pois = scenicPois.map { scenic ->
+                    // Find matching dataset POI
+                    val datasetPoi = datasetPois.find { it.name.equals(scenic.name, ignoreCase = true) }
+                    val description = datasetPoi?.description ?: scenic.description.ifBlank { "A scenic location along the route." }
+                    // Boost scenic score for POIs that came from the dataset
+                    val boostedScore = scenic.score.toFloat() + (if (datasetPoi != null) 20f else 0f)
                     Poi(
                         name = scenic.name,
                         category = scenic.type,
-                        description = "Scenic score: ${scenic.score}",
+                        description = description,
                         municipality = scenic.municipality ?: "Unknown",
                         lat = scenic.lat,
-                        lon = scenic.lon
+                        lon = scenic.lon,
+                        scenicScore = boostedScore
                     )
+                }.toMutableList()
+
+                // Enhance descriptions with Wikipedia if empty
+                for (i in pois.indices) {
+                    val poi = pois[i]
+                    if (poi.description.isBlank() || poi.description == "A scenic location along the route.") {
+                        val wikiDesc = webSearchService.getDescriptionForPoi(poi.name)
+                        if (wikiDesc != null) {
+                            pois[i] = poi.copy(description = wikiDesc)
+                        }
+                    }
                 }
 
-                _routePois.value = pois
+                // Add additional dataset POIs near the route
+                val scenicNames = scenicPois.map { it.name.lowercase() }.toSet()
+                val additionalPois = datasetPois.filter { datasetPoi ->
+                    !scenicNames.contains(datasetPoi.name.lowercase()) &&
+                    minDistanceToRoute(GeoPoint(datasetPoi.lat!!, datasetPoi.lon!!), route) < 5000.0
+                }
+                for (datasetPoi in additionalPois) {
+                    pois.add(Poi(
+                        name = datasetPoi.name,
+                        category = datasetPoi.category,
+                        description = datasetPoi.description,
+                        municipality = datasetPoi.municipality,
+                        lat = datasetPoi.lat,
+                        lon = datasetPoi.lon,
+                        scenicScore = 50f // High base score for dataset POIs
+                    ))
+                }
+
+                // Sort by category priority and take top recommendations
+                val sortedPois = pois.sortedWith(
+                    compareBy<Poi> { poi ->
+                        when (poi.category) {
+                            "tourism", "scenic" -> 0
+                            "historic" -> 1
+                            "natural" -> 2
+                            "mountain" -> 3
+                            "coastal" -> 4
+                            else -> 5
+                        }
+                    }.thenBy { it.name }
+                ).take(75)
+
+                // Apply ML reranker on the top candidates
+                val reranked = poiReranker.rerank(sortedPois, newStart.latitude, newStart.longitude, System.currentTimeMillis())
+
+                // Take final top 20 for UI
+                    _routePois.value = reranked.take(50)
                 // Compute average scenic score for recalculated route
                 try {
                     val avgScore = if (scenicPois.isNotEmpty()) scenicPois.map { it.score }.average().toFloat() else 0f
@@ -411,6 +661,14 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 _statusMessage.value = getApplication<Application>().getString(com.example.scenic_navigation.R.string.planning_your_scenic_route) + " Found ${scenicPois.size} scenic spots."
                 _isFetchingPois.value = false
+
+                // Cache the results for future use
+                val cacheKey = "${newStart.latitude},${newStart.longitude};${destination.latitude},${destination.longitude};$currentRoutingMode;${lastCurationIntent?.hashCode() ?: 0}"
+                routeCache[cacheKey] = route
+                distanceCache[cacheKey] = _routeDistanceMeters.value ?: 0.0
+                durationCache[cacheKey] = _routeDurationSeconds.value ?: 0L
+                scoreCache[cacheKey] = _scenicScore.value ?: 0f
+                poiCache[cacheKey] = pois
             } catch (e: Exception) {
                 _statusMessage.value = "Error recalculating route: ${e.message}"
             } finally {
