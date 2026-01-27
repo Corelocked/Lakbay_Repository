@@ -1,6 +1,6 @@
-# Scenic Navigation
+# LAKBAY
 
-Scenic Navigation is an intelligent Android navigation application designed for travelers who believe the journey is just as important as the destination. Instead of providing the fastest or shortest route, this app finds the most scenic path by discovering and prioritizing roads with beautiful coastlines, majestic mountains, and other points of interest.
+LAKBAY is an intelligent Android navigation application designed for travelers who believe the journey is just as important as the destination. Instead of providing the fastest or shortest route, this app finds the most scenic path by discovering and prioritizing roads with beautiful coastlines, majestic mountains, and other points of interest.
 
 ## Features
 
