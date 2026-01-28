@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.example.scenic_navigation" />
+                  <option name="mobileSdkAppId" value="1:533429423836:android:399583515a9198186b6e19" />
+                  <option name="projectId" value="lakbay-ciit" />
+                  <option name="projectNumber" value="533429423836" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

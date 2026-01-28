@@ -6,16 +6,16 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.scenic_navigation.models.Poi
-import com.example.scenic_navigation.services.PoiService
-import com.example.scenic_navigation.services.MunicipalityService
 import com.example.scenic_navigation.ml.PoiReranker
+import com.example.scenic_navigation.services.WebSearchService
 import kotlinx.coroutines.launch
 import org.osmdroid.util.GeoPoint
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 class RecommendationsViewModel(application: Application) : AndroidViewModel(application) {
-    private val poiService = PoiService(application.applicationContext)
-    private val municipalityService = MunicipalityService()
-    private val packageName = application.packageName
+    private val poiReranker = PoiReranker(application.applicationContext)
+    private val webSearchService = WebSearchService()
 
     private val _isLoading = MutableLiveData<Boolean>(false)
     val isLoading: LiveData<Boolean> = _isLoading
@@ -23,33 +23,65 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
     private val _recommendations = MutableLiveData<List<Poi>>(emptyList())
     val recommendations: LiveData<List<Poi>> = _recommendations
 
-    // Use an ML-based reranker (kept lightweight)
-    private val poiReranker = PoiReranker(application.applicationContext)
+    // Simple CSV parser to handle quoted fields
+    private fun parseCsvLine(line: String): List<String> {
+        val result = mutableListOf<String>()
+        var current = StringBuilder()
+        var inQuotes = false
+        for (char in line) {
+            when {
+                char == '"' -> inQuotes = !inQuotes
+                char == ',' && !inQuotes -> {
+                    result.add(current.toString().trim())
+                    current = StringBuilder()
+                }
+                else -> current.append(char)
+            }
+        }
+        result.add(current.toString().trim())
+        return result
+    }
 
     fun fetchRecommendations() {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
 
-                // Fetch popular POIs from multiple locations in the Philippines
-                val popularLocations = listOf(
-                    GeoPoint(14.5995, 120.9842), // Manila
-                    GeoPoint(16.4023, 120.5960), // Baguio
-                    GeoPoint(10.3157, 123.8854), // Cebu
-                    GeoPoint(7.0731, 125.6128),  // Davao
-                    GeoPoint(11.1949, 119.4013)  // El Nido
-                )
-
+                // Load POIs from CSV dataset
+                val assetManager = getApplication<Application>().assets
+                val inputStream = assetManager.open("datasets/luzon_dataset.csv")
+                val reader = BufferedReader(InputStreamReader(inputStream))
                 val allPois = mutableListOf<Poi>()
 
-                // Fetch POIs near each popular location
-                for (location in popularLocations) {
-                    val pois = poiService.fetchPoisNearLocation(
-                        center = location,
-                        radiusMeters = 10000,
-                        packageName = packageName
-                    )
-                    allPois.addAll(pois)
+                reader.readLine() // Skip header
+                reader.forEachLine { line ->
+                    val parts = parseCsvLine(line)
+                    if (parts.size >= 6) {
+                        val poi = Poi(
+                            name = parts[0].trim().removeSurrounding("\""),
+                            category = parts[1].trim().removeSurrounding("\""),
+                            description = parts[5].trim().removeSurrounding("\""),
+                            municipality = parts[2].trim().removeSurrounding("\""),
+                            lat = parts[3].trim().removeSurrounding("\"").toDoubleOrNull(),
+                            lon = parts[4].trim().removeSurrounding("\"").toDoubleOrNull()
+                        )
+                        if (poi.name.isNotBlank() && poi.lat != null && poi.lon != null) {
+                            allPois.add(poi)
+                        }
+                    }
+                }
+                reader.close()
+                inputStream.close()
+
+                // Enhance descriptions with Wikipedia if empty
+                for (i in allPois.indices) {
+                    val poi = allPois[i]
+                    if (poi.description.isBlank()) {
+                        val wikiDesc = webSearchService.getDescriptionForPoi(poi.name)
+                        if (wikiDesc != null) {
+                            allPois[i] = poi.copy(description = wikiDesc)
+                        }
+                    }
                 }
 
                 // Remove duplicates based on name and location
@@ -72,7 +104,7 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
                 ).take(50)
 
                 // Apply ML reranker on the top candidates (run on IO thread via viewModelScope)
-                val center = popularLocations.first()
+                val center = GeoPoint(14.5995, 120.9842) // Manila as center
                 val reranked = poiReranker.rerank(sortedPois, center.latitude, center.longitude, System.currentTimeMillis())
 
                 // Take final top 20 for UI

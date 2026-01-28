@@ -37,7 +37,8 @@ data class ScenicPoi(
     val lat: Double,
     val lon: Double,
     val score: Int,
-    val municipality: String? = null // Added for compatibility with RouteViewModel
+    val municipality: String? = null, // Added for compatibility with RouteViewModel
+    val description: String = "" // Added for POI descriptions
 )
 
 /**
@@ -86,7 +87,6 @@ data class CoastalSegment(
  * Curation intent captures the lightweight trip curation choices from the user.
  */
 enum class SeeingType {
-    HISTORICAL,
     OCEANIC,
     MOUNTAIN
 }
@@ -94,7 +94,11 @@ enum class SeeingType {
 enum class ActivityType {
     SIGHTSEEING,
     SHOP_AND_DINE,
-    CULTURAL
+    CULTURAL,
+    ADVENTURE,
+    RELAXATION,
+    FAMILY_FRIENDLY,
+    ROMANTIC
 }
 
 data class CurationIntent(
