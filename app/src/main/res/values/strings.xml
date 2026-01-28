@@ -37,4 +37,19 @@
     <!-- Bottom sheet -->
     <string name="recommendations_along_route">Recommendations Along Route</string>
     <string name="no_recommendations">No recommendations available yet. Plan a route to see suggestions.</string>
+
+    <string-array name="seeing_options">
+        <item>🌊 Oceanic View</item>
+        <item>⛰️ Mountain Ranges</item>
+    </string-array>
+
+    <string-array name="activity_options">
+        <item>👀 Sight seeing</item>
+        <item>🍽️ Shop and Dine</item>
+        <item>🎭 Cultural activities</item>
+        <item>🏔️ Adventure &amp; Hiking</item>
+        <item>🧘 Relaxation &amp; Wellness</item>
+        <item>👨‍👩‍👧‍👦 Family Friendly</item>
+        <item>💕 Romantic Getaway</item>
+    </string-array>
 </resources>
