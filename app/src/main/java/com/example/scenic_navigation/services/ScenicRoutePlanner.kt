@@ -172,6 +172,9 @@ class ScenicRoutePlanner(
                 type.contains("park") -> 65
                 type.contains("attract") || type.contains("attraction") -> 55
                 type.contains("historic") -> 50
+                type.contains("adventure") -> 110
+                type.contains("hiking trail") -> 105
+                type.contains("trail") -> 100
                 else -> 20
             }
             else -> when {
@@ -618,6 +621,9 @@ out center 40;
                                     type.equals("park", true) -> 65
                                     type.equals("attraction", true) -> 55
                                     type.equals("historic", true) -> 50
+                                    type.equals("adventure", true) -> 110
+                                    type.equals("hiking trail", true) -> 105
+                                    type.equals("trail", true) -> 100
                                     else -> 20
                                 }
                                 else -> when {
@@ -853,7 +859,7 @@ out center 40;
             val matchesActivity = when (curationIntent.activity) {
                 com.example.scenic_navigation.models.ActivityType.SHOP_AND_DINE -> cat.contains("shop") || cat.contains("mall") || cat.contains("market") || cat.contains("restaurant") || cat.contains("food") || cat.contains("cafe")
                 com.example.scenic_navigation.models.ActivityType.CULTURAL -> cat.contains("museum") || cat.contains("historic") || cat.contains("theatre") || cat.contains("gallery") || cat.contains("church") || cat.contains("heritage")
-                com.example.scenic_navigation.models.ActivityType.ADVENTURE -> cat.contains("peak") || cat.contains("waterfall") || cat.contains("hiking") || cat.contains("climbing") || cat.contains("adventure") || cat.contains("sport")
+                com.example.scenic_navigation.models.ActivityType.ADVENTURE -> cat.contains("peak") || cat.contains("waterfall") || cat.contains("hiking") || cat.contains("climbing") || cat.contains("adventure") || cat.contains("sport") || cat.contains("hiking trail") || cat.contains("trail")
                 com.example.scenic_navigation.models.ActivityType.RELAXATION -> cat.contains("beach") || cat.contains("park") || cat.contains("spa") || cat.contains("resort") || cat.contains("relax") || cat.contains("nature")
                 com.example.scenic_navigation.models.ActivityType.FAMILY_FRIENDLY -> cat.contains("park") || cat.contains("playground") || cat.contains("zoo") || cat.contains("museum") || cat.contains("picnic") || cat.contains("family")
                 com.example.scenic_navigation.models.ActivityType.ROMANTIC -> cat.contains("view") || cat.contains("restaurant") || cat.contains("park") || cat.contains("beach") || cat.contains("sunset") || cat.contains("romantic")
@@ -1039,6 +1045,9 @@ out center 200;
                                     type.equals("park", true) -> 65
                                     type.equals("attraction", true) -> 55
                                     type.equals("historic", true) -> 50
+                                    type.equals("adventure", true) -> 110
+                                    type.equals("hiking trail", true) -> 105
+                                    type.equals("trail", true) -> 100
                                     else -> 20
                                 }
                                 else -> when {
@@ -1230,6 +1239,10 @@ out center 200;
         return pois.sumOf { it.score }.toDouble()
     }
 }
+
+
+
+
 
 
 
