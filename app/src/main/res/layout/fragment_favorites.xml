@@ -47,6 +47,7 @@
         android:layout_weight="1"
         android:paddingStart="8dp"
         android:paddingEnd="8dp"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         android:clipToPadding="false" />
 
     <!-- Empty state (initially hidden, shown when no favorites) -->
