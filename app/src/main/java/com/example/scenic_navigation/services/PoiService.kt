@@ -15,6 +15,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.osmdroid.util.GeoPoint
 import java.text.Normalizer
 import java.util.Locale
+import kotlinx.coroutines.runBlocking
 
 /**
  * Service for fetching Points of Interest from Overpass API
@@ -43,9 +44,24 @@ class PoiService(private val context: Context? = null) {
     // Local dataset loaded from assets (optional)
     private val localPois: MutableList<com.example.scenic_navigation.models.Poi> = mutableListOf()
 
+    // Web search service for enhanced POI fetching with semantic analysis
+    private var webSearchService: WebSearchService? = null
+
+    fun setWebSearchService(service: WebSearchService) {
+        webSearchService = service
+    }
+
     init {
         try {
             context?.let { ctx ->
+                // Try to initialize Web Search service first
+                try {
+                    webSearchService = WebSearchService()
+                    Log.d("PoiService", "Web Search service initialized")
+                } catch (e: Exception) {
+                    Log.d("PoiService", "Failed to initialize Web Search service: ${e.message}")
+                }
+
                 val am = ctx.assets
                 val datasetPath = "datasets"
                 val files = am.list(datasetPath) ?: emptyArray()
@@ -60,13 +76,17 @@ class PoiService(private val context: Context? = null) {
                                 line = br.readLine() ?: break
                                 if (line.isBlank()) continue
                                 val parts = line.split(csvSplit)
-                                if (parts.size >= 5) {
+                                if (parts.size >= 6) {
                                     val name = parts[0].trim().trim('"')
                                     val category = parts[1].trim().trim('"')
+                                    val location = parts[2].trim().trim('"')
                                     val lat = parts[3].trim().toDoubleOrNull()
                                     val lon = parts[4].trim().toDoubleOrNull()
+                                    val description = parts[5].trim().trim('"')
                                     if (lat != null && lon != null) {
-                                        localPois.add(com.example.scenic_navigation.models.Poi(name, category, "", "", lat, lon))
+                                        // Extract municipality from location (e.g., "Tagaytay, Cavite" -> "Tagaytay")
+                                        val municipality = location.split(",")[0].trim()
+                                        localPois.add(com.example.scenic_navigation.models.Poi(name, category, description, municipality, lat, lon))
                                     }
                                 }
                             }
@@ -140,6 +160,30 @@ class PoiService(private val context: Context? = null) {
         // Sample points along the route
         val samples = sampleRoute(routePoints, sampleDistMeters, maxSamples)
 
+        // If Web Search service is available, use it for enhanced POI fetching with reviews
+        webSearchService?.let { webService ->
+            val webPois = mutableListOf<Poi>()
+            // Limit to 5 samples to avoid rate limits
+            val limitedSamples = samples.take(5)
+            for (sample in limitedSamples) {
+                val pois = webService.searchAttractionsNearLocation(sample, (radiusMeters / 1000.0).toInt())
+                webPois.addAll(pois)
+            }
+            // Also include local dataset POIs
+            val localMatches = samples.flatMap { s -> localPoisNear(s.latitude, s.longitude, radiusMeters) }
+            val combined = (webPois + localMatches).distinctBy { poi ->
+                String.format(Locale.US, "%s_%.5f_%.5f", poi.name, poi.lat ?: 0.0, poi.lon ?: 0.0)
+            }
+            // Filter by distance to route
+            return@withContext combined
+                .map { poi -> Pair(poi, minDistToRoute(poi, routePoints)) }
+                .filter { it.second <= maxDistToRouteMeters }
+                .sortedBy { it.second }
+                .map { it.first }
+                .take(50)
+        }
+
+        // Fallback to Overpass if Web Search not available
         // If Overpass is disabled for testing, return only local POIs near the samples
         if (Config.DISABLE_OVERPASS) {
             val localMatches = samples.flatMap { s -> localPoisNear(s.latitude, s.longitude, radiusMeters) }
@@ -391,6 +435,7 @@ class PoiService(private val context: Context? = null) {
         return out
     }
 
+
     private fun sampleRoute(
         routePoints: List<GeoPoint>,
         sampleDistMeters: Int,
@@ -539,7 +584,7 @@ class PoiService(private val context: Context? = null) {
         }
 
         // Leisure activities
-        if (leisure.isNotBlank()) {
+        if (leisure.trim().isNotEmpty()) {
             return when (leisure.lowercase()) {
                 "park" -> "Park"
                 "garden" -> "Garden"
@@ -654,4 +699,6 @@ class PoiService(private val context: Context? = null) {
         }
         return matches.distinctBy { poi -> String.format(Locale.US, "%s_%.5f_%.5f", poi.name, poi.lat ?: 0.0, poi.lon ?: 0.0) }
     }
+
+    fun getLocalPois(): List<Poi> = localPois
 }

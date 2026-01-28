@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.commit
 import com.example.scenic_navigation.ui.RouteFragment
-import com.example.scenic_navigation.ui.RecommendationsFragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import org.osmdroid.config.Configuration
 import android.view.Menu
@@ -45,9 +44,6 @@ class MainActivity : AppCompatActivity() {
             WindowInsetsCompat.CONSUMED
         }
 
-        // Initialize FavoriteStore
-        com.example.scenic_navigation.FavoriteStore.init(this)
-
         // Show RouteFragment by default
         if (savedInstanceState == null) {
             supportFragmentManager.commit {
@@ -62,13 +58,6 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_route -> {
                     supportFragmentManager.commit {
                         replace(R.id.fragment_container, RouteFragment())
-                        // Removed addToBackStack(null) for tab navigation
-                    }
-                    true
-                }
-                R.id.nav_recommendations -> {
-                    supportFragmentManager.commit {
-                        replace(R.id.fragment_container, RecommendationsFragment())
                         // Removed addToBackStack(null) for tab navigation
                     }
                     true

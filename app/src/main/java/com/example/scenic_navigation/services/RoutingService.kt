@@ -334,8 +334,8 @@ class RoutingService {
             }
 
             // Filter out waypoints that are too far from the path or outside the start-dest range
-            // Allow some flexibility with t (e.g., -0.1 to 1.1) for waypoints slightly outside
-            if (perpDistance <= maxPerpendicularDistance && t >= -0.1 && t <= 1.1) {
+            // Allow some flexibility with t (e.g., -0.1 to 1.0) for waypoints slightly outside
+            if (perpDistance <= maxPerpendicularDistance && t >= -0.1 && t <= 1.0) {
                 Triple(wp, t, perpDistance)
             } else {
                 Log.d("RoutingService", "Filtering out waypoint at (${wp.latitude},${wp.longitude}): " +
