@@ -34,6 +34,19 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/toolbar" />
 
+    <!-- Copyright Notice -->
+    <TextView
+        android:id="@+id/osm_copyright"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="© OpenStreetMap contributors"
+        android:textSize="10sp"
+        android:textColor="?android:attr/textColorSecondary"
+        android:layout_marginStart="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/bottom_navigation"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <!-- Bottom Navigation with clean elevation -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
