@@ -15,3 +15,7 @@
 .cxx
 local.properties
 /.idea/misc.xml
+/.idea/.name
+/.idea/deviceManager.xml
+/.idea/discord.xml
+/.idea/studiobot.xml
