@@ -4,11 +4,11 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/cream"
+        android:background="@color/lakbay_cream"
         tools:context=".ui.LoginActivity">
 
-    <!-- 1. ImageView for the Logo Pin (Top part) -->
-    <ImageView            android:id="@+id/logo_pin"
+    <ImageView
+            android:id="@+id/logo_pin"
             android:layout_width="250dp"
             android:layout_height="250dp"
             android:layout_marginBottom="-140dp"
@@ -18,7 +18,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:srcCompat="@drawable/logo_pin" />
 
-    <!-- 2. ImageView for the Logo Title (Bottom part) -->
     <ImageView
             android:id="@+id/logo_title"
             android:layout_width="300dp"
@@ -30,14 +29,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:srcCompat="@drawable/logo_title" />
 
-
-    <!-- 2. Email EditText with Icon -->
-
-    <!-- 3. Password EditText with Icon -->
-
-    <!-- 4. Login Button -->
-
-    <!-- 5. Sign Up TextView at the bottom -->
     <Button
             android:id="@+id/login_button"
             android:layout_width="0dp"
