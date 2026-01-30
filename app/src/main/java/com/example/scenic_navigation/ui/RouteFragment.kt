@@ -2,6 +2,7 @@ package com.example.scenic_navigation.ui
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -31,8 +32,10 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
+import android.net.Uri
 import android.util.TypedValue
 import android.widget.ArrayAdapter
+import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -88,6 +91,12 @@ class RouteFragment : Fragment(), SensorEventListener {
         restoreRouteIfAvailable()
         observeViewModel()
         startClusterPolling()
+
+        // Setup copyright click listener
+        binding.osmCopyright.setOnClickListener {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://osm.org/copyright"))
+            startActivity(intent)
+        }
     }
     private var clusterPollRunnable: Runnable? = null
     private var lastZoomLevel: Double = -1.0

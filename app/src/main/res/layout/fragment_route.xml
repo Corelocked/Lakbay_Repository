@@ -12,6 +12,18 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <!-- Copyright Notice -->
+    <TextView
+        android:id="@+id/osm_copyright"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="© OpenStreetMap contributors"
+        android:textSize="10sp"
+        android:textColor="?android:attr/textColorSecondary"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="8dp"
+        android:layout_marginBottom="8dp" />
+
     <!-- Input Card - Collapsible with cleaner design -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/card_input"
