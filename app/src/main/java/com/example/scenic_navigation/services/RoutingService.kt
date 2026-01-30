@@ -103,6 +103,11 @@ class RoutingService {
             GeoPoint(13.7500, 120.9500), // Mindoro Strait view
             GeoPoint(13.4200, 123.4100)  // Join at Albay
         ),
+        "luzon_south" to listOf(
+            GeoPoint(14.4800, 120.8800), // Cavite coast near Manila
+            GeoPoint(14.0100, 120.9800), // Batangas coast
+            GeoPoint(13.7500, 120.9500)  // Southern Batangas coast
+        ),
         // VISAYAS ROUTES
         "visayas_cebu_coastal" to listOf(
             GeoPoint(10.3200, 123.7500), // Northern Cebu coast
@@ -304,10 +309,10 @@ class RoutingService {
         }
 
         // Set maximum perpendicular distance threshold based on route length
-        // For short routes (<50km), allow max 10km deviation
-        // For longer routes, allow up to 20% deviation but cap at 50km
+        // For short routes (<50km), allow max 2.5km deviation to avoid unnecessary detours
+        // For longer routes, allow up to 15% deviation but cap at 50km
         val maxPerpendicularDistance = when {
-            directDistance < 50_000 -> 10_000.0 // 10km for short routes
+            directDistance < 50_000 -> 2_500.0 // 5km for short routes
             directDistance < 200_000 -> directDistance * 0.15 // 15% for medium routes
             else -> 50_000.0 // 50km max for long routes
         }
@@ -501,7 +506,7 @@ class RoutingService {
 
         // Order the waypoint set along the route direction then sample down to a few representative points
         val ordered = orderWaypointsAlongRoute(start, dest, bestWaypoints)
-        val sampled = sampleWaypoints(ordered, maxPoints = if (isLongDistance) 5 else 3)
+        val sampled = sampleWaypoints(ordered, maxPoints = if (isLongDistance) 5 else 1)
         Log.d("RoutingService", "Using coastal waypoints. original=${bestWaypoints.size} ordered=${ordered.size} sampled=${sampled.size}")
         try {
             Log.d("RoutingService", "Coastal ordered coords: ${ordered.joinToString(";") { "${it.latitude},${it.longitude}" }}")
