@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/cream"
+    android:background="@color/lakbay_cream"
     tools:context=".ui.SignupActivity">
 
     <!-- 2. ImageView for the Logo Title (Bottom part) -->

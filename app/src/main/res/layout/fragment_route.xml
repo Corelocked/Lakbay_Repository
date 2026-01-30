@@ -46,14 +46,14 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:padding="16dp"
-                android:background="@color/primary"
+                android:background="@color/lakbay_red"
                 android:gravity="center_vertical">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="🗺️ Plan Your Journey"
+                    android:text="Plan Your Journey"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="@color/white" />
@@ -68,7 +68,7 @@
                     android:text="⚙"
                     android:textColor="@color/white"
                     android:textSize="16sp"
-                    android:backgroundTint="@color/primary_light"
+                    android:backgroundTint="#FF8C8C"
                     app:cornerRadius="20dp"
                     style="@style/Widget.Material3.Button.IconButton"
                     android:layout_marginEnd="8dp" />
@@ -83,7 +83,7 @@
                     android:text="▼"
                     android:textColor="@color/white"
                     android:textSize="14sp"
-                    android:backgroundTint="@color/primary_light"
+                    android:backgroundTint="#FF8C8C"
                     app:cornerRadius="20dp"
                     style="@style/Widget.Material3.Button.IconButton" />
             </LinearLayout>
@@ -161,7 +161,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    android:hint="🔭 What do you want to see?"
+                    android:hint="What do you want to see?"
                     app:boxCornerRadiusBottomEnd="12dp"
                     app:boxCornerRadiusBottomStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
@@ -181,7 +181,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    android:hint="🎯 What do you want to do?"
+                    android:hint="What do you want to do?"
                     app:boxCornerRadiusBottomEnd="12dp"
                     app:boxCornerRadiusBottomStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
@@ -359,6 +359,7 @@
                     style="@style/Widget.App.Button.Primary"
                     android:layout_width="match_parent"
                     android:layout_height="58dp"
+                    android:backgroundTint="@color/lakbay_red"
                     android:text="@string/plan_trip"
                     android:textColor="@color/white"
                     android:textSize="16sp"

@@ -36,7 +36,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="@drawable/gradient_primary"
+                android:background="@color/lakbay_blue"
                 android:padding="20dp">
 
                 <TextView
@@ -61,7 +61,7 @@
                     android:paddingEnd="12dp"
                     android:paddingTop="4dp"
                     android:paddingBottom="4dp"
-                    android:background="@color/primary_light"
+                    android:background="@color/lakbay_blue"
                     android:text="Category" />
             </LinearLayout>
 
@@ -96,6 +96,7 @@
                         android:layout_height="54dp"
                         android:layout_weight="1"
                         android:layout_marginEnd="8dp"
+                        android:backgroundTint="@color/lakbay_blue"
                         android:text="Navigate"
                         android:textColor="@color/white"
                         android:textSize="15sp"
@@ -114,7 +115,7 @@
                         android:textColor="@color/black"
                         android:textSize="15sp"
                         app:icon="@android:drawable/ic_menu_save"
-                        app:iconTint="@color/black"
+                        app:iconTint="@color/lakbay_blue"
                         app:iconGravity="textStart" />
                 </LinearLayout>
             </LinearLayout>
