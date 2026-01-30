@@ -32,6 +32,8 @@ class MainActivity : AppCompatActivity() {
 
         auth = FirebaseAuth.getInstance()
 
+        FavoriteStore.init(this)
+
         // Setup toolbar as ActionBar for consistent Material AppBar behavior
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
