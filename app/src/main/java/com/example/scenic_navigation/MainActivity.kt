@@ -5,7 +5,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -82,13 +81,6 @@ class MainActivity : AppCompatActivity() {
                 }
                 else -> false
             }
-        }
-
-        // Setup copyright click listener
-        val copyright = findViewById<TextView>(R.id.osm_copyright)
-        copyright.setOnClickListener {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://osm.org/copyright"))
-            startActivity(intent)
         }
     }
 
