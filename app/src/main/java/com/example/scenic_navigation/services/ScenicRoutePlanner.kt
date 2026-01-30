@@ -42,7 +42,7 @@ class ScenicRoutePlanner(
 
     companion object {
         // Minimum scenic score threshold - filter out POIs below this value
-        private const val MIN_SCENIC_SCORE = 35
+        private const val MIN_SCENIC_SCORE = 45
 
         // LRU cache for Overpass queries at specific rounded locations
         private val poiQueryCache: MutableMap<String, List<com.example.scenic_navigation.models.ScenicPoi>> =
