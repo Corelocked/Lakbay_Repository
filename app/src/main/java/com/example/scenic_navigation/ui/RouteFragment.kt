@@ -137,10 +137,18 @@ class RouteFragment : Fragment(), SensorEventListener {
     }
 
     private fun setupMap() {
+        val prefs = requireContext().getSharedPreferences("scenic_prefs", android.content.Context.MODE_PRIVATE)
+        val style = prefs.getString("map_style", "Streets") ?: "Streets"
+        val tileSource = when (style) {
+            "Streets" -> TileSourceFactory.MAPNIK
+            "Satellite" -> TileSourceFactory.USGS_SAT
+            "Topo" -> TileSourceFactory.USGS_TOPO
+            else -> TileSourceFactory.MAPNIK
+        }
         binding.map.apply {
-            setTileSource(TileSourceFactory.MAPNIK)
+            setTileSource(tileSource)
             setMultiTouchControls(true)
-            controller.setZoom(13.0)
+            controller.setZoom(15.0)  // Increased from 13.0 for larger street text visibility
             // Set default location (Philippines)
             controller.setCenter(GeoPoint(14.5995, 120.9842))
         }
@@ -241,6 +249,17 @@ class RouteFragment : Fragment(), SensorEventListener {
         }
     }
 
+
+    private fun changeTileSource(style: String) {
+        val tileSource = when (style) {
+            "Streets" -> TileSourceFactory.MAPNIK
+            "Satellite" -> TileSourceFactory.USGS_SAT
+            "Topo" -> TileSourceFactory.USGS_TOPO
+            else -> TileSourceFactory.MAPNIK
+        }
+        binding.map.setTileSource(tileSource)
+        binding.map.invalidate()
+    }
 
     private fun setupCollapseButton() {
         binding.btnCollapse.setOnClickListener {
@@ -855,6 +874,7 @@ class RouteFragment : Fragment(), SensorEventListener {
     override fun onResume() {
         super.onResume()
         binding.map.onResume()
+        setupMap() // Refresh map style in case it changed in settings
 
         rotationVectorSensor?.let { sensor ->
             sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI)
