@@ -27,4 +27,12 @@
         android:defaultValue="true"
         android:summary="When enabled, long oceanic routes will favor built-in coastal waypoint sets." />
 
+    <ListPreference
+        android:key="map_style"
+        android:title="Map Style"
+        android:summary="Choose the map tile style"
+        android:entries="@array/map_style_options"
+        android:entryValues="@array/map_style_options"
+        android:defaultValue="Basic" />
+
 </PreferenceScreen>
