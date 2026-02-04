@@ -373,16 +373,17 @@ class ScenicRoutePlanner(
         val filteredPois = allPois.filter { poi ->
             val cat = poi.category?.lowercase(Locale.getDefault()) ?: ""
             val matchesSeeing = when (curationIntent.seeing) {
-                com.example.scenic_navigation.models.SeeingType.OCEANIC -> cat.contains("beach") || cat.contains("coast") || cat.contains("ocean") || cat.contains("sea")
-                com.example.scenic_navigation.models.SeeingType.MOUNTAIN -> cat.contains("mount") || cat.contains("hike") || cat.contains("view") || cat.contains("mountain")
-            } || cat.contains("historic") || cat.contains("church") || cat.contains("monument") // Always include historical landmarks
+                com.example.scenic_navigation.models.SeeingType.OCEANIC -> cat.contains("beach") || cat.contains("coast") || cat.contains("ocean") || cat.contains("sea") || cat.contains("bay") || cat.contains("lake")
+                com.example.scenic_navigation.models.SeeingType.MOUNTAIN -> cat.contains("mount") || cat.contains("hike") || cat.contains("view") || cat.contains("mountain") || cat.contains("peak") || cat.contains("volcano")
+            } || cat.contains("historic") || cat.contains("church") || cat.contains("monument") || cat.contains("art") || cat.contains("museum") || cat.contains("viewpoint")
+            // Always include historical landmarks
             val matchesActivity = when (curationIntent.activity) {
-                com.example.scenic_navigation.models.ActivityType.SHOP_AND_DINE -> cat.contains("shop") || cat.contains("mall") || cat.contains("market") || cat.contains("restaurant") || cat.contains("food") || cat.contains("cafe")
-                com.example.scenic_navigation.models.ActivityType.CULTURAL -> cat.contains("museum") || cat.contains("historic") || cat.contains("theatre") || cat.contains("gallery") || cat.contains("church") || cat.contains("heritage")
-                com.example.scenic_navigation.models.ActivityType.ADVENTURE -> cat.contains("peak") || cat.contains("waterfall") || cat.contains("hiking") || cat.contains("climbing") || cat.contains("adventure") || cat.contains("sport") || cat.contains("hiking trail") || cat.contains("trail")
-                com.example.scenic_navigation.models.ActivityType.RELAXATION -> cat.contains("beach") || cat.contains("park") || cat.contains("spa") || cat.contains("resort") || cat.contains("relax") || cat.contains("nature")
-                com.example.scenic_navigation.models.ActivityType.FAMILY_FRIENDLY -> cat.contains("park") || cat.contains("playground") || cat.contains("zoo") || cat.contains("museum") || cat.contains("picnic") || cat.contains("family")
-                com.example.scenic_navigation.models.ActivityType.ROMANTIC -> cat.contains("view") || cat.contains("restaurant") || cat.contains("park") || cat.contains("beach") || cat.contains("sunset") || cat.contains("romantic")
+                com.example.scenic_navigation.models.ActivityType.SHOP_AND_DINE -> cat.contains("shop") || cat.contains("mall") || cat.contains("market") || cat.contains("restaurant") || cat.contains("food") || cat.contains("cafe") || cat.contains("bakery") || cat.contains("deli") || cat.contains("wine")
+                com.example.scenic_navigation.models.ActivityType.CULTURAL -> cat.contains("museum") || cat.contains("historic") || cat.contains("theatre") || cat.contains("gallery") || cat.contains("church") || cat.contains("heritage") || cat.contains("monument") || cat.contains("art") || cat.contains("museum") || cat.contains("camp")
+                com.example.scenic_navigation.models.ActivityType.ADVENTURE -> cat.contains("peak") || cat.contains("waterfall") || cat.contains("hiking") || cat.contains("climbing") || cat.contains("adventure") || cat.contains("sport") || cat.contains("hiking trail") || cat.contains("trail") || cat.contains("cave") || cat.contains("hike") || cat.contains("view")
+                com.example.scenic_navigation.models.ActivityType.RELAXATION -> cat.contains("beach") || cat.contains("park") || cat.contains("spa") || cat.contains("resort") || cat.contains("relax") || cat.contains("nature") || cat.contains("beach") || cat.contains("pool")
+                com.example.scenic_navigation.models.ActivityType.FAMILY_FRIENDLY -> cat.contains("park") || cat.contains("playground") || cat.contains("zoo") || cat.contains("museum") || cat.contains("picnic") || cat.contains("family") || cat.contains("camp") || cat.contains("nature") || cat.contains("view")
+                com.example.scenic_navigation.models.ActivityType.ROMANTIC -> cat.contains("view") || cat.contains("restaurant") || cat.contains("park") || cat.contains("beach") || cat.contains("sunset") || cat.contains("romantic") || cat.contains("cafe") || cat.contains("wine")
                 else -> true // sightseeing, allow all
             }
             matchesSeeing && matchesActivity && poi.lat != null && poi.lon != null
