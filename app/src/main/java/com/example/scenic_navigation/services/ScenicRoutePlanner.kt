@@ -116,11 +116,6 @@ class ScenicRoutePlanner(
         com.example.scenic_navigation.services.PoiService(context)
     }
 
-    // WebSearchService for Wikipedia-based POI discovery
-    private val webSearchService: com.example.scenic_navigation.services.WebSearchService by lazy {
-        com.example.scenic_navigation.services.WebSearchService()
-    }
-
     // PoiReranker for ML-based POI re-ranking
     private val poiReranker: PoiReranker by lazy {
         PoiReranker(context!!)
@@ -256,9 +251,9 @@ class ScenicRoutePlanner(
 
                         // Padding in degrees (approx): convert ~radius meters to degrees roughly
                         val padDegrees = when {
-                            length < 10_000 -> 0.01 // ~1km for very short routes
-                            length < 50_000 -> 0.01 // ~1km for short routes
-                            else -> 0.01 // ~1km for longer routes
+                            length < 10_000 -> 0.02 // ~2km for very short routes
+                            length < 50_000 -> 0.03 // ~3km for short routes
+                            else -> 0.05 // ~5km for longer routes
                         }
                         val bboxMinLat = (minLat - padDegrees)
                         val bboxMaxLat = (maxLat + padDegrees)
@@ -280,33 +275,6 @@ class ScenicRoutePlanner(
                             } finally {
                                 mutex.unlock()
                             }
-                        }
-
-                        // Fetch Wikipedia POIs at segment center for additional scenic discovery
-                        val centerPoint = sub[sub.size / 2]
-                        try {
-                            val webPois = webSearchService.searchAttractionsNearLocation(centerPoint, radiusKm = 5)
-                            val convertedWebPois = webPois.mapNotNull { poi ->
-                                val lat = poi.lat ?: return@mapNotNull null
-                                val lon = poi.lon ?: return@mapNotNull null
-                                val score = poi.scenicScore?.toInt() ?: 0
-                                ScenicPoi(
-                                    name = poi.name,
-                                    type = poi.category,
-                                    lat = lat,
-                                    lon = lon,
-                                    score = score,
-                                    description = poi.description
-                                )
-                            }
-                            mutex.lock()
-                            try {
-                                scenicPois.addAll(convertedWebPois)
-                            } finally {
-                                mutex.unlock()
-                            }
-                        } catch (e: Exception) {
-                            Log.w("ScenicRoutePlanner", "Error fetching Wikipedia POIs: ${e.message}")
                         }
                     }
                 }
@@ -345,8 +313,8 @@ class ScenicRoutePlanner(
                         if (t.contains(k)) totalBoost += v
                     }
                     // If tagFilters are present and poi doesn't match any, deprioritize slightly
-                    val matchesFilter = if (cfg.tagFilters.isEmpty()) true else cfg.tagFilters.any { pred ->
-                        pred.value.isBlank() || t.contains(pred.value.lowercase(Locale.getDefault()))
+                    val matchesFilter = if (cfg.tagFilters.isEmpty()) true else cfg.tagFilters.any { filter ->
+                        t.contains(filter.lowercase(Locale.getDefault()))
                     }
                     val multiplier = (1.0 + totalBoost).coerceAtMost(3.0) * if (matchesFilter) 1.0 else 0.85
                     poi.copy(score = (poi.score * multiplier).toInt())
@@ -388,454 +356,6 @@ class ScenicRoutePlanner(
 
         // Return all processed POIs without capping to allow full scenic discovery
         return@withContext list
-    }
-
-    private suspend fun fetchScenicPoisAtPoint(
-        point: GeoPoint,
-        radius: Int,
-        packageName: String,
-        routeType: String = "generic",
-        routePoints: List<GeoPoint>,
-        curationIntent: com.example.scenic_navigation.models.CurationIntent? = null
-    ): List<ScenicPoi> = withContext(Dispatchers.IO) {
-        val lat = point.latitude
-        val lon = point.longitude
-
-        // Build curation-aware type-specific query
-        val cfg = com.example.scenic_navigation.services.CurationMapper.map(curationIntent, deviceLocaleTag())
-
-        fun buildPredicateLines(prefix: String): String {
-            if (cfg.tagFilters.isEmpty()) return ""
-            val sb = StringBuilder()
-            for (p in cfg.tagFilters) {
-                val clause = when {
-                    p.value.isBlank() -> "[${p.key}]"
-                    p.value.startsWith("~") -> {
-                        // value contains a regex (without leading ~ in Overpass syntax we keep the string after ~)
-                        val pat = p.value.removePrefix("~")
-                        "[${p.key}~\"$pat\"]"
-                    }
-                    else -> "[${p.key}=${p.value}]"
-                }
-                sb.append("  node(around:$radius,$lat,$lon)$clause;\n")
-                sb.append("  way(around:$radius,$lat,$lon)$clause;\n")
-                sb.append("  relation(around:$radius,$lat,$lon)$clause;\n")
-            }
-            return sb.toString()
-        }
-
-        // Type-specific query
-        val qlType = when (routeType) {
-            "oceanic" -> """
-[out:json][timeout:15];
-(
-  node(around:$radius,$lat,$lon)[natural=beach];
-  node(around:$radius,$lat,$lon)[natural=coastline];
-  node(around:$radius,$lat,$lon)[natural=bay];
-  node(around:$radius,$lat,$lon)[natural=cape];
-  node(around:$radius,$lat,$lon)[tourism=viewpoint];
-  node(around:$radius,$lat,$lon)[leisure=nature_reserve];
-  node(around:$radius,$lat,$lon)[leisure=park];
-  node(around:$radius,$lat,$lon)[tourism=attraction];
-  node(around:$radius,$lat,$lon)[tourism=picnic_site];
-  node(around:$radius,$lat,$lon)[natural=water];
-  node(around:$radius,$lat,$lon)[waterway=waterfall];
-  way(around:$radius,$lat,$lon)[natural=beach];
-  way(around:$radius,$lat,$lon)[natural=coastline];
-  way(around:$radius,$lat,$lon)[natural=bay];
-);
-out center 200;
-""".trimIndent()
-            "mountain" -> """
-[out:json][timeout:15];
-(
-  node(around:$radius,$lat,$lon)[natural=peak];
-  node(around:$radius,$lat,$lon)[natural=saddle];
-  node(around:$radius,$lat,$lon)[natural=volcano];
-  node(around:$radius,$lat,$lon)[natural=wood];
-  node(around:$radius,$lat,$lon)[tourism=viewpoint];
-  node(around:$radius,$lat,$lon)[leisure=nature_reserve];
-  node(around:$radius,$lat,$lon)[natural=ridge];
-  node(around:$radius,$lat,$lon)[tourism=attraction];
-  node(around:$radius,$lat,$lon)[leisure=park];
-  node(around:$radius,$lat,$lon)[waterway=waterfall];
-  way(around:$radius,$lat,$lon)[natural=wood];
-);
-out center 200;
-""".trimIndent()
-            else -> """
-[out:json][timeout:15];
-(
-  node(around:$radius,$lat,$lon)[tourism=viewpoint];
-  node(around:$radius,$lat,$lon)[leisure=park];
-  node(around:$radius,$lat,$lon)[natural=peak];
-  node(around:$radius,$lat,$lon)[natural=wood];
-  node(around:$radius,$lat,$lon)[tourism=attraction];
-  node(around:$radius,$lat,$lon)[natural=beach];
-  node(around:$radius,$lat,$lon)[leisure=nature_reserve];
-  node(around:$radius,$lat,$lon)[tourism=picnic_site];
-  node(around:$radius,$lat,$lon)[tourism=camp_site];
-  node(around:$radius,$lat,$lon)[tourism=hotel];
-  node(around:$radius,$lat,$lon)[tourism=museum];
-  node(around:$radius,$lat,$lon)[historic];
-);
-out center 200;
-""".trimIndent()
-        }
-
-        // Generic attractions query (lighter)
-        val extraPredLinesForGeneric = buildPredicateLines("")
-
-        var qlGeneric = """
-[out:json][timeout:12];
-(
-  node(around:$radius,$lat,$lon)[tourism=viewpoint];
-  node(around:$radius,$lat,$lon)[leisure=park];
-  node(around:$radius,$lat,$lon)[tourism=attraction];
-  node(around:$radius,$lat,$lon)[tourism=picnic_site];
-  node(around:$radius,$lat,$lon)[tourism=camp_site];
-  node(around:$radius,$lat,$lon)[historic];
-);
-out center 40;
-""".trimIndent()
-
-        if (extraPredLinesForGeneric.isNotBlank()) {
-            qlGeneric = qlGeneric.replace(")\nout", extraPredLinesForGeneric + ")\nout")
-        }
-
-        val mediaType = "text/plain; charset=utf-8".toMediaType()
-        var qlTypeFinal = qlType
-        val extraPredLinesForType = buildPredicateLines("")
-        if (extraPredLinesForType.isNotBlank()) {
-            qlTypeFinal = qlTypeFinal.replace(")\nout", extraPredLinesForType + ")\nout")
-        }
-        val requestTypeBody = qlTypeFinal.toRequestBody(mediaType)
-
-        // Helper: parse Overpass JSON and compute scores according to mode
-        fun parseElementsToMap(body: String, scoringMode: String): MutableMap<String, ScenicPoi> {
-            val m = mutableMapOf<String, ScenicPoi>()
-            try {
-                val json = org.json.JSONObject(body)
-                val elements = json.optJSONArray("elements") ?: return m
-
-                for (i in 0 until elements.length()) {
-                    val el = elements.getJSONObject(i)
-                    var elLat = el.optDouble("lat", Double.NaN)
-                    var elLon = el.optDouble("lon", Double.NaN)
-
-                    if (elLat.isNaN() || elLon.isNaN()) {
-                        val center = el.optJSONObject("center")
-                        if (center != null) {
-                            elLat = center.optDouble("lat", Double.NaN)
-                            elLon = center.optDouble("lon", Double.NaN)
-                        }
-                    }
-
-                    val tags = el.optJSONObject("tags")
-                    val rawName = tags?.optString("name")?.trim().takeUnless { it.isNullOrEmpty() }
-                    val altName = tags?.optString("alt_name")?.trim().takeUnless { it.isNullOrEmpty() }
-                    val operator = tags?.optString("operator")?.trim().takeUnless { it.isNullOrEmpty() }
-                    val descr = tags?.optString("description")?.trim().takeUnless { it.isNullOrEmpty() }
-
-                    val type = tags?.optString("tourism")
-                        ?: tags?.optString("leisure")
-                        ?: tags?.optString("natural")
-                        ?: tags?.optString("historic")
-                        ?: tags?.optString("waterway")
-                        ?: "unknown"
-
-                    // Skip items whose primary type is unknown or not whitelisted
-                    val typeKey = type.lowercase(Locale.getDefault())
-                    if (typeKey == "unknown" || !POI_TAG_WHITELIST.contains(typeKey)) continue
-
-                    // Determine display name according to smart policy:
-                    // prefer explicit `name`, then alt/operator/description, then synthesize only for allowed tags
-                    fun friendlyTypeName(t: String?): String {
-                        if (t == null || t.isBlank()) return "Scenic Location"
-                        return when (t.lowercase(Locale.getDefault())) {
-                            "beach" -> "Beach"
-                            "coastline" -> "Coastline"
-                            "bay" -> "Bay"
-                            "cape" -> "Cape"
-                            "viewpoint" -> "Viewpoint"
-                            "nature_reserve" -> "Nature Reserve"
-                            "park" -> "Park"
-                            "attraction" -> "Attraction"
-                            "picnic_site" -> "Picnic Site"
-                            "water" -> "Water"
-                            "waterfall" -> "Waterfall"
-                            "peak" -> "Peak"
-                            "saddle" -> "Saddle"
-                            "volcano" -> "Volcano"
-                            "wood" -> "Wood"
-                            "ridge" -> "Ridge"
-                            else -> t.replace('_', ' ').replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-                        }
-                    }
-
-                    val name = when {
-                        !rawName.isNullOrEmpty() -> rawName
-                        !altName.isNullOrEmpty() -> altName
-                        !operator.isNullOrEmpty() -> operator
-                        !descr.isNullOrEmpty() -> descr
-                        ALLOWED_SYNTHESIS_TAGS.contains(typeKey) -> {
-                            val friendly = friendlyTypeName(type)
-                            if (friendly == "Scenic Location") "Scenic Location" else "$friendly (unnamed)"
-                        }
-                        else -> continue
-                    }
-
-                    if (!elLat.isNaN() && !elLon.isNaN()) {
-                        val isNearCoast = routePoints.any { p ->
-                            p.distanceToAsDouble(GeoPoint(elLat, elLon)) < 20000 // 20km threshold
-                        }
-
-                        val score = if (scoringMode == "type") {
-                            when (routeType) {
-                                "oceanic" -> if (isNearCoast) when {
-                                    type.equals("beach", true) -> 120
-                                    type.equals("coastline", true) -> 110
-                                    type.equals("bay", true) -> 105
-                                    type.equals("cape", true) -> 100
-                                    type.equals("viewpoint", true) -> 95
-                                    type.equals("nature_reserve", true) -> 85
-                                    type.equals("water", true) -> 75
-                                    type.equals("waterfall", true) -> 70
-                                    type.equals("park", true) -> 60
-                                    type.equals("attraction", true) -> 50
-                                    type.equals("picnic_site", true) -> 40
-                                    else -> 20
-                                } else when {
-                                    type.contains("historic") -> 50
-                                    else -> 20
-                                }
-                                "mountain" -> when {
-                                    type.equals("peak", true) -> 120
-                                    type.equals("volcano", true) -> 115
-                                    type.equals("saddle", true) -> 105
-                                    type.equals("viewpoint", true) -> 100
-                                    type.equals("ridge", true) -> 95
-                                    type.equals("nature_reserve", true) -> 90
-                                    type.equals("wood", true) -> 80
-                                    type.equals("waterfall", true) -> 75
-                                    type.equals("park", true) -> 65
-                                    type.equals("attraction", true) -> 55
-                                    type.equals("historic", true) -> 50
-                                    type.equals("adventure", true) -> 110
-                                    type.equals("hiking trail", true) -> 105
-                                    type.equals("trail", true) -> 100
-                                    else -> 20
-                                }
-                                else -> when {
-                                    type.equals("viewpoint", true) -> 110
-                                    type.equals("peak", true) -> 100
-                                    type.equals("nature_reserve", true) -> 95
-                                    type.equals("beach", true) -> 90
-                                    type.equals("park", true) -> 85
-                                    type.equals("wood", true) -> 70
-                                    type.equals("historic", true) -> 65
-                                    type.equals("museum", true) -> 60
-                                    type.equals("restaurant", true) -> 80
-                                    type.equals("cafe", true) -> 75
-                                    type.equals("food", true) -> 70
-                                    type.equals("hotel", true) -> 25
-                                    type.equals("camp_site", true) -> 40
-                                    type.equals("picnic_site", true) -> 35
-                                    else -> 20
-                                }
-                            }
-                        } else {
-                            when {
-                                type.equals("viewpoint", true) -> 110
-                                type.equals("peak", true) -> 100
-                                type.equals("nature_reserve", true) -> 95
-                                type.equals("beach", true) -> 90
-                                type.equals("park", true) -> 85
-                                type.equals("wood", true) -> 70
-                                type.equals("historic", true) -> 65
-                                type.equals("attraction", true) -> 60
-                                type.equals("museum", true) -> 45
-                                type.equals("hotel", true) -> 25
-                                type.equals("camp_site", true) -> 40
-                                type.equals("picnic_site", true) -> 35
-                                type.equals("restaurant", true) -> 80
-                                else -> if (type in listOf("gift", "souvenir", "art", "craft", "bakery", "deli", "cheese", "wine", "farm", "seafood", "books", "clothes")) 70 else 20
-                            }
-                        }
-
-                        val key = "${"%.5f".format(elLat)}_${"%.5f".format(elLon)}_$name"
-                        val municipality = tags?.optString("addr:city") ?: tags?.optString("addr:town") ?: tags?.optString("addr:municipality") ?: "Unknown"
-                        m[key] = ScenicPoi(name, type, elLat, elLon, score, municipality = municipality, description = descr ?: "")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("ScenicRoutePlanner", "Error parsing Overpass body: ${e.message}")
-            }
-            return m
-        }
-
-        try {
-            val requestType = Request.Builder()
-                .url("https://overpass-api.de/api/interpreter")
-                .post(requestTypeBody)
-                .header("User-Agent", "$packageName/1.0 (contact: cedricjoshua.palapuz@gmail.com)")
-                .header("Accept", "application/json")
-                .build()
-
-            val requestTypeResp = httpClient.newCall(requestType).execute()
-            val typeMap = if (requestTypeResp.isSuccessful) {
-                val body = requestTypeResp.body?.string() ?: ""
-                requestTypeResp.close()
-                parseElementsToMap(body, "type")
-            } else {
-                requestTypeResp.close()
-                mutableMapOf()
-            }
-
-            val requestGeneric = Request.Builder()
-                .url("https://overpass-api.de/api/interpreter")
-                .post(qlGeneric.toRequestBody(mediaType))
-                .header("User-Agent", "$packageName/1.0 (contact: cedricjoshua.palapuz@gmail.com)")
-                .header("Accept", "application/json")
-                .build()
-
-            val requestGenericResp = httpClient.newCall(requestGeneric).execute()
-            val genericMap = if (requestGenericResp.isSuccessful) {
-                val body = requestGenericResp.body?.string() ?: ""
-                requestGenericResp.close()
-                parseElementsToMap(body, "generic")
-            } else {
-                requestGenericResp.close()
-                mutableMapOf()
-            }
-
-            // Merge maps and compute blended score: typeScore + 0.5 * genericScore
-            val allKeys = mutableSetOf<String>()
-            allKeys.addAll(typeMap.keys)
-            allKeys.addAll(genericMap.keys)
-
-            val merged = mutableListOf<ScenicPoi>()
-            for (k in allKeys) {
-                val t = typeMap[k]
-                val g = genericMap[k]
-                val blended = (t?.score ?: 0) + GENERIC_BLEND_WEIGHT * (g?.score ?: 0)
-                val chosen = t ?: g
-                if (chosen != null) {
-                    merged.add(ScenicPoi(chosen.name, chosen.type, chosen.lat, chosen.lon, blended.toInt()))
-                }
-            }
-
-            // Before adjusting, merge any local dataset POIs near the route so dataset entries appear
-            try {
-                val datasetPois = poiService.getLocalPoisNearRoute(routePoints, 2000)
-                for (dp in datasetPois) {
-                    try {
-                        val dlat = dp.lat ?: continue
-                        val dlon = dp.lon ?: continue
-                        val isNearCoast = routePoints.any { p -> p.distanceToAsDouble(GeoPoint(dlat, dlon)) < 20000 }
-                        val score = computeScoreFromCategory(dp.category, routeType, isNearCoast)
-                        val key = "${"%.5f".format(dlat)}_${"%.5f".format(dlon)}_${dp.name}"
-                        if (!typeMap.containsKey(key) && !genericMap.containsKey(key)) {
-                            // Insert at merged so it will be adjusted by proximity/rarity logic below
-                            merged.add(com.example.scenic_navigation.models.ScenicPoi(dp.name, dp.category, dlat, dlon, score, description = dp.description))
-                        }
-                    } catch (_: Exception) {}
-                }
-            } catch (e: Exception) {
-                Log.w("ScenicRoutePlanner", "Error merging dataset POIs: ${e.message}")
-            }
-
-            // Curation boosts/filters were applied earlier when building queries and will be applied
-            // again as a safety net below when ranking POIs.
-
-            // Improve recommendations by adjusting scores using proximity to route,
-            // type rarity, and spatial diversity.
-            try {
-                // Precompute distances to route (nearest sample) for each POI
-                val poiDistances = merged.map { poi ->
-                    val nearest = routePoints.minOfOrNull { p ->
-                        GeoUtils.haversine(p.latitude, p.longitude, poi.lat, poi.lon)
-                    } ?: Double.MAX_VALUE
-                    Pair(poi, nearest)
-                }
-
-                // Type frequency map
-                val typeFreq = merged.groupingBy { it.type.lowercase(Locale.getDefault()) }.eachCount()
-                val maxFreq = typeFreq.values.maxOrNull() ?: 1
-
-                // Compute neighbor counts for diversity penalty
-                val neighborCounts = mutableMapOf<ScenicPoi, Int>()
-                for (i in merged.indices) {
-                    val a = merged[i]
-                    var cnt = 0
-                    for (j in merged.indices) {
-                        if (i == j) continue
-                        val b = merged[j]
-                        val d = GeoUtils.haversine(a.lat, a.lon, b.lat, b.lon)
-                        if (d <= 100.0) cnt++
-                    }
-                    neighborCounts[a] = cnt
-                }
-
-                val adjusted = merged.map { poi ->
-                    val dist = poiDistances.firstOrNull { it.first == poi }?.second ?: Double.MAX_VALUE
-
-                    // proximity boost: closer POIs get a modest boost
-                    val proximityBoost = when {
-                        dist <= 500.0 -> 0.20
-                        dist <= 2000.0 -> 0.10
-                        else -> 0.0
-                    }
-
-                    // rarity boost: rarer types get a small bonus
-                    val freq = typeFreq[poi.type.lowercase(Locale.getDefault())] ?: 1
-                    val rarityBoost = ((maxFreq - freq).toDouble() / maxFreq.toDouble()) * 0.15
-
-                    // diversity penalty: if many neighbors, slightly reduce score
-                    val neighbors = neighborCounts[poi] ?: 0
-                    val diversityPenaltyFactor = 1.0 / (1.0 + neighbors * 0.15)
-
-                    val base = poi.score.toDouble()
-                    val boosted = base * (1.0 + proximityBoost + rarityBoost) * diversityPenaltyFactor
-                    poi.copy(score = boosted.coerceIn(1.0, 250.0).toInt())
-                }
-
-                // Apply curation config for point-level fetches too
-                try {
-                    if (cfg.poiBoosts.isNotEmpty() || cfg.tagFilters.isNotEmpty()) {
-                        val after = adjusted.map { poi ->
-                            var totalBoost = 0.0
-                            val t = poi.type.lowercase(Locale.getDefault())
-                            for ((k, v) in cfg.poiBoosts) if (t.contains(k)) totalBoost += v
-                            val matchesFilter = if (cfg.tagFilters.isEmpty()) true else cfg.tagFilters.any { pred ->
-                                pred.value.isBlank() || t.contains(pred.value.lowercase(Locale.getDefault()))
-                            }
-                            val multiplier = (1.0 + totalBoost).coerceAtMost(3.0) * if (matchesFilter) 1.0 else 0.85
-                            poi.copy(score = (poi.score * multiplier).toInt())
-                        }
-                        // Filter out POIs with low scenic scores or blank names
-                        val filtered = after.filter { poi ->
-                            poi.score >= MIN_SCENIC_SCORE && poi.name.isNotBlank()
-                        }
-                        Log.d("ScenicRoutePlanner", "Filtered POIs: ${after.size} -> ${filtered.size} (removed ${after.size - filtered.size} low-score/unnamed POIs)")
-                        return@withContext filtered.sortedByDescending { it.score }
-                    }
-                } catch (_: Exception) {}
-
-                // Sort adjusted scores and return, filtering out low-score POIs and unnamed ones
-                val filtered = adjusted.filter { poi ->
-                    poi.score >= MIN_SCENIC_SCORE && poi.name.isNotBlank()
-                }
-                Log.d("ScenicRoutePlanner", "Filtered POIs: ${adjusted.size} -> ${filtered.size} (removed ${adjusted.size - filtered.size} low-score/unnamed POIs)")
-                return@withContext filtered.sortedByDescending { it.score }
-            } catch (e: Exception) {
-                Log.w("ScenicRoutePlanner", "Error adjusting POI scores: ${e.message}")
-                return@withContext merged
-            }
-        } catch (e: Exception) {
-            Log.e("ScenicRoutePlanner", "Error fetching scenic POIs: ${e.message}")
-            return@withContext emptyList()
-        }
     }
 
     suspend fun suggestViaPointsForCuration(
@@ -899,288 +419,61 @@ out center 40;
         segmentPoints: List<GeoPoint>,
         curationIntent: com.example.scenic_navigation.models.CurationIntent? = null
     ): List<ScenicPoi> = withContext(Dispatchers.IO) {
-        // Build type-specific bbox queries (uses bbox: minLat,minLon,maxLat,maxLon)
-        val qlType = when (routeType) {
-            "oceanic" -> {
-                """
-[out:json][timeout:20];
-(
-  node($minLat,$minLon,$maxLat,$maxLon)[natural=beach];
-  node($minLat,$minLon,$maxLat,$maxLon)[natural=coastline];
-  node($minLat,$minLon,$maxLat,$maxLon)[natural=bay];
-  node($minLat,$minLon,$maxLat,$maxLon)[natural=cape];
-  node($minLat,$minLon,$maxLat,$maxLon)[tourism=viewpoint];
-  node($minLat,$minLon,$maxLat,$maxLon)[leisure=nature_reserve];
-  node($minLat,$minLon,$maxLat,$maxLon)[leisure=park];
-  node($minLat,$minLon,$maxLat,$maxLon)[tourism=attraction];
-  node($minLat,$minLon,$maxLat,$maxLon)[tourism=picnic_site];
-  node($minLat,$minLon,$maxLat,$maxLon)[natural=water];
-  node($minLat,$minLon,$maxLat,$maxLon)[waterway=waterfall];
-  way($minLat,$minLon,$maxLat,$maxLon)[natural=beach];
-  way($minLat,$minLon,$maxLat,$maxLon)[natural=coastline];
-  way($minLat,$minLon,$maxLat,$maxLon)[natural=bay];
-);
-out center 200;
-""".trimIndent()
-            }
-            "mountain" -> {
-                """
-[out:json][timeout:20];
-(
-  node($minLat,$minLon,$maxLat,$maxLon)[natural=peak];
-  node($minLat,$minLon,$maxLat,$maxLon)[natural=saddle];
-  node($minLat,$minLon,$maxLat,$maxLon)[natural=volcano];
-  node($minLat,$minLon,$maxLat,$maxLon)[natural=wood];
-  node($minLat,$minLon,$maxLat,$maxLon)[tourism=viewpoint];
-  node($minLat,$minLon,$maxLat,$maxLon)[leisure=nature_reserve];
-  node($minLat,$minLon,$maxLat,$maxLon)[natural=ridge];
-  node($minLat,$minLon,$maxLat,$maxLon)[tourism=attraction];
-  node($minLat,$minLon,$maxLat,$maxLon)[leisure=park];
-  node($minLat,$minLon,$maxLat,$maxLon)[waterway=waterfall];
-  way($minLat,$minLon,$maxLat,$maxLon)[natural=wood];
-);
-out center 200;
-""".trimIndent()
-            }
-            else -> {
-                """
-[out:json][timeout:20];
-(
-  node($minLat,$minLon,$maxLat,$maxLon)[tourism=viewpoint];
-  node($minLat,$minLon,$maxLat,$maxLon)[leisure=park];
-  node($minLat,$minLon,$maxLat,$maxLon)[natural=peak];
-  node($minLat,$minLon,$maxLat,$maxLon)[natural=wood];
-  node($minLat,$minLon,$maxLat,$maxLon)[tourism=attraction];
-  node($minLat,$minLon,$maxLat,$maxLon)[natural=beach];
-  node($minLat,$minLon,$maxLat,$maxLon)[leisure=nature_reserve];
-  node($minLat,$minLon,$maxLat,$maxLon)[tourism=picnic_site];
-  node($minLat,$minLon,$maxLat,$maxLon)[tourism=camp_site];
-  node($minLat,$minLon,$maxLat,$maxLon)[tourism=hotel];
-  node($minLat,$minLon,$maxLat,$maxLon)[tourism=museum];
-  node($minLat,$minLon,$maxLat,$maxLon)[historic];
-);
-out center 200;
-""".trimIndent()
-            }
+        // Get all local POIs
+        val allLocalPois = poiService.getLocalPois()
+
+        // Filter POIs within the bbox
+        val bboxPois = allLocalPois.filter { poi ->
+            val lat = poi.lat ?: return@filter false
+            val lon = poi.lon ?: return@filter false
+            lat >= minLat && lat <= maxLat && lon >= minLon && lon <= maxLon
         }
 
-        val qlGeneric = """
-[out:json][timeout:18];
-(
-  node($minLat,$minLon,$maxLat,$maxLon)[tourism=viewpoint];
-  node($minLat,$minLon,$maxLat,$maxLon)[leisure=park];
-  node($minLat,$minLon,$maxLat,$maxLon)[tourism=attraction];
-  node($minLat,$minLon,$maxLat,$maxLon)[tourism=picnic_site];
-  node($minLat,$minLon,$maxLat,$maxLon)[tourism=camp_site];
-  node($minLat,$minLon,$maxLat,$maxLon)[historic];
-);
-out center 200;
-""".trimIndent()
-
-        val mediaType = "text/plain; charset=utf-8".toMediaType()
-
-        // Local parser copied from fetchScenicPoisAtPoint to handle bbox responses
-        fun parseElementsToMap(body: String, scoringMode: String): MutableMap<String, ScenicPoi> {
-            val m = mutableMapOf<String, ScenicPoi>()
-            try {
-                val json = org.json.JSONObject(body)
-                val elements = json.optJSONArray("elements") ?: return m
-
-                for (i in 0 until elements.length()) {
-                    val el = elements.getJSONObject(i)
-                    var elLat = el.optDouble("lat", Double.NaN)
-                    var elLon = el.optDouble("lon", Double.NaN)
-
-                    if (elLat.isNaN() || elLon.isNaN()) {
-                        val center = el.optJSONObject("center")
-                        if (center != null) {
-                            elLat = center.optDouble("lat", Double.NaN)
-                            elLon = center.optDouble("lon", Double.NaN)
-                        }
-                    }
-
-                    val tags = el.optJSONObject("tags")
-                    val name = tags?.optString("name") ?: "Scenic Location"
-                    val type = tags?.optString("tourism")
-                        ?: tags?.optString("leisure")
-                        ?: tags?.optString("natural")
-                        ?: tags?.optString("historic")
-                        ?: tags?.optString("waterway")
-                        ?: "unknown"
-                    val descr = tags?.optString("description")?.trim().takeUnless { it.isNullOrEmpty() }
-
-                    if (!elLat.isNaN() && !elLon.isNaN()) {
-                        val isNearCoast = segmentPoints.any { p ->
-                            p.distanceToAsDouble(GeoPoint(elLat, elLon)) < 20000
-                        }
-
-                        val score = if (scoringMode == "type") {
-                            when (routeType) {
-                                "oceanic" -> if (isNearCoast) when {
-                                    type.equals("beach", true) -> 120
-                                    type.equals("coastline", true) -> 110
-                                    type.equals("bay", true) -> 105
-                                    type.equals("cape", true) -> 100
-                                    type.equals("viewpoint", true) -> 95
-                                    type.equals("nature_reserve", true) -> 85
-                                    type.equals("water", true) -> 75
-                                    type.equals("waterfall", true) -> 70
-                                    type.equals("park", true) -> 60
-                                    type.equals("attraction", true) -> 50
-                                    type.equals("picnic_site", true) -> 40
-                                    else -> 20
-                                } else when {
-                                    type.contains("historic") -> 50
-                                    else -> 20
-                                }
-                                "mountain" -> when {
-                                    type.equals("peak", true) -> 120
-                                    type.equals("volcano", true) -> 115
-                                    type.equals("saddle", true) -> 105
-                                    type.equals("viewpoint", true) -> 100
-                                    type.equals("ridge", true) -> 95
-                                    type.equals("nature_reserve", true) -> 90
-                                    type.equals("wood", true) -> 80
-                                    type.equals("waterfall", true) -> 75
-                                    type.equals("park", true) -> 65
-                                    type.equals("attraction", true) -> 55
-                                    type.equals("historic", true) -> 50
-                                    type.equals("adventure", true) -> 110
-                                    type.equals("hiking trail", true) -> 105
-                                    type.equals("trail", true) -> 100
-                                    else -> 20
-                                }
-                                else -> when {
-                                    type.equals("viewpoint", true) -> 110
-                                    type.equals("peak", true) -> 100
-                                    type.equals("nature_reserve", true) -> 95
-                                    type.equals("beach", true) -> 90
-                                    type.equals("park", true) -> 85
-                                    type.equals("wood", true) -> 70
-                                    type.equals("historic", true) -> 65
-                                    type.equals("museum", true) -> 60
-                                    type.equals("restaurant", true) -> 80
-                                    type.equals("cafe", true) -> 75
-                                    type.equals("food", true) -> 70
-                                    type.equals("hotel", true) -> 25
-                                    type.equals("camp_site", true) -> 40
-                                    type.equals("picnic_site", true) -> 35
-                                    else -> 20
-                                }
-                            }
-                        } else {
-                            when {
-                                type.equals("viewpoint", true) -> 110
-                                type.equals("peak", true) -> 100
-                                type.equals("nature_reserve", true) -> 95
-                                type.equals("beach", true) -> 90
-                                type.equals("park", true) -> 85
-                                type.equals("wood", true) -> 70
-                                type.equals("historic", true) -> 65
-                                type.equals("attraction", true) -> 60
-                                type.equals("museum", true) -> 45
-                                type.equals("hotel", true) -> 25
-                                type.equals("camp_site", true) -> 40
-                                type.equals("picnic_site", true) -> 35
-                                type.equals("restaurant", true) -> 80
-                                else -> if (type in listOf("gift", "souvenir", "art", "craft", "bakery", "deli", "cheese", "wine", "farm", "seafood", "books", "clothes")) 70 else 20
-                            }
-                        }
-
-                        val key = "${"%.5f".format(elLat)}_${"%.5f".format(elLon)}_$name"
-                        val municipality = tags?.optString("addr:city") ?: tags?.optString("addr:town") ?: tags?.optString("addr:municipality") ?: "Unknown"
-                        m[key] = ScenicPoi(name, type, elLat, elLon, score, municipality = municipality, description = descr ?: "")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("ScenicRoutePlanner", "Error parsing Overpass body (bbox): ${e.message}")
+        // Convert to ScenicPoi with scores
+        val scenicPois = bboxPois.mapNotNull { poi ->
+            val lat = poi.lat ?: return@mapNotNull null
+            val lon = poi.lon ?: return@mapNotNull null
+            val isNearCoast = segmentPoints.any { p ->
+                p.distanceToAsDouble(GeoPoint(lat, lon)) < 20000 // 20km threshold
             }
-            return m
+            val score = computeScoreFromCategory(poi.category, routeType, isNearCoast)
+            ScenicPoi(
+                name = poi.name,
+                type = poi.category ?: "unknown",
+                lat = lat,
+                lon = lon,
+                score = score,
+                municipality = poi.municipality,
+                description = poi.description
+            )
         }
 
+        // Apply curation
         try {
-            val requestType = Request.Builder()
-                .url("https://overpass-api.de/api/interpreter")
-                .post(qlType.toRequestBody(mediaType))
-                .header("User-Agent", "$packageName/1.0 (contact: cedricjoshua.palapuz@gmail.com)")
-                .header("Accept", "application/json")
-                .build()
-
-            val requestTypeResp = httpClient.newCall(requestType).execute()
-            val typeMap = if (requestTypeResp.isSuccessful) {
-                val body = requestTypeResp.body?.string() ?: ""
-                requestTypeResp.close()
-                parseElementsToMap(body, "type")
-            } else {
-                requestTypeResp.close()
-                mutableMapOf()
-            }
-
-            val requestGeneric = Request.Builder()
-                .url("https://overpass-api.de/api/interpreter")
-                .post(qlGeneric.toRequestBody(mediaType))
-                .header("User-Agent", "$packageName/1.0 (contact: cedricjoshua.palapuz@gmail.com)")
-                .header("Accept", "application/json")
-                .build()
-
-            val requestGenericResp = httpClient.newCall(requestGeneric).execute()
-            val genericMap = if (requestGenericResp.isSuccessful) {
-                val body = requestGenericResp.body?.string() ?: ""
-                requestGenericResp.close()
-                parseElementsToMap(body, "generic")
-            } else {
-                requestGenericResp.close()
-                mutableMapOf()
-            }
-
-            val allKeys = mutableSetOf<String>()
-            allKeys.addAll(typeMap.keys)
-            allKeys.addAll(genericMap.keys)
-
-            val merged = mutableListOf<ScenicPoi>()
-            for (k in allKeys) {
-                val t = typeMap[k]
-                val g = genericMap[k]
-                val blended = (t?.score ?: 0) + GENERIC_BLEND_WEIGHT * (g?.score ?: 0)
-                val chosen = t ?: g
-                if (chosen != null) {
-                    merged.add(ScenicPoi(chosen.name, chosen.type, chosen.lat, chosen.lon, blended.toInt()))
-                }
-            }
-
-            // Apply curation mapping on bbox-level results
-            try {
-                val cfg = com.example.scenic_navigation.services.CurationMapper.map(curationIntent, deviceLocaleTag())
-                if (cfg.poiBoosts.isNotEmpty() || cfg.tagFilters.isNotEmpty()) {
-                    val after = merged.map { poi ->
-                        var totalBoost = 0.0
-                        val t = poi.type.lowercase(Locale.getDefault())
-                        for ((k, v) in cfg.poiBoosts) if (t.contains(k)) totalBoost += v
-                        val matchesFilter = if (cfg.tagFilters.isEmpty()) true else cfg.tagFilters.any { pred ->
-                            pred.value.isBlank() || t.contains(pred.value.lowercase(Locale.getDefault()))
-                        }
-                        val multiplier = (1.0 + totalBoost).coerceAtMost(3.0) * if (matchesFilter) 1.0 else 0.85
-                        poi.copy(score = (poi.score * multiplier).toInt())
+            val cfg = com.example.scenic_navigation.services.CurationMapper.map(curationIntent, deviceLocaleTag())
+            if (cfg.poiBoosts.isNotEmpty() || cfg.tagFilters.isNotEmpty()) {
+                val after = scenicPois.map { poi ->
+                    var totalBoost = 0.0
+                    val t = poi.type.lowercase(Locale.getDefault())
+                    for ((k, v) in cfg.poiBoosts) if (t.contains(k)) totalBoost += v
+                    val matchesFilter = if (cfg.tagFilters.isEmpty()) true else cfg.tagFilters.any { filter ->
+                        t.contains(filter.lowercase(Locale.getDefault()))
                     }
-                    // Filter out POIs with low scenic scores or blank names
-                    val filtered = after.filter { poi ->
-                        poi.score >= MIN_SCENIC_SCORE && poi.name.isNotBlank()
-                    }
-                    Log.d("ScenicRoutePlanner", "BBox filtered POIs: ${after.size} -> ${filtered.size} (removed ${after.size - filtered.size} low-score/unnamed)")
-                    return@withContext filtered
+                    val multiplier = (1.0 + totalBoost).coerceAtMost(3.0) * if (matchesFilter) 1.0 else 0.85
+                    poi.copy(score = (poi.score * multiplier).toInt())
                 }
-            } catch (_: Exception) {}
-
-            // Filter before returning
-            val filtered = merged.filter { poi ->
-                poi.score >= MIN_SCENIC_SCORE && poi.name.isNotBlank()
+                val filtered = after.filter { poi ->
+                    poi.score >= MIN_SCENIC_SCORE && poi.name.isNotBlank()
+                }
+                return@withContext filtered
             }
-            Log.d("ScenicRoutePlanner", "BBox filtered POIs: ${merged.size} -> ${filtered.size} (removed ${merged.size - filtered.size} low-score/unnamed)")
-            return@withContext filtered
-        } catch (e: Exception) {
-            Log.e("ScenicRoutePlanner", "Error fetching scenic POIs (bbox): ${e.message}")
-            return@withContext emptyList()
+        } catch (_: Exception) {}
+
+        // Filter
+        val filtered = scenicPois.filter { poi ->
+            poi.score >= MIN_SCENIC_SCORE && poi.name.isNotBlank()
         }
+        return@withContext filtered
     }
 
     /**
@@ -1239,6 +532,16 @@ out center 200;
         return pois.sumOf { it.score }.toDouble()
     }
 }
+
+
+
+
+
+
+
+
+
+
 
 
 

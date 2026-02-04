@@ -89,8 +89,13 @@ class RoutingService {
         "luzon_north" to listOf(
             GeoPoint(15.7800, 120.2800), // Zambales coast
             GeoPoint(16.0500, 120.3300), // La Union coast
+            GeoPoint(16.8800, 120.4500), // Vigan, Ilocos Sur coast
             GeoPoint(17.5800, 120.3800), // Ilocos Norte coast
+            GeoPoint(17.6100, 120.3200), // Laoag, Ilocos Norte
             GeoPoint(18.1700, 120.5900)  // Northern tip before going to Aparri
+        ),
+        "luzon_aurora" to listOf(
+            GeoPoint(15.7617, 121.5603)  // Baler, Aurora coast
         ),
         "luzon_bicol_east" to listOf(
             GeoPoint(14.6000, 121.2000), // Laguna
@@ -109,70 +114,84 @@ class RoutingService {
             GeoPoint(14.2300, 120.7300), // Maragondon, Cavite (Laguna Bay coast)
             GeoPoint(14.0700, 120.6300), // Nasugbu, Batangas (Laguna Bay coast)
             GeoPoint(14.0100, 120.9800), // Batangas coast
-            GeoPoint(13.7500, 120.9500)  // Southern Batangas coast
+            GeoPoint(13.7500, 120.9500), // Southern Batangas coast
+            GeoPoint(14.4000, 121.0300), // Binakayan, Kawit (Laguna Bay)
+            GeoPoint(14.3500, 121.0600), // Noveleta (Laguna Bay)
+            GeoPoint(14.2800, 121.1100), // Kawit (Laguna Bay)
+            GeoPoint(14.2200, 121.1700), // Imus (Laguna Bay)
+            GeoPoint(14.1800, 121.2400), // Dasmariñas (Laguna Bay)
+            GeoPoint(14.1500, 121.3100), // Carmona (Laguna Bay)
+            GeoPoint(14.1200, 121.3800), // Silang (Laguna Bay)
+            GeoPoint(14.1000, 121.4500), // Amadeo (Laguna Bay)
+            GeoPoint(14.0800, 121.5200), // Tagaytay Ridge (Laguna Bay)
+            GeoPoint(14.0500, 121.5900), // Calamba (Laguna Bay)
+            GeoPoint(14.0300, 121.6600), // Los Baños (Laguna Bay)
+            GeoPoint(14.0100, 121.7300), // Bay (Laguna Bay)
+            GeoPoint(13.9800, 121.8000), // Calauan (Laguna Bay)
+            GeoPoint(13.9500, 121.8700)  // Victoria (Laguna Bay)
         ),
-//        // VISAYAS ROUTES
-//        "visayas_cebu_coastal" to listOf(
-//            GeoPoint(10.3200, 123.7500), // Northern Cebu coast
-//            GeoPoint(10.6900, 124.0000), // Malapascua area
-//            GeoPoint(10.3200, 123.7500), // Cebu City
-//            GeoPoint(9.8600, 123.4000)   // Southern Cebu coast
-//        ),
-//        "visayas_panay_coastal" to listOf(
-//            GeoPoint(11.9600, 122.0100), // Aklan/Boracay area
-//            GeoPoint(11.0000, 122.5500), // Iloilo coast
-//            GeoPoint(10.6900, 122.5700)  // Guimaras Strait
-//        ),
-//        "visayas_bohol_coastal" to listOf(
-//            GeoPoint(9.8500, 124.4300), // Tagbilaran/Panglao
-//            GeoPoint(10.1500, 124.2000), // Northern Bohol coast
-//            GeoPoint(9.6500, 124.5000)   // Eastern Bohol coast
-//        ),
-//        "visayas_leyte_samar" to listOf(
-//            GeoPoint(11.2500, 125.0000), // Samar west coast
-//            GeoPoint(11.0000, 124.9500), // San Juanico Strait
-//            GeoPoint(10.7200, 124.8400), // Tacloban area
-//            GeoPoint(10.3900, 125.0100)  // Southern Leyte coast
-//        ),
-//        // MINDANAO ROUTES
-//        "mindanao_south_pacific" to listOf(
-//            GeoPoint(6.9000, 125.6100), // Davao coastal
-//            GeoPoint(6.5000, 125.2000), // Davao del Sur coast
-//            GeoPoint(6.1100, 125.1700)  // General Santos coastal approach
-//        ),
-//        "mindanao_north_coast" to listOf(
-//            GeoPoint(8.4800, 124.6500), // Cagayan de Oro coastal
-//            GeoPoint(8.8000, 125.1000), // Misamis Oriental coast
-//            GeoPoint(8.9500, 125.5400)  // Butuan Bay approach
-//        ),
-//        "mindanao_west_zamboanga" to listOf(
-//            GeoPoint(8.0000, 123.5000), // Lanao del Norte coast
-//            GeoPoint(7.8000, 123.2000), // Misamis Occidental coast
-//            GeoPoint(7.3000, 122.7000), // Zamboanga del Norte coast
-//            GeoPoint(6.9100, 122.0700)  // Zamboanga City coastal
-//        ),
-//        "mindanao_surigao_coast" to listOf(
-//            GeoPoint(9.7800, 125.4900), // Surigao City
-//            GeoPoint(9.5000, 125.7000), // Eastern Surigao coast
-//            GeoPoint(9.0000, 126.0000)  // Pacific coast route
-//        ),
-//        // INTER-ISLAND ROUTES
-//        "luzon_visayas_manila_cebu" to listOf(
-//            GeoPoint(14.0100, 120.9800), // Batangas coast
-//            GeoPoint(13.4000, 121.3000), // Mindoro coast
-//            GeoPoint(12.5000, 121.9000), // Romblon area
-//            GeoPoint(11.2500, 123.2500), // Negros coast
-//            GeoPoint(10.3200, 123.7500)  // Cebu
-//        ),
-//        "luzon_mindanao_manila_davao" to listOf(
-//            GeoPoint(13.4200, 123.4100), // Bicol
-//            GeoPoint(12.5000, 124.0000), // Samar coast
-//            GeoPoint(11.0000, 125.0000), // Leyte coast
-//            GeoPoint(10.3900, 125.0100), // Southern Leyte
-//            GeoPoint(9.0000, 125.5000),  // Surigao coast
-//            GeoPoint(7.5000, 126.0000),  // Eastern Mindanao coast
-//            GeoPoint(6.9000, 125.6100)   // Davao
-//        )
+        // VISAYAS ROUTES
+        "visayas_cebu_coastal" to listOf(
+            GeoPoint(10.3200, 123.7500), // Northern Cebu coast
+            GeoPoint(10.6900, 124.0000), // Malapascua area
+            GeoPoint(10.3200, 123.7500), // Cebu City
+            GeoPoint(9.8600, 123.4000)   // Southern Cebu coast
+        ),
+        "visayas_panay_coastal" to listOf(
+            GeoPoint(11.9600, 122.0100), // Aklan/Boracay area
+            GeoPoint(11.0000, 122.5500), // Iloilo coast
+            GeoPoint(10.6900, 122.5700)  // Guimaras Strait
+        ),
+        "visayas_bohol_coastal" to listOf(
+            GeoPoint(9.8500, 124.4300), // Tagbilaran/Panglao
+            GeoPoint(10.1500, 124.2000), // Northern Bohol coast
+            GeoPoint(9.6500, 124.5000)   // Eastern Bohol coast
+        ),
+        "visayas_leyte_samar" to listOf(
+            GeoPoint(11.2500, 125.0000), // Samar west coast
+            GeoPoint(11.0000, 124.9500), // San Juanico Strait
+            GeoPoint(10.7200, 124.8400), // Tacloban area
+            GeoPoint(10.3900, 125.0100)  // Southern Leyte coast
+        ),
+        // MINDANAO ROUTES
+        "mindanao_south_pacific" to listOf(
+            GeoPoint(6.9000, 125.6100), // Davao coastal
+            GeoPoint(6.5000, 125.2000), // Davao del Sur coast
+            GeoPoint(6.1100, 125.1700)  // General Santos coastal approach
+        ),
+        "mindanao_north_coast" to listOf(
+            GeoPoint(8.4800, 124.6500), // Cagayan de Oro coastal
+            GeoPoint(8.8000, 125.1000), // Misamis Oriental coast
+            GeoPoint(8.9500, 125.5400)  // Butuan Bay approach
+        ),
+        "mindanao_west_zamboanga" to listOf(
+            GeoPoint(8.0000, 123.5000), // Lanao del Norte coast
+            GeoPoint(7.8000, 123.2000), // Misamis Occidental coast
+            GeoPoint(7.3000, 122.7000), // Zamboanga del Norte coast
+            GeoPoint(6.9100, 122.0700)  // Zamboanga City coastal
+        ),
+        "mindanao_surigao_coast" to listOf(
+            GeoPoint(9.7800, 125.4900), // Surigao City
+            GeoPoint(9.5000, 125.7000), // Eastern Surigao coast
+            GeoPoint(9.0000, 126.0000)  // Pacific coast route
+        ),
+        // INTER-ISLAND ROUTES
+        "luzon_visayas_manila_cebu" to listOf(
+            GeoPoint(14.0100, 120.9800), // Batangas coast
+            GeoPoint(13.4000, 121.3000), // Mindoro coast
+            GeoPoint(12.5000, 121.9000), // Romblon area
+            GeoPoint(11.2500, 123.2500), // Negros coast
+            GeoPoint(10.3200, 123.7500)  // Cebu
+        ),
+        "luzon_mindanao_manila_davao" to listOf(
+            GeoPoint(13.4200, 123.4100), // Bicol
+            GeoPoint(12.5000, 124.0000), // Samar coast
+            GeoPoint(11.0000, 125.0000), // Leyte coast
+            GeoPoint(10.3900, 125.0100), // Southern Leyte
+            GeoPoint(9.0000, 125.5000),  // Surigao coast
+            GeoPoint(7.5000, 126.0000),  // Eastern Mindanao coast
+            GeoPoint(6.9000, 125.6100)   // Davao
+        )
     )
 
     // Expose a read-only view of known coastal waypoint keys for UI selection
@@ -240,6 +259,9 @@ class RoutingService {
         for ((key, waypoints) in allWaypointSets) {
             if (waypoints.isEmpty()) continue
 
+            // Skip aurora waypoints for northern destinations (latitude > 17.0) to avoid favoring east coast over west coast Ilocos routes
+            if (dest.latitude > 17.0 && key == "luzon_aurora") continue
+
             val avgDistance = if (denom == 0.0) {
                 // fallback to midpoint distance if start==dest
                 val routeMidPoint = GeoPoint(
@@ -264,10 +286,16 @@ class RoutingService {
                 } / waypoints.size
             }
 
-            if (avgDistance < minAvgDistance) {
-                minAvgDistance = avgDistance
+            // Apply bias for northern destinations to prefer luzon_north (Ilocos route)
+            var adjustedAvgDistance = avgDistance
+            if (key == "luzon_north" && dest.latitude > 17.0) {
+                adjustedAvgDistance *= 0.5 // Reduce distance by half to favor Ilocos route for Cagayan destinations
+            }
+
+            if (adjustedAvgDistance < minAvgDistance) {
+                minAvgDistance = adjustedAvgDistance
                 bestSet = waypoints
-                Log.d("RoutingService", "New best waypoint set: $key with avg projected distance=${"%.0f".format(avgDistance)}m")
+                Log.d("RoutingService", "New best waypoint set: $key with adjusted avg projected distance=${"%.0f".format(adjustedAvgDistance)}m")
             }
         }
 
