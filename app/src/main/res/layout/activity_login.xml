@@ -36,7 +36,7 @@
             android:layout_marginStart="32dp"
             android:layout_marginEnd="32dp"
             android:layout_marginTop="28dp"
-            android:text="Log In"
+            android:text="@string/log_in"
             android:textColor="@android:color/white"
             android:backgroundTint="#FF3D32"
             app:layout_constraintEnd_toEndOf="parent"
@@ -86,7 +86,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="64dp"
-            android:text="No Account? Sign up here"
+            android:text="@string/no_account_signup"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent" />

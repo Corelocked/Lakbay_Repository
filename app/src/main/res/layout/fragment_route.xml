@@ -17,7 +17,7 @@
         android:id="@+id/osm_copyright"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="© OpenStreetMap contributors"
+        android:text="@string/osm_copyright"
         android:textSize="10sp"
         android:textColor="?android:attr/textColorSecondary"
         android:layout_gravity="bottom|start"
@@ -53,7 +53,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Plan Your Journey"
+                    android:text="@string/plan_your_journey"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="@color/white" />
@@ -161,7 +161,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    android:hint="What do you want to see?"
+                    android:hint="@string/seeing_hint"
                     app:boxCornerRadiusBottomEnd="12dp"
                     app:boxCornerRadiusBottomStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
@@ -181,7 +181,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    android:hint="What do you want to do?"
+                    android:hint="@string/activity_hint"
                     app:boxCornerRadiusBottomEnd="12dp"
                     app:boxCornerRadiusBottomStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
@@ -227,7 +227,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="⚙️ Advanced Options"
+                                android:text="@string/advanced_options"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
                                 android:textColor="@color/text_primary" />
@@ -261,7 +261,7 @@
                                     <TextView
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="🌊 Coastal Settings"
+                                        android:text="@string/coastal_settings"
                                         android:textSize="14sp"
                                         android:textStyle="bold"
                                         android:textColor="@color/text_primary"
@@ -278,7 +278,7 @@
                                             android:id="@+id/switchForceCoastal"
                                             android:layout_width="wrap_content"
                                             android:layout_height="wrap_content"
-                                            android:text="Force coastal set"
+                                            android:text="@string/force_coastal_set"
                                             android:textSize="14sp" />
 
                                         <Spinner
@@ -299,7 +299,7 @@
                                     <TextView
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="🏷️ Subtypes (optional)"
+                                        android:text="@string/subtypes_optional"
                                         android:textSize="14sp"
                                         android:textStyle="bold"
                                         android:textColor="@color/text_primary"
@@ -314,35 +314,35 @@
                                             android:id="@+id/cbLakeside"
                                             android:layout_width="wrap_content"
                                             android:layout_height="wrap_content"
-                                            android:text="🏞️ Lakeside"
+                                            android:text="@string/lakeside"
                                             android:textSize="14sp" />
 
                                         <com.google.android.material.checkbox.MaterialCheckBox
                                             android:id="@+id/cbForest"
                                             android:layout_width="wrap_content"
                                             android:layout_height="wrap_content"
-                                            android:text="🌲 Forest"
+                                            android:text="@string/forest"
                                             android:textSize="14sp" />
 
                                         <com.google.android.material.checkbox.MaterialCheckBox
                                             android:id="@+id/cbHiking"
                                             android:layout_width="wrap_content"
                                             android:layout_height="wrap_content"
-                                            android:text="🥾 Hiking"
+                                            android:text="@string/hiking"
                                             android:textSize="14sp" />
 
                                         <com.google.android.material.checkbox.MaterialCheckBox
                                             android:id="@+id/cbAdventure"
                                             android:layout_width="wrap_content"
                                             android:layout_height="wrap_content"
-                                            android:text="🎒 Adventure"
+                                            android:text="@string/adventure"
                                             android:textSize="14sp" />
 
                                         <com.google.android.material.checkbox.MaterialCheckBox
                                             android:id="@+id/cbRelax"
                                             android:layout_width="wrap_content"
                                             android:layout_height="wrap_content"
-                                            android:text="😌 Relax"
+                                            android:text="@string/relax"
                                             android:textSize="14sp" />
 
                                     </LinearLayout>
@@ -464,7 +464,7 @@
                     android:textSize="15sp"
                     android:textStyle="bold"
                     android:textAlignment="center"
-                    android:text="Planning route..." />
+                    android:text="@string/planning_route" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
     </FrameLayout>

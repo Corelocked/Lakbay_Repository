@@ -46,7 +46,7 @@
                     android:textSize="22sp"
                     android:textStyle="bold"
                     android:textColor="@color/white"
-                    android:text="POI Title" />
+                    android:text="@string/poi_title_placeholder" />
 
                 <TextView
                     android:id="@+id/tv_poi_category"
@@ -62,7 +62,7 @@
                     android:paddingTop="4dp"
                     android:paddingBottom="4dp"
                     android:background="@color/lakbay_blue"
-                    android:text="Category" />
+                    android:text="@string/poi_category_placeholder" />
             </LinearLayout>
 
             <!-- Content section -->
@@ -79,7 +79,7 @@
                     android:textSize="15sp"
                     android:textColor="@color/text_primary"
                     android:lineSpacingExtra="4dp"
-                    android:text="Short description of the POI goes here..." />
+                    android:text="@string/poi_description_placeholder" />
 
                 <!-- Action buttons -->
                 <LinearLayout
@@ -97,7 +97,7 @@
                         android:layout_weight="1"
                         android:layout_marginEnd="8dp"
                         android:backgroundTint="@color/lakbay_blue"
-                        android:text="Navigate"
+                        android:text="@string/navigate_button"
                         android:textColor="@color/white"
                         android:textSize="15sp"
                         app:icon="@android:drawable/ic_menu_directions"
@@ -111,7 +111,7 @@
                         android:layout_height="54dp"
                         android:layout_weight="1"
                         android:layout_marginStart="8dp"
-                        android:text="Save"
+                        android:text="@string/save_button"
                         android:textColor="@color/black"
                         android:textSize="15sp"
                         app:icon="@android:drawable/ic_menu_save"
