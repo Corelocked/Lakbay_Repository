@@ -54,7 +54,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Scenic Destinations"
+                        android:text="@string/scenic_destinations"
                         android:textSize="22sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
@@ -63,7 +63,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="✨ Discover beautiful places for your next adventure"
+                        android:text="@string/discover_description"
                         android:textSize="14sp"
                         android:textColor="@color/text_secondary" />
                 </LinearLayout>
@@ -87,7 +87,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="🔍 Filter by Category"
+                        android:text="@string/filter_by_category"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
@@ -106,7 +106,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
-                            android:text="All"
+                            android:text="@string/all_filter"
                             android:checked="true" />
 
                         <com.google.android.material.chip.Chip
@@ -115,7 +115,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
-                            android:text="🏞️ Scenic" />
+                            android:text="@string/scenic_filter" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_coastal"
@@ -123,7 +123,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
-                            android:text="🌊 Coastal" />
+                            android:text="@string/coastal_filter" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_mountain"
@@ -131,7 +131,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
-                            android:text="⛰️ Mountain" />
+                            android:text="@string/mountain_filter" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_historic"
@@ -139,7 +139,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
-                            android:text="🏛️ Historic" />
+                            android:text="@string/historic_filter" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_food"
@@ -147,7 +147,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
-                            android:text="🍽️ Food" />
+                            android:text="@string/food_filter" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_nature"
@@ -155,7 +155,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
-                            android:text="🌳 Nature" />
+                            android:text="@string/nature_filter" />
 
                     </com.google.android.material.chip.ChipGroup>
 
@@ -163,7 +163,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="📍 Maximum Distance"
+                        android:text="@string/maximum_distance"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
@@ -208,7 +208,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="📊 Sort By"
+                        android:text="@string/sort_by"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
@@ -228,7 +228,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
-                            android:text="Distance"
+                            android:text="@string/distance_sort"
                             android:checked="true" />
 
                         <com.google.android.material.chip.Chip
@@ -237,7 +237,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
-                            android:text="Scenic Score" />
+                            android:text="@string/scenic_score_sort" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_sort_name"
@@ -245,7 +245,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
-                            android:text="Name" />
+                            android:text="@string/name_sort" />
                     </com.google.android.material.chip.ChipGroup>
 
                 </LinearLayout>
@@ -290,7 +290,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="No recommendations yet"
+                    android:text="@string/no_recommendations_yet"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="@color/text_primary"
@@ -300,7 +300,7 @@
                     android:id="@+id/empty_state_message"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Plan a route to see scenic destinations"
+                    android:text="@string/plan_route_message"
                     android:textSize="14sp"
                     android:textColor="@color/text_secondary"
                     android:textAlignment="center" />

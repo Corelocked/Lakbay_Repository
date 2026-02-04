@@ -25,7 +25,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="⭐ Your Favorites"
+                android:text="@string/your_favorites"
                 android:textSize="22sp"
                 android:textStyle="bold"
                 android:textColor="@color/white"
@@ -34,7 +34,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Places you've saved for later"
+                android:text="@string/favorites_description"
                 android:textSize="14sp"
                 android:textColor="@color/white" />
         </LinearLayout>
@@ -66,14 +66,14 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="⭐"
+            android:text="@string/star_emoji"
             android:textSize="80sp"
             android:layout_marginBottom="16dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="No favorites yet"
+            android:text="@string/no_favorites_yet"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@color/text_primary"
@@ -82,7 +82,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Save places to visit them later"
+            android:text="@string/save_places_description"
             android:textSize="14sp"
             android:textColor="@color/text_secondary"
             android:textAlignment="center" />

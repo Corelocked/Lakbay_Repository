@@ -159,7 +159,7 @@ class RouteFragment : Fragment(), SensorEventListener {
 
     private fun setupInputs() {
         // Start input is now fixed to current location
-        binding.etStart.setText("Current Location")
+        binding.etStart.setText(getString(R.string.current_location))
         binding.etStart.isEnabled = false
         binding.tilStart.isEnabled = false
 
@@ -440,7 +440,7 @@ class RouteFragment : Fragment(), SensorEventListener {
         if (currentLocationMarker == null) {
             currentLocationMarker = Marker(binding.map).apply {
                 position = userPosition
-                title = "Current Location"
+                title = getString(R.string.current_location)
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                 icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_user_arrow, null)
                 binding.map.overlays.add(this)

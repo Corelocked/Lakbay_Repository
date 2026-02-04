@@ -4,35 +4,43 @@
 
     <EditTextPreference
         android:key="pref_cluster_eps_meters"
-        android:title="Cluster EPS (meters)"
-        android:dialogTitle="Cluster EPS (meters)"
+        android:title="@string/cluster_eps_title"
+        android:dialogTitle="@string/cluster_eps_dialog_title"
         android:defaultValue="2000.0"
         android:inputType="numberDecimal" />
 
     <EditTextPreference
         android:key="pref_cluster_min_pts"
-        android:title="Minimum points per cluster"
-        android:dialogTitle="Minimum points per cluster"
+        android:title="@string/min_points_title"
+        android:dialogTitle="@string/min_points_dialog_title"
         android:defaultValue="3"
         android:inputType="number" />
 
     <Preference
         android:key="pref_reset_defaults"
-        android:title="Reset to defaults"
-        android:summary="Restore default tuning values" />
+        android:title="@string/reset_defaults_title"
+        android:summary="@string/reset_defaults_summary" />
 
     <SwitchPreference
         android:key="pref_prefer_coastal_long_oceanic"
-        android:title="Prefer coastal sets for long oceanic trips"
+        android:title="@string/prefer_coastal_title"
         android:defaultValue="true"
-        android:summary="When enabled, long oceanic routes will favor built-in coastal waypoint sets." />
+        android:summary="@string/prefer_coastal_summary" />
 
     <ListPreference
         android:key="map_style"
-        android:title="Map Style"
-        android:summary="Choose the map tile style"
+        android:title="@string/map_style_title"
+        android:summary="@string/map_style_summary"
         android:entries="@array/map_style_options"
         android:entryValues="@array/map_style_options"
         android:defaultValue="Basic" />
+
+    <ListPreference
+        android:key="language"
+        android:title="@string/language_title"
+        android:summary="@string/language_summary"
+        android:entries="@array/language_options"
+        android:entryValues="@array/language_values"
+        android:defaultValue="en" />
 
 </PreferenceScreen>

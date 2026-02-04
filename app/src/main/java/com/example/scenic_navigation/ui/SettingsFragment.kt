@@ -120,6 +120,25 @@ class SettingsFragment : PreferenceFragmentCompat() {
             Snackbar.make(root, "Preferences reset to defaults", Snackbar.LENGTH_SHORT).show()
             true
         }
+
+        // Language preference
+        val languagePref = findPreference<androidx.preference.ListPreference>("language")
+        languagePref?.summaryProvider = androidx.preference.Preference.SummaryProvider<androidx.preference.ListPreference> { pref ->
+            val value = pref.value
+            val index = pref.findIndexOfValue(value)
+            if (index >= 0) pref.entries[index] else "English"
+        }
+        // Set the current value from preferences
+        val currentLanguage = com.example.scenic_navigation.utils.LocaleHelper.getLanguage(requireContext())
+        languagePref?.value = currentLanguage
+        languagePref?.setOnPreferenceChangeListener { _, newValue ->
+            val language = newValue as String
+            com.example.scenic_navigation.utils.LocaleHelper.setLanguage(requireContext(), language)
+            // Restart the activity completely to apply the new locale
+            requireActivity().finish()
+            requireActivity().startActivity(requireActivity().intent)
+            true
+        }
     }
 
     // Intercept EditTextPreference dialogs to provide OK-button disabling while typing

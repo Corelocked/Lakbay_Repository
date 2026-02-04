@@ -30,11 +30,90 @@
     <!-- POI item placeholders -->
     <string name="poi_name_placeholder">POI Name</string>
     <string name="poi_category_placeholder">Category</string>
-    <string name="poi_description_placeholder">Short description</string>
     <string name="poi_icon_desc">POI icon</string>
     <string name="view_details">View details</string>
 
     <!-- Bottom sheet -->
     <string name="recommendations_along_route">Recommendations Along Route</string>
     <string name="no_recommendations">No recommendations available yet. Plan a route to see suggestions.</string>
+
+    <!-- Layout strings -->
+    <string name="osm_copyright">© OpenStreetMap contributors</string>
+    <string name="plan_your_journey">Plan Your Journey</string>
+    <string name="settings_emoji">⚙</string>
+    <string name="dropdown_emoji">▼</string>
+    <string name="advanced_options">⚙️ Advanced Options</string>
+    <string name="coastal_settings">🌊 Coastal Settings</string>
+    <string name="force_coastal_set">Force coastal set</string>
+    <string name="subtypes_optional">🏷️ Subtypes (optional)</string>
+    <string name="lakeside">🏞️ Lakeside</string>
+    <string name="forest">🌲 Forest</string>
+    <string name="hiking">🥾 Hiking</string>
+    <string name="adventure">🎒 Adventure</string>
+    <string name="relax">😌 Relax</string>
+    <string name="planning_route">Planning route...</string>
+    <string name="scenic_destinations">Scenic Destinations</string>
+    <string name="discover_description">✨ Discover beautiful places for your next adventure</string>
+    <string name="filter_by_category">🔍 Filter by Category</string>
+    <string name="dash_separator">--</string>
+    <string name="go_button">Go</string>
+
+    <!-- Layout hints -->
+    <string name="seeing_hint">What do you want to see?</string>
+    <string name="activity_hint">What do you want to do?</string>
+
+    <!-- POI Detail Bottom Sheet -->
+    <string name="poi_title_placeholder">POI Title</string>
+    <string name="poi_description_placeholder">Short description of the POI goes here...</string>
+    <string name="navigate_button">Navigate</string>
+    <string name="save_button">Save</string>
+
+    <!-- Login/Signup -->
+    <string name="log_in">Log In</string>
+    <string name="no_account_signup">No Account? Sign up here</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="already_have_account">Already have an account? Log in</string>
+
+    <!-- Favorites -->
+    <string name="your_favorites">⭐ Your Favorites</string>
+    <string name="favorites_description">Places you\'ve saved for later</string>
+    <string name="star_emoji">⭐</string>
+    <string name="no_favorites_yet">No favorites yet</string>
+    <string name="save_places_description">Save places to visit them later</string>
+
+    <!-- Recommendations Filter Chips -->
+    <string name="all_filter">All</string>
+    <string name="scenic_filter">🏞️ Scenic</string>
+    <string name="coastal_filter">🌊 Coastal</string>
+    <string name="mountain_filter">⛰️ Mountain</string>
+    <string name="historic_filter">🏛️ Historic</string>
+    <string name="food_filter">🍽️ Food</string>
+    <string name="nature_filter">🌳 Nature</string>
+    <string name="maximum_distance">📍 Maximum Distance</string>
+    <string name="sort_by">📊 Sort By</string>
+    <string name="distance_sort">Distance</string>
+    <string name="scenic_score_sort">Scenic Score</string>
+    <string name="name_sort">Name</string>
+    <string name="no_recommendations_yet">No recommendations yet</string>
+    <string name="plan_route_message">Plan a route to see scenic destinations</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_route">Route</string>
+    <string name="nav_favorites">Favorites</string>
+    <string name="nav_sign_out">Sign Out</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="cluster_eps_title">Cluster EPS (meters)</string>
+    <string name="cluster_eps_dialog_title">Cluster EPS (meters)</string>
+    <string name="min_points_title">Minimum points per cluster</string>
+    <string name="min_points_dialog_title">Minimum points per cluster</string>
+    <string name="reset_defaults_title">Reset to defaults</string>
+    <string name="reset_defaults_summary">Restore default tuning values</string>
+    <string name="prefer_coastal_title">Prefer coastal sets for long oceanic trips</string>
+    <string name="prefer_coastal_summary">When enabled, long oceanic routes will favor built-in coastal waypoint sets.</string>
+    <string name="map_style_title">Map Style</string>
+    <string name="map_style_summary">Choose the map tile style</string>
+    <string name="language_title">Language</string>
+    <string name="language_summary">Choose the app language</string>
 </resources>
