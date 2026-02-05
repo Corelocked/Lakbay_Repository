@@ -8,9 +8,9 @@
 
     <!-- Map View -->
     <org.osmdroid.views.MapView
-        android:id="@+id/map"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+            android:id="@+id/map"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
     <!-- Copyright Notice -->
     <TextView
@@ -111,9 +111,11 @@
                     app:boxCornerRadiusBottomStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
                     app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/lakbay_yellow"
                     app:startIconDrawable="@android:drawable/ic_menu_mylocation"
                     app:startIconTint="@color/primary"
                     app:endIconMode="clear_text"
+                    app:hintTextColor="@color/black"
                     android:layout_marginBottom="16dp">
 
                     <com.google.android.material.textfield.MaterialAutoCompleteTextView
@@ -139,21 +141,24 @@
                     app:boxCornerRadiusBottomStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
                     app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/lakbay_yellow"
                     app:startIconDrawable="@android:drawable/ic_dialog_map"
                     app:startIconTint="@color/accent"
                     app:endIconMode="clear_text"
+                    app:hintTextColor="@color/black"
                     android:layout_marginBottom="16dp">
 
                     <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                        android:id="@+id/et_destination"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textPostalAddress"
-                        android:textSize="15sp"
-                        android:completionThreshold="2"
-                        android:dropDownHeight="wrap_content"
-                        android:maxLines="1"
-                        android:autofillHints="postalAddress" />
+                            android:id="@+id/et_destination"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            style="@style/Widget.App.AutoCompleteTextView.Popup"
+                            android:inputType="textPostalAddress"
+                            android:textSize="15sp"
+                            android:completionThreshold="2"
+                            android:dropDownHeight="wrap_content"
+                            android:maxLines="1"
+                            android:autofillHints="postalAddress" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -165,12 +170,15 @@
                     app:boxCornerRadiusBottomEnd="12dp"
                     app:boxCornerRadiusBottomStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
-                    app:boxCornerRadiusTopStart="12dp">
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/lakbay_yellow"
+                    app:hintTextColor="@color/black">
 
                     <AutoCompleteTextView
                         android:id="@+id/actv_seeing"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        style="@style/Widget.App.AutoCompleteTextView.Popup"
                         android:inputType="none"
                         android:entries="@array/seeing_options"
                         />
@@ -185,12 +193,15 @@
                     app:boxCornerRadiusBottomEnd="12dp"
                     app:boxCornerRadiusBottomStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
-                    app:boxCornerRadiusTopStart="12dp">
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/lakbay_yellow"
+                    app:hintTextColor="@color/black">
 
                     <AutoCompleteTextView
                         android:id="@+id/actv_activity"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        style="@style/Widget.App.AutoCompleteTextView.Popup"
                         android:inputType="none"
                         android:entries="@array/activity_options"
                         />
