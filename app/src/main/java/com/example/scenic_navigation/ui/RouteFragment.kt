@@ -20,11 +20,14 @@ import com.example.scenic_navigation.R
 import com.example.scenic_navigation.databinding.FragmentRouteBinding
 import com.example.scenic_navigation.models.ActivityType
 import com.example.scenic_navigation.models.SeeingType
+import com.example.scenic_navigation.models.CurationIntent
 import com.example.scenic_navigation.services.LocationService
 import com.example.scenic_navigation.utils.OffRouteDetector
 import com.example.scenic_navigation.viewmodel.RouteViewModel
 import com.example.scenic_navigation.viewmodel.SharedRouteViewModel
+import com.example.scenic_navigation.data.FirestoreRepository
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.auth.FirebaseAuth
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import android.graphics.Bitmap
@@ -66,6 +69,9 @@ class RouteFragment : Fragment(), SensorEventListener {
     private var rotationVectorSensor: Sensor? = null
     private var azimuth: Float = 0f
 
+    // Firestore helper
+    private val firestoreRepo = FirestoreRepository()
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -91,6 +97,9 @@ class RouteFragment : Fragment(), SensorEventListener {
         restoreRouteIfAvailable()
         observeViewModel()
         startClusterPolling()
+
+        // Load remote last selection if available and apply to UI
+        loadRemoteSelectionIfAvailable()
 
         // Setup copyright click listener
         binding.osmCopyright.setOnClickListener {
@@ -225,6 +234,9 @@ class RouteFragment : Fragment(), SensorEventListener {
             }
 
             viewModel.planRouteCurated(destination, seeing, activity)
+
+            // Save selection to Firestore (and keep local fallback)
+            saveSelectionToFirestore(destination, seeing, activity)
         }
 
         // Advanced options toggle
@@ -932,5 +944,67 @@ class RouteFragment : Fragment(), SensorEventListener {
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
         // No-op
+    }
+
+    private fun saveSelectionToFirestore(destination: String, seeing: SeeingType, activity: ActivityType) {
+        val auth = FirebaseAuth.getInstance()
+        val uid = auth.currentUser?.uid
+        val intent = CurationIntent(destinationQuery = destination, seeing = seeing, activity = activity)
+
+        if (uid == null) {
+            // User must be signed in. Redirect to LoginActivity to prompt sign-in.
+            Snackbar.make(binding.root, "Please sign in to save your selection", Snackbar.LENGTH_LONG).show()
+            val loginIntent = android.content.Intent(requireContext(), com.example.scenic_navigation.ui.LoginActivity::class.java)
+            startActivity(loginIntent)
+            return
+        }
+
+        firestoreRepo.saveSelection(uid, intent) { success, error ->
+            if (!success) {
+                Snackbar.make(binding.root, "Failed to save selection: ${error ?: "unknown"}", Snackbar.LENGTH_LONG).show()
+            } else {
+                // Optionally give feedback that the selection was saved
+                Snackbar.make(binding.root, "Selection saved", Snackbar.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun loadRemoteSelectionIfAvailable() {
+        val auth = FirebaseAuth.getInstance()
+        val uid = auth.currentUser?.uid
+        if (uid == null) {
+            // No signed-in user; do not attempt to read remote data.
+            return
+        }
+
+        firestoreRepo.loadSelection(uid) { intent ->
+            intent?.let {
+                // Apply loaded intent to UI fields on main thread
+                activity?.runOnUiThread {
+                    if (it.destinationQuery.isNotBlank()) {
+                        binding.etDestination.setText(it.destinationQuery)
+                    }
+                    binding.actvSeeing.setText(
+                        when (it.seeing) {
+                            SeeingType.OCEANIC -> "🌊 Oceanic View"
+                            SeeingType.MOUNTAIN -> "⛰️ Mountain Ranges"
+                        },
+                        false
+                    )
+                    binding.actvActivity.setText(
+                        when (it.activity) {
+                            ActivityType.SIGHTSEEING -> "👀 Sight seeing"
+                            ActivityType.SHOP_AND_DINE -> "🍽️ Shop and Dine"
+                            ActivityType.CULTURAL -> "🎭 Cultural activities"
+                            ActivityType.ADVENTURE -> "🏔️ Adventure & Hiking"
+                            ActivityType.RELAXATION -> "🧘 Relaxation & Wellness"
+                            ActivityType.FAMILY_FRIENDLY -> "👨‍👩‍👧‍👦 Family Friendly"
+                            ActivityType.ROMANTIC -> "💕 Romantic Getaway"
+                        },
+                        false
+                    )
+                }
+            }
+        }
     }
 }
