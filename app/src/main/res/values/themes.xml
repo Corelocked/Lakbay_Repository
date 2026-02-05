@@ -87,4 +87,8 @@
     <style name="Shape.App.Large" parent="ShapeAppearance.Material3.LargeComponent">
         <item name="cornerSize">20dp</item>
     </style>
+
+    <style name="Widget.App.AutoCompleteTextView.Popup" parent="Widget.Material3.AutoCompleteTextView.OutlinedBox">
+        <item name="android:popupBackground">@color/white</item>
+    </style>
 </resources>

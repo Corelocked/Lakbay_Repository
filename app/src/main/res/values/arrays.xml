@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="seeing_options">
+        <item>🌊 Oceanic View</item>
+        <item>⛰️ Mountain Ranges</item>
+    </string-array>
+
+    <string-array name="activity_options">
+        <item>👀 Sight seeing</item>
+        <item>🍽️ Shop and Dine</item>
+        <item>🎭 Cultural activities</item>
+        <item>🏔️ Adventure &amp; Hiking</item>
+        <item>🧘 Relaxation &amp; Wellness</item>
+        <item>👨‍👩‍👧‍👦 Family Friendly</item>
+        <item>💕 Romantic Getaway</item>
+    </string-array>
+
+    <string-array name="map_style_options">
+        <item>Streets</item>
+        <item>Satellite</item>
+        <item>Topo</item>
+    </string-array>
+
+    <string-array name="language_options">
+        <item>English</item>
+        <item>Filipino</item>
+    </string-array>
+
+    <string-array name="language_values">
+        <item>en</item>
+        <item>fil</item>
+    </string-array>
+</resources>

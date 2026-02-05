@@ -8,9 +8,21 @@
 
     <!-- Map View -->
     <org.osmdroid.views.MapView
-        android:id="@+id/map"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+            android:id="@+id/map"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    <!-- Copyright Notice -->
+    <TextView
+        android:id="@+id/osm_copyright"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/osm_copyright"
+        android:textSize="10sp"
+        android:textColor="?android:attr/textColorSecondary"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="8dp"
+        android:layout_marginBottom="8dp" />
 
     <!-- Input Card - Collapsible with cleaner design -->
     <com.google.android.material.card.MaterialCardView
@@ -34,42 +46,44 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:padding="16dp"
-                android:background="@color/primary"
+                android:background="@color/lakbay_red"
                 android:gravity="center_vertical">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="🗺️ Plan Your Journey"
+                    android:text="@string/plan_your_journey"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="@color/white" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_settings"
-                    android:layout_width="40dp"
+                    android:layout_width="48dp"
                     android:layout_height="40dp"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:padding="0dp"
                     android:text="⚙"
+                    android:textColor="@color/white"
                     android:textSize="16sp"
-                    android:backgroundTint="@color/primary_light"
+                    android:backgroundTint="#FF8C8C"
                     app:cornerRadius="20dp"
                     style="@style/Widget.Material3.Button.IconButton"
                     android:layout_marginEnd="8dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_collapse"
-                    android:layout_width="40dp"
+                    android:layout_width="48dp"
                     android:layout_height="40dp"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:padding="0dp"
                     android:text="▼"
+                    android:textColor="@color/white"
                     android:textSize="14sp"
-                    android:backgroundTint="@color/primary_light"
+                    android:backgroundTint="#FF8C8C"
                     app:cornerRadius="20dp"
                     style="@style/Widget.Material3.Button.IconButton" />
             </LinearLayout>
@@ -97,9 +111,11 @@
                     app:boxCornerRadiusBottomStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
                     app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/lakbay_yellow"
                     app:startIconDrawable="@android:drawable/ic_menu_mylocation"
                     app:startIconTint="@color/primary"
                     app:endIconMode="clear_text"
+                    app:hintTextColor="@color/black"
                     android:layout_marginBottom="16dp">
 
                     <com.google.android.material.textfield.MaterialAutoCompleteTextView
@@ -125,23 +141,228 @@
                     app:boxCornerRadiusBottomStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
                     app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/lakbay_yellow"
                     app:startIconDrawable="@android:drawable/ic_dialog_map"
                     app:startIconTint="@color/accent"
                     app:endIconMode="clear_text"
-                    android:layout_marginBottom="20dp">
+                    app:hintTextColor="@color/black"
+                    android:layout_marginBottom="16dp">
 
                     <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                        android:id="@+id/et_destination"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textPostalAddress"
-                        android:textSize="15sp"
-                        android:completionThreshold="2"
-                        android:dropDownHeight="wrap_content"
-                        android:maxLines="1"
-                        android:autofillHints="postalAddress" />
+                            android:id="@+id/et_destination"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            style="@style/Widget.App.AutoCompleteTextView.Popup"
+                            android:inputType="textPostalAddress"
+                            android:textSize="15sp"
+                            android:completionThreshold="2"
+                            android:dropDownHeight="wrap_content"
+                            android:maxLines="1"
+                            android:autofillHints="postalAddress" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:hint="@string/seeing_hint"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/lakbay_yellow"
+                    app:hintTextColor="@color/black">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/actv_seeing"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        style="@style/Widget.App.AutoCompleteTextView.Popup"
+                        android:inputType="none"
+                        android:entries="@array/seeing_options"
+                        />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:hint="@string/activity_hint"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/lakbay_yellow"
+                    app:hintTextColor="@color/black">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/actv_activity"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        style="@style/Widget.App.AutoCompleteTextView.Popup"
+                        android:inputType="none"
+                        android:entries="@array/activity_options"
+                        />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- ADVANCED SETTINGS, REMOVE?
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="16dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp"
+                    app:cardBackgroundColor="@color/background"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+
+                        <LinearLayout
+                            android:id="@+id/advanced_options_header"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:padding="16dp"
+                            android:gravity="center_vertical"
+                            android:background="?attr/selectableItemBackground">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/advanced_options"
+                                android:textSize="15sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/text_primary" />
+
+                            <ImageView
+                                android:id="@+id/advanced_options_arrow"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@android:drawable/arrow_down_float"
+                                android:contentDescription="Expand advanced options"
+                                app:tint="@color/text_secondary" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/advanced_options_content"
+                            android:layout_width="match_parent"
+                            android:layout_height="200dp"
+                            android:orientation="vertical"
+                            android:padding="16dp"
+                            android:visibility="gone">
+
+                            <ScrollView
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/coastal_settings"
+                                        android:textSize="14sp"
+                                        android:textStyle="bold"
+                                        android:textColor="@color/text_primary"
+                                        android:layout_marginBottom="8dp" />
+
+                                    <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="horizontal"
+                                        android:gravity="center_vertical"
+                                        android:layout_marginBottom="12dp">
+
+                                        <com.google.android.material.switchmaterial.SwitchMaterial
+                                            android:id="@+id/switchForceCoastal"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="@string/force_coastal_set"
+                                            android:textSize="14sp" />
+
+                                        <Spinner
+                                            android:id="@+id/spinnerCoastalSets"
+                                            android:layout_width="0dp"
+                                            android:layout_height="48dp"
+                                            android:layout_weight="1"
+                                            android:layout_marginStart="8dp"
+                                            android:spinnerMode="dropdown" />
+                                    </LinearLayout>
+
+                                    <View
+                                        android:layout_width="match_parent"
+                                        android:layout_height="1dp"
+                                        android:background="@color/divider"
+                                        android:layout_marginVertical="8dp" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/subtypes_optional"
+                                        android:textSize="14sp"
+                                        android:textStyle="bold"
+                                        android:textColor="@color/text_primary"
+                                        android:layout_marginBottom="8dp" />
+
+                                    <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="vertical">
+
+                                        <com.google.android.material.checkbox.MaterialCheckBox
+                                            android:id="@+id/cbLakeside"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="@string/lakeside"
+                                            android:textSize="14sp" />
+
+                                        <com.google.android.material.checkbox.MaterialCheckBox
+                                            android:id="@+id/cbForest"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="@string/forest"
+                                            android:textSize="14sp" />
+
+                                        <com.google.android.material.checkbox.MaterialCheckBox
+                                            android:id="@+id/cbHiking"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="@string/hiking"
+                                            android:textSize="14sp" />
+
+                                        <com.google.android.material.checkbox.MaterialCheckBox
+                                            android:id="@+id/cbAdventure"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="@string/adventure"
+                                            android:textSize="14sp" />
+
+                                        <com.google.android.material.checkbox.MaterialCheckBox
+                                            android:id="@+id/cbRelax"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="@string/relax"
+                                            android:textSize="14sp" />
+
+                                    </LinearLayout>
+                                </LinearLayout>
+                            </ScrollView>
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+                -->
 
                 <!-- Plan Button -->
                 <com.google.android.material.button.MaterialButton
@@ -149,7 +370,9 @@
                     style="@style/Widget.App.Button.Primary"
                     android:layout_width="match_parent"
                     android:layout_height="58dp"
+                    android:backgroundTint="@color/lakbay_red"
                     android:text="@string/plan_trip"
+                    android:textColor="@color/white"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     app:icon="@android:drawable/ic_menu_directions"
@@ -252,120 +475,9 @@
                     android:textSize="15sp"
                     android:textStyle="bold"
                     android:textAlignment="center"
-                    android:text="Planning route..." />
+                    android:text="@string/planning_route" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
     </FrameLayout>
-
-    <!-- Route Summary Card -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card_summary"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="220dp"
-        android:layout_marginEnd="12dp"
-        android:layout_gravity="top|end"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="8dp"
-        app:cardBackgroundColor="@color/card_background"
-        android:visibility="gone">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:minWidth="180dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="📊 Route Info"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:textColor="@color/primary"
-                android:layout_marginBottom="12dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="8dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📍"
-                    android:textSize="18sp"
-                    android:layout_marginEnd="8dp" />
-
-                <TextView
-                    android:id="@+id/tv_summary_distance"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:text="Distance: --"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="8dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="⏱️"
-                    android:textSize="18sp"
-                    android:layout_marginEnd="8dp" />
-
-                <TextView
-                    android:id="@+id/tv_summary_duration"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:text="Duration: --"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="13sp" />
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/divider"
-                android:layout_marginVertical="8dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="⭐"
-                    android:textSize="18sp"
-                    android:layout_marginEnd="8dp" />
-
-                <TextView
-                    android:id="@+id/tv_summary_score"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:text="Scenic: --"
-                    android:textColor="@color/accent"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -6,8 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.example.scenic_navigation.FavoriteStore
+import com.example.scenic_navigation.FavoritesAdapter
 
 class FavoritesFragment : Fragment() {
     private var _binding: com.example.scenic_navigation.databinding.FragmentFavoritesBinding? = null
@@ -23,7 +23,7 @@ class FavoritesFragment : Fragment() {
         binding.rvFavorites.layoutManager = LinearLayoutManager(requireContext())
         FavoriteStore.init(requireContext())
         val favorites = FavoriteStore.getAllFavorites()
-        val adapter = com.example.scenic_navigation.PoiPreviewAdapter(favorites) { poi ->
+        val adapter = FavoritesAdapter(favorites) { poi ->
             val bottom = POIDetailBottomSheet(poi)
             bottom.show(parentFragmentManager, "poi_detail")
         }
