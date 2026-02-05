@@ -83,7 +83,6 @@ dependencies {
 
     // TensorFlow Lite for on-device inference (ensure version matches your trainer runtime)
     implementation("org.tensorflow:tensorflow-lite:2.12.0")
-    implementation(libs.firebase.auth)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
