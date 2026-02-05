@@ -14,7 +14,6 @@ import com.example.scenic_navigation.config.Config
 import androidx.lifecycle.Observer
 import android.content.SharedPreferences
 import com.example.scenic_navigation.services.LocationService
-import com.example.scenic_navigation.services.WebSearchService
 import com.example.scenic_navigation.ml.PoiReranker
 import kotlinx.coroutines.launch
 import org.osmdroid.util.GeoPoint
@@ -34,7 +33,6 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
     private val locationService = LocationService(application)
     private val packageName = application.packageName
     private var settingsObserver: Observer<Int>? = null
-    private val webSearchService = WebSearchService()
     private val poiReranker = PoiReranker(application.applicationContext)
 
     // Simple CSV parser to handle quoted fields
@@ -371,34 +369,8 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 }.toMutableList()
 
-                // Enhance descriptions with Wikipedia if empty
-                for (i in pois.indices) {
-                    val poi = pois[i]
-                    if (poi.description.isBlank() || poi.description == "A scenic location along the route.") {
-                        val wikiDesc = webSearchService.getDescriptionForPoi(poi.name)
-                        if (wikiDesc != null) {
-                            pois[i] = poi.copy(description = wikiDesc)
-                        }
-                    }
-                }
-
-                // Add additional dataset POIs near the route
-                val scenicNames = scenicPois.map { it.name.lowercase() }.toSet()
-                val additionalPois = datasetPois.filter { datasetPoi ->
-                    !scenicNames.contains(datasetPoi.name.lowercase()) &&
-                    minDistanceToRoute(GeoPoint(datasetPoi.lat!!, datasetPoi.lon!!), route) < 5000.0
-                }
-                for (datasetPoi in additionalPois) {
-                    pois.add(Poi(
-                        name = datasetPoi.name,
-                        category = datasetPoi.category,
-                        description = datasetPoi.description,
-                        municipality = datasetPoi.municipality,
-                        lat = datasetPoi.lat,
-                        lon = datasetPoi.lon,
-                        scenicScore = 50f // High base score for dataset POIs
-                    ))
-                }
+                // Add dataset POIs directly to routePois without filtering
+                _routePois.value = pois
 
                 // Sort by category priority and take top recommendations
                 val sortedPois = pois.sortedWith(
@@ -604,54 +576,9 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 }.toMutableList()
 
-                // Enhance descriptions with Wikipedia if empty
-                for (i in pois.indices) {
-                    val poi = pois[i]
-                    if (poi.description.isBlank() || poi.description == "A scenic location along the route.") {
-                        val wikiDesc = webSearchService.getDescriptionForPoi(poi.name)
-                        if (wikiDesc != null) {
-                            pois[i] = poi.copy(description = wikiDesc)
-                        }
-                    }
-                }
+                // Add dataset POIs directly to routePois without filtering
+                _routePois.value = pois
 
-                // Add additional dataset POIs near the route
-                val scenicNames = scenicPois.map { it.name.lowercase() }.toSet()
-                val additionalPois = datasetPois.filter { datasetPoi ->
-                    !scenicNames.contains(datasetPoi.name.lowercase()) &&
-                    minDistanceToRoute(GeoPoint(datasetPoi.lat!!, datasetPoi.lon!!), route) < 5000.0
-                }
-                for (datasetPoi in additionalPois) {
-                    pois.add(Poi(
-                        name = datasetPoi.name,
-                        category = datasetPoi.category,
-                        description = datasetPoi.description,
-                        municipality = datasetPoi.municipality,
-                        lat = datasetPoi.lat,
-                        lon = datasetPoi.lon,
-                        scenicScore = 50f // High base score for dataset POIs
-                    ))
-                }
-
-                // Sort by category priority and take top recommendations
-                val sortedPois = pois.sortedWith(
-                    compareBy<Poi> { poi ->
-                        when (poi.category) {
-                            "tourism", "scenic" -> 0
-                            "historic" -> 1
-                            "natural" -> 2
-                            "mountain" -> 3
-                            "coastal" -> 4
-                            else -> 5
-                        }
-                    }.thenBy { it.name }
-                ).take(75)
-
-                // Apply ML reranker on the top candidates
-                val reranked = poiReranker.rerank(sortedPois, newStart.latitude, newStart.longitude, System.currentTimeMillis())
-
-                // Take final top 20 for UI
-                    _routePois.value = reranked.take(50)
                 // Compute average scenic score for recalculated route
                 try {
                     val avgScore = if (scenicPois.isNotEmpty()) scenicPois.map { it.score }.average().toFloat() else 0f

@@ -3,7 +3,7 @@
     <item
         android:id="@+id/nav_route"
         android:icon="@android:drawable/ic_menu_directions"
-        android:title="Route" />
+        android:title="@string/nav_route" />
     <!-- Discover/Recommendations page deprecated -->
     <!-- <item
         android:id="@+id/nav_recommendations"
@@ -12,9 +12,9 @@
     <item
         android:id="@+id/nav_favorites"
         android:icon="@android:drawable/btn_star_big_on"
-        android:title="Favorites" />
+        android:title="@string/nav_favorites" />
     <item
         android:id="@+id/nav_sign_out"
         android:icon="@android:drawable/ic_menu_close_clear_cancel"
-        android:title="Sign Out" />
+        android:title="@string/nav_sign_out" />
 </menu>

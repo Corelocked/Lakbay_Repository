@@ -2,6 +2,7 @@ package com.example.scenic_navigation.ui
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -17,6 +18,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import com.example.scenic_navigation.R
 import com.example.scenic_navigation.databinding.FragmentRouteBinding
+import com.example.scenic_navigation.models.ActivityType
+import com.example.scenic_navigation.models.SeeingType
 import com.example.scenic_navigation.services.LocationService
 import com.example.scenic_navigation.utils.OffRouteDetector
 import com.example.scenic_navigation.viewmodel.RouteViewModel
@@ -29,7 +32,10 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
+import android.net.Uri
 import android.util.TypedValue
+import android.widget.ArrayAdapter
+import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -85,6 +91,12 @@ class RouteFragment : Fragment(), SensorEventListener {
         restoreRouteIfAvailable()
         observeViewModel()
         startClusterPolling()
+
+        // Setup copyright click listener
+        binding.osmCopyright.setOnClickListener {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://osm.org/copyright"))
+            startActivity(intent)
+        }
     }
     private var clusterPollRunnable: Runnable? = null
     private var lastZoomLevel: Double = -1.0
@@ -125,10 +137,18 @@ class RouteFragment : Fragment(), SensorEventListener {
     }
 
     private fun setupMap() {
+        val prefs = requireContext().getSharedPreferences("scenic_prefs", android.content.Context.MODE_PRIVATE)
+        val style = prefs.getString("map_style", "Streets") ?: "Streets"
+        val tileSource = when (style) {
+            "Streets" -> TileSourceFactory.MAPNIK
+            "Satellite" -> TileSourceFactory.USGS_SAT
+            "Topo" -> TileSourceFactory.USGS_TOPO
+            else -> TileSourceFactory.MAPNIK
+        }
         binding.map.apply {
-            setTileSource(TileSourceFactory.MAPNIK)
+            setTileSource(tileSource)
             setMultiTouchControls(true)
-            controller.setZoom(13.0)
+            controller.setZoom(15.0)  // Increased from 13.0 for larger street text visibility
             // Set default location (Philippines)
             controller.setCenter(GeoPoint(14.5995, 120.9842))
         }
@@ -139,7 +159,7 @@ class RouteFragment : Fragment(), SensorEventListener {
 
     private fun setupInputs() {
         // Start input is now fixed to current location
-        binding.etStart.setText("Current Location")
+        binding.etStart.setText(getString(R.string.current_location))
         binding.etStart.isEnabled = false
         binding.tilStart.isEnabled = false
 
@@ -168,12 +188,57 @@ class RouteFragment : Fragment(), SensorEventListener {
             binding.tilDestination.error = null
         }
 
-        // Plan route button click - always use curation dialog
+        // Setup dropdowns
+        val seeingAdapter = ArrayAdapter.createFromResource(requireContext(), R.array.seeing_options, android.R.layout.simple_dropdown_item_1line)
+        binding.actvSeeing.setAdapter(seeingAdapter)
+
+        val activityAdapter = ArrayAdapter.createFromResource(requireContext(), R.array.activity_options, android.R.layout.simple_dropdown_item_1line)
+        binding.actvActivity.setAdapter(activityAdapter)
+
+
+        // Plan route button click
         binding.btnPlan.setOnClickListener {
-            // Show curation dialog directly
-            val dlg = CurationDialogFragment()
-            dlg.show(parentFragmentManager, "curation_dialog")
+            val destination = binding.etDestination.text.toString()
+            if (destination.isBlank()) {
+                binding.tilDestination.error = "Please enter a destination"
+                return@setOnClickListener
+            }
+
+            val seeingString = binding.actvSeeing.text.toString()
+            val activityString = binding.actvActivity.text.toString()
+
+            val seeing = when (seeingString) {
+                "🌊 Oceanic View" -> SeeingType.OCEANIC
+                "⛰️ Mountain Ranges" -> SeeingType.MOUNTAIN
+                else -> SeeingType.OCEANIC // Default value
+            }
+
+            val activity = when (activityString) {
+                "👀 Sight seeing" -> ActivityType.SIGHTSEEING
+                "🍽️ Shop and Dine" -> ActivityType.SHOP_AND_DINE
+                "🎭 Cultural activities" -> ActivityType.CULTURAL
+                "🏔️ Adventure & Hiking" -> ActivityType.ADVENTURE
+                "🧘 Relaxation & Wellness" -> ActivityType.RELAXATION
+                "👨‍👩‍👧‍👦 Family Friendly" -> ActivityType.FAMILY_FRIENDLY
+                "💕 Romantic Getaway" -> ActivityType.ROMANTIC
+                else -> ActivityType.SIGHTSEEING // Default value
+            }
+
+            viewModel.planRouteCurated(destination, seeing, activity)
         }
+
+        // Advanced options toggle
+        /*
+        binding.advancedOptionsHeader.setOnClickListener {
+            if (binding.advancedOptionsContent.visibility == View.VISIBLE) {
+                binding.advancedOptionsContent.visibility = View.GONE
+                binding.advancedOptionsArrow.setImageResource(android.R.drawable.arrow_down_float)
+            } else {
+                binding.advancedOptionsContent.visibility = View.VISIBLE
+                binding.advancedOptionsArrow.setImageResource(android.R.drawable.arrow_up_float)
+            }
+        }
+        */
 
         // Clear errors on text change
         binding.etStart.doOnTextChanged { _, _, _, _ ->
@@ -184,6 +249,17 @@ class RouteFragment : Fragment(), SensorEventListener {
         }
     }
 
+
+    private fun changeTileSource(style: String) {
+        val tileSource = when (style) {
+            "Streets" -> TileSourceFactory.MAPNIK
+            "Satellite" -> TileSourceFactory.USGS_SAT
+            "Topo" -> TileSourceFactory.USGS_TOPO
+            else -> TileSourceFactory.MAPNIK
+        }
+        binding.map.setTileSource(tileSource)
+        binding.map.invalidate()
+    }
 
     private fun setupCollapseButton() {
         binding.btnCollapse.setOnClickListener {
@@ -252,27 +328,24 @@ class RouteFragment : Fragment(), SensorEventListener {
         // Observe phased loading flags for more granular UI
         viewModel.isGeocoding.observe(viewLifecycleOwner) { g ->
             binding.progressGeocoding.visibility = if (g) View.VISIBLE else View.GONE
-            if (g) binding.tvOverlayStatus.text = getString(com.example.scenic_navigation.R.string.geocoding_status)
+            if (g) binding.tvOverlayStatus.text = getString(R.string.geocoding_status)
         }
 
         viewModel.isRouting.observe(viewLifecycleOwner) { r ->
             binding.progressRouting.visibility = if (r) View.VISIBLE else View.GONE
-            if (r) binding.tvOverlayStatus.text = getString(com.example.scenic_navigation.R.string.routing_status)
+            if (r) binding.tvOverlayStatus.text = getString(R.string.routing_status)
         }
 
         viewModel.isFetchingPois.observe(viewLifecycleOwner) { p ->
             binding.progressPoiFetch.visibility = if (p) View.VISIBLE else View.GONE
-            if (p) binding.tvOverlayStatus.text = getString(com.example.scenic_navigation.R.string.finding_pois_status)
+            if (p) binding.tvOverlayStatus.text = getString(R.string.finding_pois_status)
         }
 
         // Observe route summary values
         viewModel.routeDistanceMeters.observe(viewLifecycleOwner) { meters ->
             if (meters != null && meters > 0.0) {
-                binding.cardSummary.visibility = View.VISIBLE
                 val km = meters / 1000.0
-                binding.tvSummaryDistance.text = String.format("Distance: %.1f km", km)
             } else {
-                binding.cardSummary.visibility = View.GONE
             }
         }
 
@@ -280,17 +353,13 @@ class RouteFragment : Fragment(), SensorEventListener {
             if (secs != null && secs > 0L) {
                 val hours = secs / 3600
                 val mins = (secs % 3600) / 60
-                binding.tvSummaryDuration.text = if (hours > 0) String.format("Duration: %dh %02dm", hours, mins) else String.format("Duration: %dm", mins)
             } else {
-                binding.tvSummaryDuration.text = "Duration: --"
             }
         }
 
         viewModel.scenicScore.observe(viewLifecycleOwner) { score ->
             if (score != null && score > 0f) {
-                binding.tvSummaryScore.text = String.format("Scenic score: %.1f", score)
             } else {
-                binding.tvSummaryScore.text = "Scenic score: --"
             }
         }
 
@@ -322,15 +391,6 @@ class RouteFragment : Fragment(), SensorEventListener {
             updateMarkers(pois)
             // Update shared ViewModel only if both points and POIs are ready
             updateSharedViewModelIfReady()
-        }
-
-        // Observe curation intent from curation dialog
-        sharedViewModel.curationIntent.observe(viewLifecycleOwner) { intent ->
-            intent?.let {
-                // Trigger curated route planning and clear the intent to avoid re-trigger
-                viewModel.planRouteCurated(it.destinationQuery, it.seeing, it.activity)
-                sharedViewModel.setCurationIntent(null)
-            }
         }
     }
 
@@ -380,7 +440,7 @@ class RouteFragment : Fragment(), SensorEventListener {
         if (currentLocationMarker == null) {
             currentLocationMarker = Marker(binding.map).apply {
                 position = userPosition
-                title = "Current Location"
+                title = getString(R.string.current_location)
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                 icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_user_arrow, null)
                 binding.map.overlays.add(this)
@@ -814,6 +874,7 @@ class RouteFragment : Fragment(), SensorEventListener {
     override fun onResume() {
         super.onResume()
         binding.map.onResume()
+        setupMap() // Refresh map style in case it changed in settings
 
         rotationVectorSensor?.let { sensor ->
             sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI)

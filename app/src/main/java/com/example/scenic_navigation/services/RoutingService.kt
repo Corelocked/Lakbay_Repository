@@ -89,8 +89,13 @@ class RoutingService {
         "luzon_north" to listOf(
             GeoPoint(15.7800, 120.2800), // Zambales coast
             GeoPoint(16.0500, 120.3300), // La Union coast
+            GeoPoint(16.8800, 120.4500), // Vigan, Ilocos Sur coast
             GeoPoint(17.5800, 120.3800), // Ilocos Norte coast
+            GeoPoint(17.6100, 120.3200), // Laoag, Ilocos Norte
             GeoPoint(18.1700, 120.5900)  // Northern tip before going to Aparri
+        ),
+        "luzon_aurora" to listOf(
+            GeoPoint(15.7617, 121.5603)  // Baler, Aurora coast
         ),
         "luzon_bicol_east" to listOf(
             GeoPoint(14.6000, 121.2000), // Laguna
@@ -102,6 +107,28 @@ class RoutingService {
             GeoPoint(14.0100, 120.9800), // Batangas coast
             GeoPoint(13.7500, 120.9500), // Mindoro Strait view
             GeoPoint(13.4200, 123.4100)  // Join at Albay
+        ),
+        "luzon_south" to listOf(
+            GeoPoint(14.4800, 120.8800), // Cavite coast near Manila
+            GeoPoint(14.3200, 120.7700), // Naic, Cavite (Laguna Bay coast)
+            GeoPoint(14.2300, 120.7300), // Maragondon, Cavite (Laguna Bay coast)
+            GeoPoint(14.0700, 120.6300), // Nasugbu, Batangas (Laguna Bay coast)
+            GeoPoint(14.0100, 120.9800), // Batangas coast
+            GeoPoint(13.7500, 120.9500), // Southern Batangas coast
+            GeoPoint(14.4000, 121.0300), // Binakayan, Kawit (Laguna Bay)
+            GeoPoint(14.3500, 121.0600), // Noveleta (Laguna Bay)
+            GeoPoint(14.2800, 121.1100), // Kawit (Laguna Bay)
+            GeoPoint(14.2200, 121.1700), // Imus (Laguna Bay)
+            GeoPoint(14.1800, 121.2400), // Dasmariñas (Laguna Bay)
+            GeoPoint(14.1500, 121.3100), // Carmona (Laguna Bay)
+            GeoPoint(14.1200, 121.3800), // Silang (Laguna Bay)
+            GeoPoint(14.1000, 121.4500), // Amadeo (Laguna Bay)
+            GeoPoint(14.0800, 121.5200), // Tagaytay Ridge (Laguna Bay)
+            GeoPoint(14.0500, 121.5900), // Calamba (Laguna Bay)
+            GeoPoint(14.0300, 121.6600), // Los Baños (Laguna Bay)
+            GeoPoint(14.0100, 121.7300), // Bay (Laguna Bay)
+            GeoPoint(13.9800, 121.8000), // Calauan (Laguna Bay)
+            GeoPoint(13.9500, 121.8700)  // Victoria (Laguna Bay)
         ),
         // VISAYAS ROUTES
         "visayas_cebu_coastal" to listOf(
@@ -232,6 +259,9 @@ class RoutingService {
         for ((key, waypoints) in allWaypointSets) {
             if (waypoints.isEmpty()) continue
 
+            // Skip aurora waypoints for northern destinations (latitude > 17.0) to avoid favoring east coast over west coast Ilocos routes
+            if (dest.latitude > 17.0 && key == "luzon_aurora") continue
+
             val avgDistance = if (denom == 0.0) {
                 // fallback to midpoint distance if start==dest
                 val routeMidPoint = GeoPoint(
@@ -256,10 +286,16 @@ class RoutingService {
                 } / waypoints.size
             }
 
-            if (avgDistance < minAvgDistance) {
-                minAvgDistance = avgDistance
+            // Apply bias for northern destinations to prefer luzon_north (Ilocos route)
+            var adjustedAvgDistance = avgDistance
+            if (key == "luzon_north" && dest.latitude > 17.0) {
+                adjustedAvgDistance *= 0.5 // Reduce distance by half to favor Ilocos route for Cagayan destinations
+            }
+
+            if (adjustedAvgDistance < minAvgDistance) {
+                minAvgDistance = adjustedAvgDistance
                 bestSet = waypoints
-                Log.d("RoutingService", "New best waypoint set: $key with avg projected distance=${"%.0f".format(avgDistance)}m")
+                Log.d("RoutingService", "New best waypoint set: $key with adjusted avg projected distance=${"%.0f".format(adjustedAvgDistance)}m")
             }
         }
 
@@ -304,10 +340,10 @@ class RoutingService {
         }
 
         // Set maximum perpendicular distance threshold based on route length
-        // For short routes (<50km), allow max 10km deviation
-        // For longer routes, allow up to 20% deviation but cap at 50km
+        // For short routes (<50km), allow max 2.5km deviation to avoid unnecessary detours
+        // For longer routes, allow up to 15% deviation but cap at 50km
         val maxPerpendicularDistance = when {
-            directDistance < 50_000 -> 10_000.0 // 10km for short routes
+            directDistance < 50_000 -> 2_500.0 // 5km for short routes
             directDistance < 200_000 -> directDistance * 0.15 // 15% for medium routes
             else -> 50_000.0 // 50km max for long routes
         }
@@ -492,6 +528,12 @@ class RoutingService {
         val directDistance = start.distanceToAsDouble(dest)
         val isLongDistance = directDistance > 300_000
 
+        // For very short routes (<30km), don't use coastal waypoints to avoid unnecessary detours
+        if (directDistance < 30_000) {
+            Log.d("RoutingService", "Route is too short (${"%.0f".format(directDistance)}m) for coastal waypoints. Using direct route.")
+            return fetchRoute(start, dest, packageName, "default")
+        }
+
         val bestWaypoints = findBestWaypointSet(start, dest, coastalWaypoints, isLongDistance)
 
         if (bestWaypoints.isEmpty()) {
@@ -501,7 +543,7 @@ class RoutingService {
 
         // Order the waypoint set along the route direction then sample down to a few representative points
         val ordered = orderWaypointsAlongRoute(start, dest, bestWaypoints)
-        val sampled = sampleWaypoints(ordered, maxPoints = if (isLongDistance) 5 else 3)
+        val sampled = sampleWaypoints(ordered, maxPoints = if (isLongDistance) 5 else 1)
         Log.d("RoutingService", "Using coastal waypoints. original=${bestWaypoints.size} ordered=${ordered.size} sampled=${sampled.size}")
         try {
             Log.d("RoutingService", "Coastal ordered coords: ${ordered.joinToString(";") { "${it.latitude},${it.longitude}" }}")

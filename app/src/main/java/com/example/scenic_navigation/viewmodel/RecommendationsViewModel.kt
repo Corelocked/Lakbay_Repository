@@ -7,7 +7,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.scenic_navigation.models.Poi
 import com.example.scenic_navigation.ml.PoiReranker
-import com.example.scenic_navigation.services.WebSearchService
 import kotlinx.coroutines.launch
 import org.osmdroid.util.GeoPoint
 import java.io.BufferedReader
@@ -15,7 +14,6 @@ import java.io.InputStreamReader
 
 class RecommendationsViewModel(application: Application) : AndroidViewModel(application) {
     private val poiReranker = PoiReranker(application.applicationContext)
-    private val webSearchService = WebSearchService()
 
     private val _isLoading = MutableLiveData<Boolean>(false)
     val isLoading: LiveData<Boolean> = _isLoading
@@ -72,17 +70,6 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
                 }
                 reader.close()
                 inputStream.close()
-
-                // Enhance descriptions with Wikipedia if empty
-                for (i in allPois.indices) {
-                    val poi = allPois[i]
-                    if (poi.description.isBlank()) {
-                        val wikiDesc = webSearchService.getDescriptionForPoi(poi.name)
-                        if (wikiDesc != null) {
-                            allPois[i] = poi.copy(description = wikiDesc)
-                        }
-                    }
-                }
 
                 // Remove duplicates based on name and location
                 val uniquePois = allPois.distinctBy {

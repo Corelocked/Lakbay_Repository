@@ -1,0 +1,119 @@
+<resources>
+    <string name="app_name">Lakbay</string>
+    <string name="google_places_api_key">YOUR_GOOGLE_PLACES_API_KEY</string>
+    <string name="start_hint">Punto ng simula</string>
+    <string name="destination_hint">Patutunguhan</string>
+    <string name="use_current_location">Gamitin ang kasalukuyang lokasyon</string>
+    <string name="plan_trip">I-plano ang biyahe</string>
+    <string name="recommendations_label">Mga Rekomendasyon</string>
+
+    <!-- Strings used by MainActivity -->
+    <string name="current_location">Kasalukuyang lokasyon</string>
+    <string name="current_location_fmt">Kasalukuyang lokasyon (%1$.6f, %2$.6f)</string>
+    <string name="enter_destination">Pakilagay ang patutunguhan</string>
+    <string name="please_enter_start">Pakilagay ang punto ng simula</string>
+    <string name="could_not_calculate_route">Hindi makalkula ang ruta</string>
+    <string name="planning_your_scenic_route">Pinaplano ang iyong magandang ruta...</string>
+    <string name="navigate_to">Mag-navigate sa %1$s</string>
+    <string name="icon_for">Icon para sa %1$s, kategorya %2$s</string>
+    <string name="poi_card_desc">%1$s, %2$s</string>
+    <string name="scenic_icon_for">Magandang icon para sa %1$s</string>
+    <string name="geocoding_status">Kinakalkula ang lokasyon...</string>
+    <string name="routing_status">Kinakalkula ang ruta...</string>
+    <string name="finding_pois_status">Naghahanap ng magagandang lugar...</string>
+    <string name="location_permission_denied">Tinanggihan ang pahintulot sa lokasyon; gagamitin ang manual na input</string>
+    <string name="cancel">Kanselahin</string>
+    <string name="geocode_cancelled">Kinansela ang geocoding</string>
+    <string name="select_start_title">Piliin ang punto ng simula</string>
+    <string name="select_destination_title">Piliin ang patutunguhan</string>
+
+    <!-- POI item placeholders -->
+    <string name="poi_name_placeholder">Pangalan ng POI</string>
+    <string name="poi_category_placeholder">Kategorya</string>
+    <string name="poi_icon_desc">Icon ng POI</string>
+    <string name="view_details">Tingnan ang detalye</string>
+
+    <!-- Bottom sheet -->
+    <string name="recommendations_along_route">Mga Rekomendasyon Sa Ruta</string>
+    <string name="no_recommendations">Walang rekomendasyon na available pa. Magplano ng ruta para makita ang mga mungkahi.</string>
+
+    <!-- Layout strings -->
+    <string name="osm_copyright">© OpenStreetMap contributors</string>
+    <string name="plan_your_journey">I-plano ang Iyong Paglalakbay</string>
+    <string name="settings_emoji">⚙</string>
+    <string name="dropdown_emoji">▼</string>
+    <string name="advanced_options">⚙️ Mga Advanced na Opsyon</string>
+    <string name="coastal_settings">🌊 Mga Coastal na Setting</string>
+    <string name="force_coastal_set">Pilitin ang coastal set</string>
+    <string name="subtypes_optional">🏷️ Mga Subtype (opsyonal)</string>
+    <string name="lakeside">🏞️ Tabi ng Lawa</string>
+    <string name="forest">🌲 Gubat</string>
+    <string name="hiking">🥾 Hiking</string>
+    <string name="adventure">🎒 Adventure</string>
+    <string name="relax">😌 Mag-relax</string>
+    <string name="planning_route">Pinaplano ang ruta...</string>
+    <string name="scenic_destinations">Mga Scenic na Destinasyon</string>
+    <string name="discover_description">✨ Tuklasin ang magagandang lugar para sa iyong susunod na adventure</string>
+    <string name="filter_by_category">🔍 I-filter ayon sa Kategorya</string>
+    <string name="dash_separator">--</string>
+    <string name="go_button">Pumunta</string>
+
+    <!-- Layout hints -->
+    <string name="seeing_hint">Ano ang gusto mong makita?</string>
+    <string name="activity_hint">Ano ang gusto mong gawin?</string>
+
+    <!-- POI Detail Bottom Sheet -->
+    <string name="poi_title_placeholder">Pamagat ng POI</string>
+    <string name="poi_description_placeholder">Maikling paglalarawan ng POI ay narito...</string>
+    <string name="navigate_button">Mag-navigate</string>
+    <string name="save_button">I-save</string>
+
+    <!-- Login/Signup -->
+    <string name="log_in">Mag-log In</string>
+    <string name="no_account_signup">Walang Account? Mag-sign up dito</string>
+    <string name="sign_up">Mag-sign Up</string>
+    <string name="already_have_account">May account na? Mag-log in</string>
+
+    <!-- Favorites -->
+    <string name="your_favorites">⭐ Iyong Mga Paborito</string>
+    <string name="favorites_description">Mga lugar na iyong nai-save para sa ibang pagkakataon</string>
+    <string name="star_emoji">⭐</string>
+    <string name="no_favorites_yet">Walang paborito pa</string>
+    <string name="save_places_description">I-save ang mga lugar para bisitahin sa ibang pagkakataon</string>
+
+    <!-- Recommendations Filter Chips -->
+    <string name="all_filter">Lahat</string>
+    <string name="scenic_filter">🏞️ Scenic</string>
+    <string name="coastal_filter">🌊 Coastal</string>
+    <string name="mountain_filter">⛰️ Bundok</string>
+    <string name="historic_filter">🏛️ Makasaysayan</string>
+    <string name="food_filter">🍽️ Pagkain</string>
+    <string name="nature_filter">🌳 Kalikasan</string>
+    <string name="maximum_distance">📍 Pinakamalaking Distansya</string>
+    <string name="sort_by">📊 Ayusin Ayon sa</string>
+    <string name="distance_sort">Distansya</string>
+    <string name="scenic_score_sort">Scenic Score</string>
+    <string name="name_sort">Pangalan</string>
+    <string name="no_recommendations_yet">Walang rekomendasyon pa</string>
+    <string name="plan_route_message">Magplano ng ruta para makita ang mga scenic na destinasyon</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_route">Ruta</string>
+    <string name="nav_favorites">Mga Paborito</string>
+    <string name="nav_sign_out">Mag-sign Out</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Mga Setting</string>
+    <string name="cluster_eps_title">Cluster EPS (metro)</string>
+    <string name="cluster_eps_dialog_title">Cluster EPS (metro)</string>
+    <string name="min_points_title">Pinakamababang puntos bawat cluster</string>
+    <string name="min_points_dialog_title">Pinakamababang puntos bawat cluster</string>
+    <string name="reset_defaults_title">Ibalik sa default</string>
+    <string name="reset_defaults_summary">Ibalik ang mga default na halaga</string>
+    <string name="prefer_coastal_title">Paboran ang coastal sets para sa mahahabang oceanic trips</string>
+    <string name="prefer_coastal_summary">Kapag naka-enable, ang mahahabang oceanic routes ay paboran ang built-in coastal waypoint sets.</string>
+    <string name="map_style_title">Estilo ng Mapa</string>
+    <string name="map_style_summary">Piliin ang estilo ng map tile</string>
+    <string name="language_title">Wika</string>
+    <string name="language_summary">Piliin ang wika ng app</string>
+</resources>
