@@ -73,6 +73,13 @@ class RouteFragment : Fragment(), SensorEventListener {
     private var rotationVectorSensor: Sensor? = null
     private var azimuth: Float = 0f
 
+    // Auto-follow tracking
+    private var lastUserInteractionTime = 0L
+    private val autoFollowDelayMs = 5000L // 5 seconds
+    private var isUserControllingMap = false
+    private val autoFollowHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var autoFollowRunnable: Runnable? = null
+
     // Firestore helper
     private val firestoreRepo = FirestoreRepository()
 
@@ -95,6 +102,7 @@ class RouteFragment : Fragment(), SensorEventListener {
         rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
 
         setupMap()
+        setupMapInteractionListener()
         setupInputs()
         setupCollapseButton()
         setupSettingsButton()
@@ -164,6 +172,31 @@ class RouteFragment : Fragment(), SensorEventListener {
             setMultiTouchControls(true)
             controller.setZoom(15.0)
             controller.setCenter(GeoPoint(14.5995, 120.9842))
+        }
+    }
+
+    private fun setupMapInteractionListener() {
+        binding.map.setOnTouchListener { _, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN,
+                android.view.MotionEvent.ACTION_MOVE -> {
+                    // User is interacting with map
+                    isUserControllingMap = true
+                    lastUserInteractionTime = System.currentTimeMillis()
+
+                    // Cancel any pending auto-follow restoration
+                    autoFollowRunnable?.let { autoFollowHandler.removeCallbacks(it) }
+
+                    // Schedule auto-follow restoration after delay
+                    autoFollowRunnable = Runnable {
+                        if (System.currentTimeMillis() - lastUserInteractionTime >= autoFollowDelayMs) {
+                            isUserControllingMap = false
+                        }
+                    }
+                    autoFollowHandler.postDelayed(autoFollowRunnable!!, autoFollowDelayMs)
+                }
+            }
+            false // Don't consume the event
         }
     }
 
@@ -500,10 +533,11 @@ class RouteFragment : Fragment(), SensorEventListener {
         // Update route visualization to show traveled vs remaining path
         updateRouteVisualization(userPosition)
 
-        // Center map on user location smoothly only if auto-recenter is enabled
-        if (sharedViewModel.autoRecenter.value == true) {
+        // Only auto-follow if user hasn't manually moved the map recently
+        if (!isUserControllingMap) {
             binding.map.controller.animateTo(userPosition)
         }
+
         binding.map.invalidate()
     }
 
@@ -945,6 +979,9 @@ class RouteFragment : Fragment(), SensorEventListener {
     override fun onDestroyView() {
         super.onDestroyView()
         stopLocationTracking()
+
+        // Clean up auto-follow handler
+        autoFollowRunnable?.let { autoFollowHandler.removeCallbacks(it) }
 
         // Clean up autocomplete adapters
         if (::startPlaceAdapter.isInitialized) {
