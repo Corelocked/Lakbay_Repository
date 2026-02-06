@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Circle background -->
+    <path
+        android:fillColor="#E91E63"
+        android:pathData="M12,2 A10,10 0 1,1 12,22 A10,10 0 1,1 12,2 Z"/>
+
+    <!-- Inner circle background -->
+    <path
+        android:fillColor="#FCE4EC"
+        android:pathData="M12,4 A8,8 0 1,1 12,20 A8,8 0 1,1 12,4 Z"/>
+
+    <!-- Theater mask - happy face (right) -->
+    <path
+        android:fillColor="#C2185B"
+        android:pathData="M14,8.5 A2.5,3.5 0 1,1 14,15.5 A2.5,3.5 0 1,1 14,8.5 Z"/>
+
+    <!-- Theater mask - sad face (left) -->
+    <path
+        android:fillColor="#AD1457"
+        android:pathData="M10,8.5 A2.5,3.5 0 1,1 10,15.5 A2.5,3.5 0 1,1 10,8.5 Z"/>
+
+    <!-- Happy mask details - eyes -->
+    <path
+        android:fillColor="#880E4F"
+        android:pathData="M13.3,11 A0.4,0.4 0 1,1 13.3,11.8 A0.4,0.4 0 1,1 13.3,11 Z"/>
+    <path
+        android:fillColor="#880E4F"
+        android:pathData="M14.7,11 A0.4,0.4 0 1,1 14.7,11.8 A0.4,0.4 0 1,1 14.7,11 Z"/>
+
+    <!-- Happy mask - smile -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M13,13 Q14,14 15,13"
+        android:strokeWidth="0.5"
+        android:strokeColor="#880E4F" />
+
+    <!-- Sad mask details - eyes -->
+    <path
+        android:fillColor="#880E4F"
+        android:pathData="M9.3,11 A0.4,0.4 0 1,1 9.3,11.8 A0.4,0.4 0 1,1 9.3,11 Z"/>
+    <path
+        android:fillColor="#880E4F"
+        android:pathData="M10.7,11 A0.4,0.4 0 1,1 10.7,11.8 A0.4,0.4 0 1,1 10.7,11 Z"/>
+
+    <!-- Sad mask - frown -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M9,14 Q10,13 11,14"
+        android:strokeWidth="0.5"
+        android:strokeColor="#880E4F" />
+
+    <!-- Mask highlights -->
+    <path
+        android:fillColor="#F8BBD0"
+        android:pathData="M9.5,9.5 A0.5,0.5 0 1,1 9.5,10.5 A0.5,0.5 0 1,1 9.5,9.5 Z"/>
+    <path
+        android:fillColor="#F8BBD0"
+        android:pathData="M13.5,9.5 A0.5,0.5 0 1,1 13.5,10.5 A0.5,0.5 0 1,1 13.5,9.5 Z"/>
+
+</vector>
