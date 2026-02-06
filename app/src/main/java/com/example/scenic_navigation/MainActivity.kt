@@ -84,10 +84,18 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_sign_out -> {
-                    auth.signOut()
-                    val intent = Intent(this, LoginActivity::class.java)
-                    startActivity(intent)
-                    finish()
+                    // Confirm before signing out
+                    androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setTitle("Sign out")
+                        .setMessage("Are you sure you want to sign out?")
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .setPositiveButton(android.R.string.ok) { _, _ ->
+                            auth.signOut()
+                            val intent = Intent(this, LoginActivity::class.java)
+                            startActivity(intent)
+                            finish()
+                        }
+                        .show()
                     true
                 }
                 else -> false

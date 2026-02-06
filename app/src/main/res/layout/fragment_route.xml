@@ -148,20 +148,21 @@
                     app:hintTextColor="@color/black"
                     android:layout_marginBottom="16dp">
 
-                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                            android:id="@+id/et_destination"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            style="@style/Widget.App.AutoCompleteTextView.Popup"
-                            android:inputType="textPostalAddress"
-                            android:textSize="15sp"
-                            android:completionThreshold="2"
-                            android:dropDownHeight="wrap_content"
-                            android:maxLines="1"
-                            android:autofillHints="postalAddress" />
+                <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                        android:id="@+id/et_destination"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        style="@style/Widget.App.AutoCompleteTextView.Popup"
+                        android:inputType="textPostalAddress"
+                        android:textSize="15sp"
+                        android:completionThreshold="2"
+                        android:dropDownHeight="wrap_content"
+                        android:maxLines="1"
+                        android:autofillHints="postalAddress" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_seeing"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -185,6 +186,7 @@
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_activity"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -479,5 +481,30 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
     </FrameLayout>
+
+    <!-- Center / follow user button (shown when user pans the map) -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btn_center"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_margin="16dp"
+        android:layout_gravity="bottom|end"
+        android:visibility="gone"
+        android:contentDescription="@string/center_on_user"
+        android:src="@android:drawable/ic_menu_mylocation"
+        app:backgroundTint="@color/primary" />
+
+    <!-- End Route button: appears above the center button so it doesn't overlap -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btn_end_route"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="88dp"
+        android:layout_gravity="bottom|end"
+        android:contentDescription="End route"
+        android:src="@android:drawable/ic_menu_close_clear_cancel"
+        app:backgroundTint="@color/lakbay_red"
+        app:tint="@color/white" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
