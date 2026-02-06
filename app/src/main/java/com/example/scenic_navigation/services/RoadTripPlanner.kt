@@ -8,6 +8,9 @@ import com.example.scenic_navigation.utils.GeoUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.osmdroid.util.GeoPoint
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONObject
 
 /**
  * Service for planning optimal road trips with multiple waypoints
@@ -34,7 +37,7 @@ class RoadTripPlanner(
         onStatusUpdate?.invoke("Planning optimal road trip...")
 
         // Step 1: Filter POIs that are reasonable detours
-        val directRoute = routingService.fetchRoute(start, destination, packageName)
+        // val directRoute = routingService.fetchRoute(start, destination, packageName)
 
         val candidateWaypoints = interestingPois
             .filter { poi ->
@@ -73,7 +76,7 @@ class RoadTripPlanner(
             val to = allWaypoints[i + 1]
 
             val segmentRoute = if (preferScenicRoutes) {
-                val alternatives = routingService.fetchRouteAlternatives(from.geoPoint, to.geoPoint, packageName)
+                val alternatives = fetchRouteAlternativesLocal(from.geoPoint, to.geoPoint, packageName)
                 if (alternatives.isNotEmpty()) {
                     val result = scenicRoutePlanner.selectMostScenicRoute(alternatives, packageName)
                     val bestRoute = result.first
@@ -225,6 +228,42 @@ class RoadTripPlanner(
                 )
                 distance <= 2000.0
             }
+        }
+    }
+
+    private suspend fun fetchRouteAlternativesLocal(start: GeoPoint, destination: GeoPoint, packageName: String): List<List<GeoPoint>> = withContext(Dispatchers.IO) {
+        val client = OkHttpClient()
+        val url = "https://router.project-osrm.org/route/v1/driving/" +
+                "${start.longitude},${start.latitude};${destination.longitude},${destination.latitude}" +
+                "?overview=full&geometries=geojson&alternatives=true"
+
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", packageName)
+            .header("Accept", "application/json")
+            .build()
+
+        try {
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) return@withContext emptyList()
+            val body = response.body?.string() ?: return@withContext emptyList()
+            val json = JSONObject(body)
+            val routes = json.optJSONArray("routes") ?: return@withContext emptyList()
+            val alternatives = mutableListOf<List<GeoPoint>>()
+            for (i in 0 until routes.length()) {
+                val routeObj = routes.getJSONObject(i)
+                val geometry = routeObj.optJSONObject("geometry") ?: continue
+                val coords = geometry.optJSONArray("coordinates") ?: continue
+                val routePoints = mutableListOf<GeoPoint>()
+                for (j in 0 until coords.length()) {
+                    val pt = coords.getJSONArray(j)
+                    routePoints.add(GeoPoint(pt.getDouble(1), pt.getDouble(0)))
+                }
+                alternatives.add(routePoints)
+            }
+            return@withContext alternatives
+        } catch (e: Exception) {
+            return@withContext emptyList()
         }
     }
 }
