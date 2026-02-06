@@ -30,6 +30,8 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.util.MapTileIndex
+import android.util.Log
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -44,6 +46,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
+import java.net.HttpURLConnection
+import java.net.URL
 
 class RouteFragment : Fragment(), SensorEventListener {
     private var _binding: FragmentRouteBinding? = null
@@ -154,11 +158,11 @@ class RouteFragment : Fragment(), SensorEventListener {
             "Topo" -> TileSourceFactory.USGS_TOPO
             else -> TileSourceFactory.MAPNIK
         }
+        // Apply tile source first (so osmdroid has something while we probe availability).
         binding.map.apply {
             setTileSource(tileSource)
             setMultiTouchControls(true)
-            controller.setZoom(15.0)  // Increased from 13.0 for larger street text visibility
-            // Set default location (Philippines)
+            controller.setZoom(15.0)
             controller.setCenter(GeoPoint(14.5995, 120.9842))
         }
     }
@@ -560,7 +564,7 @@ class RouteFragment : Fragment(), SensorEventListener {
     }
 
     private fun updateRoute(points: List<GeoPoint>) {
-        // Clear previous route overlays
+        // Clear previous overlays
         routePolyline?.let { binding.map.overlays.remove(it) }
         traveledPolyline?.let { binding.map.overlays.remove(it) }
         startMarker?.let { binding.map.overlays.remove(it) }

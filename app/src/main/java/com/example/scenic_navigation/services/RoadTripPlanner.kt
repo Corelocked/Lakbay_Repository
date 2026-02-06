@@ -144,6 +144,9 @@ class RoadTripPlanner(
         repeat(maxWaypoints.coerceAtMost(candidates.size)) {
             if (remaining.isEmpty()) return@repeat
 
+            // Build a small map of counts per category among already selected to promote diversity
+            val selectedCounts = selected.groupingBy { it.category }.eachCount().withDefault { 0 }
+
             val nextWaypoint = remaining.maxByOrNull { waypoint ->
                 val distance = GeoUtils.haversine(
                     currentPoint.latitude, currentPoint.longitude,
@@ -151,7 +154,18 @@ class RoadTripPlanner(
                 )
                 val distanceScore = 1.0 / (distance / 1000.0 + 1.0)
                 val priorityScore = waypoint.priority.toDouble()
-                (priorityScore * 0.7) + (distanceScore * 0.3)
+
+                // Diversity factor penalizes categories already chosen more than once
+                val categoryKey = waypoint.category
+                val alreadyChosen = selectedCounts.getValue(categoryKey)
+                val diversityFactor = 1.0 / (1.0 + alreadyChosen)
+
+                // Slightly favor non-optional (higher confidence) POIs
+                val optionalBoost = if (waypoint.isOptional) 0.0 else 0.1
+
+                // Rebalance weights so priority still matters but distance and diversity play a role
+                val rawScore = (priorityScore * 0.6) + (distanceScore * 0.35)
+                (rawScore * diversityFactor) + optionalBoost
             }
 
             if (nextWaypoint != null) {
@@ -262,7 +276,7 @@ class RoadTripPlanner(
                 alternatives.add(routePoints)
             }
             return@withContext alternatives
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return@withContext emptyList()
         }
     }
