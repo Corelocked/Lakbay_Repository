@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Circle background -->
+    <path
+        android:fillColor="#9C27B0"
+        android:pathData="M12,2 A10,10 0 1,1 12,22 A10,10 0 1,1 12,2 Z"/>
+
+    <!-- Inner circle background -->
+    <path
+        android:fillColor="#F3E5F5"
+        android:pathData="M12,4 A8,8 0 1,1 12,20 A8,8 0 1,1 12,4 Z"/>
+
+    <!-- Binoculars - left lens -->
+    <path
+        android:fillColor="#7B1FA2"
+        android:pathData="M8.5,9 A2,2.5 0 1,1 8.5,14 A2,2.5 0 1,1 8.5,9 Z"/>
+
+    <!-- Binoculars - right lens -->
+    <path
+        android:fillColor="#7B1FA2"
+        android:pathData="M15.5,9 A2,2.5 0 1,1 15.5,14 A2,2.5 0 1,1 15.5,9 Z"/>
+
+    <!-- Binoculars - bridge connecting lenses -->
+    <path
+        android:fillColor="#6A1B9A"
+        android:pathData="M10.5,11 L13.5,11 L13.5,12 L10.5,12 Z"/>
+
+    <!-- Left lens inner circle -->
+    <path
+        android:fillColor="#E1BEE7"
+        android:pathData="M8.5,10 A1,1.5 0 1,1 8.5,13 A1,1.5 0 1,1 8.5,10 Z"/>
+
+    <!-- Right lens inner circle -->
+    <path
+        android:fillColor="#E1BEE7"
+        android:pathData="M15.5,10 A1,1.5 0 1,1 15.5,13 A1,1.5 0 1,1 15.5,10 Z"/>
+
+    <!-- Highlights on lenses -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M8,10.5 A0.5,0.7 0 1,1 8,11.9 A0.5,0.7 0 1,1 8,10.5 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M15,10.5 A0.5,0.7 0 1,1 15,11.9 A0.5,0.7 0 1,1 15,10.5 Z"/>
+
+</vector>

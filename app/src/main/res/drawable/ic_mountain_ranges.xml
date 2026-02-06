@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Circle background -->
+    <path
+        android:fillColor="#795548"
+        android:pathData="M12,2 A10,10 0 1,1 12,22 A10,10 0 1,1 12,2 Z"/>
+
+    <!-- Inner circle background -->
+    <path
+        android:fillColor="#EFEBE9"
+        android:pathData="M12,4 A8,8 0 1,1 12,20 A8,8 0 1,1 12,4 Z"/>
+
+    <!-- Back mountain - largest -->
+    <path
+        android:fillColor="#8D6E63"
+        android:pathData="M6,17 L10,9 L14,17 Z"/>
+
+    <!-- Middle mountain -->
+    <path
+        android:fillColor="#6D4C41"
+        android:pathData="M10,17 L14,10 L18,17 Z"/>
+
+    <!-- Front mountain - smallest -->
+    <path
+        android:fillColor="#5D4037"
+        android:pathData="M8,17 L12,12 L16,17 Z"/>
+
+    <!-- Snow caps on peaks -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M10,9 L10.8,10.5 L9.2,10.5 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M14,10 L14.8,11.5 L13.2,11.5 Z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,12 L12.6,13 L11.4,13 Z"/>
+
+</vector>

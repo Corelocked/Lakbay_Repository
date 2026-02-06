@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Circle background -->
+    <path
+        android:fillColor="#FF5722"
+        android:pathData="M12,2 A10,10 0 1,1 12,22 A10,10 0 1,1 12,2 Z"/>
+
+    <!-- Inner circle background -->
+    <path
+        android:fillColor="#FBE9E7"
+        android:pathData="M12,4 A8,8 0 1,1 12,20 A8,8 0 1,1 12,4 Z"/>
+
+    <!-- Plate -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,10 A4,4 0 1,1 12,18 A4,4 0 1,1 12,10 Z"
+        android:strokeWidth="0.5"
+        android:strokeColor="#E64A19"/>
+
+    <!-- Fork - left side -->
+    <path
+        android:fillColor="#D84315"
+        android:pathData="M8.5,7 L8.5,11.5 L9,11.5 L9,7 Z"/>
+    <path
+        android:fillColor="#D84315"
+        android:pathData="M7.8,7 L7.8,9.5 M8.5,7 L8.5,9.5 M9.2,7 L9.2,9.5"
+        android:strokeWidth="0.4"
+        android:strokeColor="#D84315"/>
+
+    <!-- Knife - right side -->
+    <path
+        android:fillColor="#D84315"
+        android:pathData="M15.5,7 L15.5,11.5 L15,11.5 L15,7 Z"/>
+    <path
+        android:fillColor="#BF360C"
+        android:pathData="M14.8,7 L15.7,7 L15.7,8.5 L14.8,8.5 Z"/>
+
+    <!-- Food on plate - simplified -->
+    <path
+        android:fillColor="#FF7043"
+        android:pathData="M12,12 A1.5,1.5 0 1,1 12,15 A1.5,1.5 0 1,1 12,12 Z"/>
+    <path
+        android:fillColor="#FF8A65"
+        android:pathData="M10.5,13 A0.8,0.8 0 1,1 10.5,14.6 A0.8,0.8 0 1,1 10.5,13 Z"/>
+    <path
+        android:fillColor="#FF8A65"
+        android:pathData="M13.5,13 A0.8,0.8 0 1,1 13.5,14.6 A0.8,0.8 0 1,1 13.5,13 Z"/>
+
+</vector>
