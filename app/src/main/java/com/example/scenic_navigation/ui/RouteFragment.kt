@@ -197,12 +197,38 @@ class RouteFragment : Fragment(), SensorEventListener {
             binding.tilDestination.error = null
         }
 
-        // Setup dropdowns
-        val seeingAdapter = ArrayAdapter.createFromResource(requireContext(), R.array.seeing_options, android.R.layout.simple_dropdown_item_1line)
+        // Setup dropdowns with icons using localized strings
+        val seeingStrings = resources.getStringArray(R.array.seeing_options)
+        val seeingItems = listOf(
+            IconItem(seeingStrings[0], R.drawable.ic_oceanic_view),
+            IconItem(seeingStrings[1], R.drawable.ic_mountain_ranges)
+        )
+        val seeingAdapter = IconArrayAdapter(requireContext(), seeingItems)
         binding.actvSeeing.setAdapter(seeingAdapter)
 
-        val activityAdapter = ArrayAdapter.createFromResource(requireContext(), R.array.activity_options, android.R.layout.simple_dropdown_item_1line)
+        val activityStrings = resources.getStringArray(R.array.activity_options)
+        val activityItems = listOf(
+            IconItem(activityStrings[0], R.drawable.ic_sight_seeing),
+            IconItem(activityStrings[1], R.drawable.ic_shop_and_dine),
+            IconItem(activityStrings[2], R.drawable.ic_cultural_activities),
+            IconItem(activityStrings[3], R.drawable.ic_adventure_hiking),
+            IconItem(activityStrings[4], R.drawable.ic_relaxation_wellness),
+            IconItem(activityStrings[5], R.drawable.ic_family_friendly),
+            IconItem(activityStrings[6], R.drawable.ic_romantic_getaway)
+        )
+        val activityAdapter = IconArrayAdapter(requireContext(), activityItems)
         binding.actvActivity.setAdapter(activityAdapter)
+
+        // Handle item clicks to display text properly
+        binding.actvSeeing.setOnItemClickListener { parent, _, position, _ ->
+            val selectedItem = seeingAdapter.getItem(position)
+            binding.actvSeeing.setText(selectedItem?.text, false)
+        }
+
+        binding.actvActivity.setOnItemClickListener { parent, _, position, _ ->
+            val selectedItem = activityAdapter.getItem(position)
+            binding.actvActivity.setText(selectedItem?.text, false)
+        }
 
 
         // Plan route button click
@@ -216,20 +242,24 @@ class RouteFragment : Fragment(), SensorEventListener {
             val seeingString = binding.actvSeeing.text.toString()
             val activityString = binding.actvActivity.text.toString()
 
+            // Get localized strings for comparison
+            val seeingStrings = resources.getStringArray(R.array.seeing_options)
+            val activityStrings = resources.getStringArray(R.array.activity_options)
+
             val seeing = when (seeingString) {
-                "🌊 Oceanic View" -> SeeingType.OCEANIC
-                "⛰️ Mountain Ranges" -> SeeingType.MOUNTAIN
+                seeingStrings[0] -> SeeingType.OCEANIC  // Oceanic View / Tanawin ng Karagatan
+                seeingStrings[1] -> SeeingType.MOUNTAIN  // Mountain Ranges / Mga Bundok
                 else -> SeeingType.OCEANIC // Default value
             }
 
             val activity = when (activityString) {
-                "👀 Sight seeing" -> ActivityType.SIGHTSEEING
-                "🍽️ Shop and Dine" -> ActivityType.SHOP_AND_DINE
-                "🎭 Cultural activities" -> ActivityType.CULTURAL
-                "🏔️ Adventure & Hiking" -> ActivityType.ADVENTURE
-                "🧘 Relaxation & Wellness" -> ActivityType.RELAXATION
-                "👨‍👩‍👧‍👦 Family Friendly" -> ActivityType.FAMILY_FRIENDLY
-                "💕 Romantic Getaway" -> ActivityType.ROMANTIC
+                activityStrings[0] -> ActivityType.SIGHTSEEING  // Sight seeing / Paglilibot
+                activityStrings[1] -> ActivityType.SHOP_AND_DINE  // Shop and Dine / Pamimili at Pagkain
+                activityStrings[2] -> ActivityType.CULTURAL  // Cultural activities / Mga Aktibidad sa Kultura
+                activityStrings[3] -> ActivityType.ADVENTURE  // Adventure & Hiking
+                activityStrings[4] -> ActivityType.RELAXATION  // Relaxation & Wellness / Pamamahinga at Wellness
+                activityStrings[5] -> ActivityType.FAMILY_FRIENDLY  // Family Friendly / Pamilya
+                activityStrings[6] -> ActivityType.ROMANTIC  // Romantic Getaway / Romantic na Getaway
                 else -> ActivityType.SIGHTSEEING // Default value
             }
 
@@ -984,22 +1014,27 @@ class RouteFragment : Fragment(), SensorEventListener {
                     if (it.destinationQuery.isNotBlank()) {
                         binding.etDestination.setText(it.destinationQuery)
                     }
+
+                    // Get localized strings
+                    val seeingStrings = resources.getStringArray(R.array.seeing_options)
+                    val activityStrings = resources.getStringArray(R.array.activity_options)
+
                     binding.actvSeeing.setText(
                         when (it.seeing) {
-                            SeeingType.OCEANIC -> "🌊 Oceanic View"
-                            SeeingType.MOUNTAIN -> "⛰️ Mountain Ranges"
+                            SeeingType.OCEANIC -> seeingStrings[0]  // Oceanic View / Tanawin ng Karagatan
+                            SeeingType.MOUNTAIN -> seeingStrings[1]  // Mountain Ranges / Mga Bundok
                         },
                         false
                     )
                     binding.actvActivity.setText(
                         when (it.activity) {
-                            ActivityType.SIGHTSEEING -> "👀 Sight seeing"
-                            ActivityType.SHOP_AND_DINE -> "🍽️ Shop and Dine"
-                            ActivityType.CULTURAL -> "🎭 Cultural activities"
-                            ActivityType.ADVENTURE -> "🏔️ Adventure & Hiking"
-                            ActivityType.RELAXATION -> "🧘 Relaxation & Wellness"
-                            ActivityType.FAMILY_FRIENDLY -> "👨‍👩‍👧‍👦 Family Friendly"
-                            ActivityType.ROMANTIC -> "💕 Romantic Getaway"
+                            ActivityType.SIGHTSEEING -> activityStrings[0]  // Sight seeing / Paglilibot
+                            ActivityType.SHOP_AND_DINE -> activityStrings[1]  // Shop and Dine / Pamimili at Pagkain
+                            ActivityType.CULTURAL -> activityStrings[2]  // Cultural activities / Mga Aktibidad sa Kultura
+                            ActivityType.ADVENTURE -> activityStrings[3]  // Adventure & Hiking
+                            ActivityType.RELAXATION -> activityStrings[4]  // Relaxation & Wellness / Pamamahinga at Wellness
+                            ActivityType.FAMILY_FRIENDLY -> activityStrings[5]  // Family Friendly / Pamilya
+                            ActivityType.ROMANTIC -> activityStrings[6]  // Romantic Getaway / Romantic na Getaway
                         },
                         false
                     )
