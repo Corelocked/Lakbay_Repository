@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Circle background -->
+    <path
+        android:fillColor="#03A9F4"
+        android:pathData="M12,2 A10,10 0 1,1 12,22 A10,10 0 1,1 12,2 Z"/>
+
+    <!-- Inner circle background -->
+    <path
+        android:fillColor="#E1F5FE"
+        android:pathData="M12,4 A8,8 0 1,1 12,20 A8,8 0 1,1 12,4 Z"/>
+
+    <!-- Ocean waves - bottom wave -->
+    <path
+        android:fillColor="#039BE5"
+        android:pathData="M6,14 Q8,12 10,14 T14,14 Q16,12 18,14 L18,18 L6,18 Z"/>
+
+    <!-- Ocean waves - middle wave -->
+    <path
+        android:fillColor="#0288D1"
+        android:pathData="M6,12 Q8,10.5 10,12 T14,12 Q16,10.5 18,12 L18,14 L6,14 Z"/>
+
+    <!-- Sun/sky element -->
+    <path
+        android:fillColor="#FFA726"
+        android:pathData="M12,7 A2,2 0 1,1 12,11 A2,2 0 1,1 12,7 Z"/>
+
+    <!-- Sun rays -->
+    <path
+        android:fillColor="#FFA726"
+        android:pathData="M12,5.5 L12,6.2 M12,11.8 L12,12.5 M14.5,7 L14.1,7.4 M9.9,10.6 L9.5,11 M14.5,11 L14.1,10.6 M9.9,7.4 L9.5,7"
+        android:strokeWidth="0.5"
+        android:strokeColor="#FFA726"/>
+
+</vector>
