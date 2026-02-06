@@ -83,6 +83,30 @@ class RouteFragment : Fragment(), SensorEventListener {
     // Firestore helper
     private val firestoreRepo = FirestoreRepository()
 
+    // Permission request launcher
+    private val locationPermissionLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineLocationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val coarseLocationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+
+        if (fineLocationGranted || coarseLocationGranted) {
+            // Permission granted, start location tracking if route exists
+            if (viewModel.routePoints.value?.isNotEmpty() == true && !isNavigating) {
+                startLocationTracking()
+            }
+        } else {
+            // Permission denied, show explanation
+            Snackbar.make(
+                binding.root,
+                "Location permission is required for navigation features",
+                Snackbar.LENGTH_LONG
+            ).setAction("Grant") {
+                requestLocationPermission()
+            }.show()
+        }
+    }
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -109,6 +133,9 @@ class RouteFragment : Fragment(), SensorEventListener {
         restoreRouteIfAvailable()
         observeViewModel()
         startClusterPolling()
+
+        // Request location permission on app start
+        checkAndRequestLocationPermission()
 
         // Load remote last selection if available and apply to UI
         loadRemoteSelectionIfAvailable()
@@ -170,7 +197,7 @@ class RouteFragment : Fragment(), SensorEventListener {
         binding.map.apply {
             setTileSource(tileSource)
             setMultiTouchControls(true)
-            controller.setZoom(15.0)
+            controller.setZoom(16.0)  // Increased from 15.0 for better street visibility during navigation
             controller.setCenter(GeoPoint(14.5995, 120.9842))
         }
     }
@@ -463,6 +490,11 @@ class RouteFragment : Fragment(), SensorEventListener {
             updateRoute(points)
             // Update shared ViewModel only if both points and POIs are ready
             updateSharedViewModelIfReady()
+
+            // Auto-collapse input menu when route is successfully generated
+            if (points.isNotEmpty() && !isInputCollapsed) {
+                toggleInputCollapse()
+            }
         }
 
         // Observe route POIs
@@ -542,7 +574,7 @@ class RouteFragment : Fragment(), SensorEventListener {
     }
 
     /**
-     * Update route visualization to show traveled path in darker blue
+     * Update route visualization to show traveled path in dark gray
      */
     private fun updateRouteVisualization(userPosition: GeoPoint) {
         val routePoints = viewModel.routePoints.value ?: return
@@ -558,12 +590,12 @@ class RouteFragment : Fragment(), SensorEventListener {
         // Clear previous traveled polyline
         traveledPolyline?.let { binding.map.overlays.remove(it) }
 
-        // Draw traveled path in darker blue
+        // Draw traveled path in dark gray instead of dark blue
         if (traveledPoints.size >= 2) {
             traveledPolyline = Polyline().apply {
                 setPoints(traveledPoints)
-                outlinePaint.color = android.graphics.Color.parseColor("#0D47A1") // Darker blue
-                outlinePaint.strokeWidth = 14.0f // Slightly thicker
+                outlinePaint.color = android.graphics.Color.parseColor("#424242") // Dark gray
+                outlinePaint.strokeWidth = 12.0f  // Match main route thickness
             }
             binding.map.overlays.add(traveledPolyline)
             // Ensure traveled polyline is drawn below the remaining polyline
@@ -632,10 +664,12 @@ class RouteFragment : Fragment(), SensorEventListener {
             }
             binding.map.overlays.add(destinationMarker)
 
-            // Center map on route
-            binding.map.controller.apply {
-                setCenter(points[points.size / 2])
-                setZoom(10.0)
+            // Only center and zoom if not currently navigating (initial route planning)
+            if (!isNavigating) {
+                binding.map.controller.apply {
+                    setCenter(points[points.size / 2])
+                    setZoom(16.0)  // Increased from 10.0 to 16.0
+                }
             }
             binding.map.invalidate()
 
@@ -1005,7 +1039,8 @@ class RouteFragment : Fragment(), SensorEventListener {
 
             // Azimuth is the angle around the Z axis (rotation about the vertical axis)
             azimuth = Math.toDegrees(orientation[0].toDouble()).toFloat()
-            azimuth = (azimuth + 360) % 360
+            // Negate to fix reversed direction
+            azimuth = (-azimuth + 360) % 360
 
             // Update the marker rotation
             currentLocationMarker?.rotation = azimuth
@@ -1080,6 +1115,46 @@ class RouteFragment : Fragment(), SensorEventListener {
                         false
                     )
                 }
+            }
+        }
+    }
+
+    /**
+     * Request location permission from user
+     */
+    private fun requestLocationPermission() {
+        locationPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    }
+
+    /**
+     * Check if location permission is granted, and request if not
+     */
+    private fun checkAndRequestLocationPermission() {
+        when {
+            locationService.hasLocationPermission() -> {
+                // Permission already granted
+                if (viewModel.routePoints.value?.isNotEmpty() == true && !isNavigating) {
+                    startLocationTracking()
+                }
+            }
+            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) -> {
+                // Show rationale before requesting
+                Snackbar.make(
+                    binding.root,
+                    "Location permission is needed to show your position and provide navigation",
+                    Snackbar.LENGTH_LONG
+                ).setAction("Grant") {
+                    requestLocationPermission()
+                }.show()
+            }
+            else -> {
+                // Directly request permission
+                requestLocationPermission()
             }
         }
     }
