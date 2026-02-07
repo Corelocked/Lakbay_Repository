@@ -7,13 +7,14 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.scenic_navigation.models.Poi
 import com.example.scenic_navigation.ml.PoiReranker
+import com.example.scenic_navigation.ml.MlInferenceEngine
 import kotlinx.coroutines.launch
 import org.osmdroid.util.GeoPoint
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
 class RecommendationsViewModel(application: Application) : AndroidViewModel(application) {
-    private val poiReranker = PoiReranker(application.applicationContext)
+    private val poiReranker = PoiReranker(MlInferenceEngine(application.applicationContext, "models/poi_reranker_from_luzon.tflite"))
 
     private val _isLoading = MutableLiveData<Boolean>(false)
     val isLoading: LiveData<Boolean> = _isLoading

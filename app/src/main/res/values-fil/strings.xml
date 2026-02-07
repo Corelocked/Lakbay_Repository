@@ -65,8 +65,17 @@
     <!-- POI Detail Bottom Sheet -->
     <string name="poi_title_placeholder">Pamagat ng POI</string>
     <string name="poi_description_placeholder">Maikling paglalarawan ng POI ay narito...</string>
-    <string name="navigate_button">Mag-navigate</string>
+    <string name="navigate_button">Tignan sa Google Maps</string>
     <string name="save_button">I-save</string>
+    <!-- Added for parity with default locale -->
+    <string name="poi_image_description">Preview na larawan para sa POI</string>
+    <string name="poi_rating_star">Bituin ng rating ng POI</string>
+    <string name="directions">Mga direksyon</string>
+    <string name="save">I-save</string>
+    <string name="nearby">Malapit</string>
+    <string name="send_to_phone">Ipadala sa telepono</string>
+    <string name="share">Ibahagi</string>
+    <string name="center_on_user">I-center sa user</string>
 
     <!-- Login/Signup -->
     <string name="log_in">Mag-log In</string>
