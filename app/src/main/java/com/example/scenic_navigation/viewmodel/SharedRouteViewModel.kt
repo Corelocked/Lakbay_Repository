@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import com.example.scenic_navigation.models.Poi
 import com.example.scenic_navigation.models.Town
 import com.example.scenic_navigation.ml.PoiReranker
+import com.example.scenic_navigation.ml.MlInferenceEngine
 import org.osmdroid.util.GeoPoint
 
 /**
@@ -29,7 +30,7 @@ class SharedRouteViewModel(application: Application) : AndroidViewModel(applicat
     val recommendations: LiveData<List<Poi>> = _recommendations
 
     // ML reranker (lazy initialized)
-    private val poiReranker: PoiReranker by lazy { PoiReranker(getApplication()) }
+    private val poiReranker: PoiReranker by lazy { PoiReranker(MlInferenceEngine(getApplication(), "models/poi_reranker_from_luzon.tflite")) }
 
     // Loading state
     private val _isLoading = MutableLiveData<Boolean>(false)

@@ -24,10 +24,15 @@ object CurationMapper {
                     "nature park",
                     "historical site",
                     "viewpoint",
+                    "tourist attraction",
                     "beach",
                     "coast",
                     "bay",
-                    "cape"
+                    "cape",
+                    "museum",
+                    "restaurant",
+                    "cafe",
+                    "pasalubong store"
                 ))
                 boosts["beach"] = 1.0
                 boosts["coast"] = 0.6
@@ -37,6 +42,9 @@ object CurationMapper {
                 boosts["nature park"] = 0.8
                 boosts["park"] = 0.7
                 boosts["historical site"] = 0.5
+                boosts["tourist attraction"] = 0.6
+                boosts["museum"] = 0.5
+                boosts["restaurant"] = 0.4
             }
             com.example.scenic_navigation.models.SeeingType.MOUNTAIN -> {
                 filters.addAll(listOf(
@@ -46,7 +54,9 @@ object CurationMapper {
                     "volcano",
                     "viewpoint",
                     "waterfall",
-                    "ridge"
+                    "ridge",
+                    "tourist attraction",
+                    "museum"
                 ))
                 boosts["peak"] = 1.0
                 boosts["ridge"] = 0.6
@@ -54,6 +64,7 @@ object CurationMapper {
                 boosts["waterfall"] = 0.4
                 boosts["nature park"] = 0.8
                 boosts["historical site"] = 0.5
+                boosts["museum"] = 0.4
             }
         }
 

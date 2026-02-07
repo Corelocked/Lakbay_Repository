@@ -5,6 +5,7 @@ import android.util.Log
 import com.example.scenic_navigation.models.ScenicPoi
 import com.example.scenic_navigation.utils.GeoUtils
 import com.example.scenic_navigation.ml.PoiReranker
+import com.example.scenic_navigation.ml.MlInferenceEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
@@ -118,7 +119,7 @@ class ScenicRoutePlanner(
 
     // PoiReranker for ML-based POI re-ranking
     private val poiReranker: PoiReranker by lazy {
-        PoiReranker(context!!)
+        PoiReranker(MlInferenceEngine(context!!, "models/poi_reranker_from_luzon.tflite"))
     }
 
     private fun deviceLocaleTag(): String? {
@@ -533,6 +534,8 @@ class ScenicRoutePlanner(
         return pois.sumOf { it.score }.toDouble()
     }
 }
+
+
 
 
 

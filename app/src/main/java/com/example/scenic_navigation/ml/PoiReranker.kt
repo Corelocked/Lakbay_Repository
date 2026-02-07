@@ -4,13 +4,15 @@ import android.content.Context
 import com.example.scenic_navigation.models.Poi
 
 /**
- * Simple POI reranker that uses `MlFeatureExtractor` + `MlInferenceEngine` to score POIs and
+ * Simple POI reranker that uses `MlFeatureExtractor` + an `MlInference` implementation to score POIs and
  * return them sorted by predicted score. This class is intentionally small and synchronous.
  * Consider running it on a background thread when used in the UI.
  */
-class PoiReranker(context: Context) {
+class PoiReranker(private val inference: MlInference) {
+    constructor(context: Context, modelPath: String = "models/poi_reranker_from_luzon.tflite") : this(MlInferenceEngine(context, modelPath))
+
     private val extractor = MlFeatureExtractor()
-    private val engine = MlInferenceEngine(context, "models/poi_reranker.tflite")
+    private val engine = inference
     // Blend factor between ML model score and handcrafted scenic score (0.0 = only scenic, 1.0 = only ML)
     private val ML_BLEND_ALPHA = 0.75f
 
@@ -37,4 +39,3 @@ class PoiReranker(context: Context) {
         engine.close()
     }
 }
-

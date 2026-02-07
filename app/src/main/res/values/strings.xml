@@ -65,8 +65,15 @@
     <!-- POI Detail Bottom Sheet -->
     <string name="poi_title_placeholder">POI Title</string>
     <string name="poi_description_placeholder">Short description of the POI goes here...</string>
-    <string name="navigate_button">Navigate</string>
+    <string name="navigate_button">View on Gooogle Maps</string>
     <string name="save_button">Save</string>
+    <!-- Added strings used by the POI preview header and action icons -->
+    <string name="poi_image_description">Preview image for POI</string>
+    <string name="directions">Directions</string>
+    <string name="save">Save</string>
+    <string name="nearby">Nearby</string>
+    <string name="send_to_phone">Send to phone</string>
+    <string name="share">Share</string>
 
     <!-- Login/Signup -->
     <string name="log_in">Log In</string>
