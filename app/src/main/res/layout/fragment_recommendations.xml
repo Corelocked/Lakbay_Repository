@@ -4,360 +4,357 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background">
+    android:background="@android:color/transparent">
 
-    <LinearLayout
+    <!-- Map View as the background, matching fragment_route visual layout -->
+    <org.osmdroid.views.MapView
+        android:id="@+id/map_recommendations"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="12dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:layout_height="match_parent" />
 
-        <!-- Header Section -->
-<!--        <com.google.android.material.card.MaterialCardView-->
-<!--            android:id="@+id/header_card"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            app:cardCornerRadius="12dp"-->
-<!--            app:cardElevation="2dp"-->
-<!--            app:cardBackgroundColor="@color/card_background"-->
-<!--            android:layout_marginBottom="12dp">-->
+    <!-- Top overlay filter card (styled like fragment_route input card) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_filter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:layout_gravity="top"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="6dp"
+        app:cardBackgroundColor="@color/card_background">
 
-<!--            <LinearLayout-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:orientation="vertical"-->
-<!--                android:padding="16dp">-->
-
-<!--                <TextView-->
-<!--                    android:layout_width="wrap_content"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:text="@string/scenic_destinations"-->
-<!--                    android:textSize="20sp"-->
-<!--                    android:textStyle="bold"-->
-<!--                    android:textColor="@color/text_primary"-->
-<!--                    android:layout_marginBottom="6dp" />-->
-
-<!--                <TextView-->
-<!--                    android:layout_width="wrap_content"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:text="@string/discover_description"-->
-<!--                    android:textSize="13sp"-->
-<!--                    android:textColor="@color/text_secondary" />-->
-
-<!--                <TextView-->
-<!--                    android:id="@+id/tv_model_metrics"-->
-<!--                    android:layout_width="wrap_content"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:text=""-->
-<!--                    android:textSize="12sp"-->
-<!--                    android:textColor="@color/text_secondary"-->
-<!--                    android:layout_marginTop="8dp" />-->
-<!--            </LinearLayout>-->
-<!--        </com.google.android.material.card.MaterialCardView>-->
-
-        <!-- Filter Section (styled like fragment_route input card: red header + collapsible content) -->
-        <com.google.android.material.card.MaterialCardView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="2dp"
-            app:cardBackgroundColor="@color/card_background"
-            android:layout_marginBottom="14dp">
+            android:orientation="vertical">
 
+            <!-- Header with collapse button -->
             <LinearLayout
+                android:id="@+id/filter_header"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="horizontal"
+                android:padding="12dp"
+                android:background="@color/lakbay_red"
+                android:gravity="center_vertical">
 
-                <!-- Header with collapse button, visually matching fragment_route -->
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/filter_by_category"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/white" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_filter_collapse"
+                    android:layout_width="48dp"
+                    android:layout_height="40dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:padding="0dp"
+                    android:text="▼"
+                    android:textColor="@color/white"
+                    android:textSize="14sp"
+                    android:backgroundTint="#FF8C8C"
+                    app:cornerRadius="20dp"
+                    style="@style/Widget.Material3.Button.IconButton" />
+            </LinearLayout>
+
+            <!-- Collapsible content: filter controls (kept identical to previous layout) -->
+            <LinearLayout
+                android:id="@+id/filter_collapsible_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <!-- Seeing selection dropdown (exposed menu) -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_seeing"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:hint="@string/seeing_hint"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/lakbay_yellow"
+                    app:hintTextColor="@color/black"
+                    android:layout_marginBottom="8dp">
+
+                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                        android:id="@+id/actv_seeing"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        style="@style/Widget.App.AutoCompleteTextView.Popup"
+                        android:inputType="none"
+                        android:entries="@array/seeing_options"
+                        />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chip_group_category"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:singleSelection="false"
+                    app:chipSpacingHorizontal="8dp">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_all"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:backgroundTint="@color/lakbay_cream"
+                        android:text="@string/all_filter"
+                        android:checked="true" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_scenic"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:backgroundTint="@color/lakbay_cream"
+                        android:text="@string/scenic_filter" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_coastal"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:backgroundTint="@color/lakbay_cream"
+                        android:text="@string/coastal_filter" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_mountain"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:backgroundTint="@color/lakbay_cream"
+                        android:text="@string/mountain_filter" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_historic"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:backgroundTint="@color/lakbay_cream"
+                        android:text="@string/historic_filter" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_food"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:backgroundTint="@color/lakbay_cream"
+                        android:text="@string/food_filter" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_nature"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:backgroundTint="@color/lakbay_cream"
+                        android:text="@string/nature_filter" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_culture"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:backgroundTint="@color/lakbay_cream"
+                        android:text="@string/culture_filter" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_shopping"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:backgroundTint="@color/lakbay_cream"
+                        android:text="@string/shopping_filter" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_tourism"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:backgroundTint="@color/lakbay_cream"
+                        android:text="@string/tourism_filter" />
+
+                </com.google.android.material.chip.ChipGroup>
+
+                <!-- Distance Filter -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/maximum_distance"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="6dp" />
+
                 <LinearLayout
-                    android:id="@+id/filter_header"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="12dp"
-                    android:background="@color/lakbay_red"
                     android:gravity="center_vertical">
 
-                    <TextView
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/slider_distance"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/filter_by_category"
-                        android:textSize="15sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/white" />
+                        android:valueFrom="1.0"
+                        android:valueTo="100.0"
+                        android:value="50.0"
+                        android:stepSize="1.0"
+                        app:labelBehavior="gone"
+                        app:thumbColor="@color/lakbay_red"
+                        app:trackColorActive="@color/lakbay_red"
+                        app:trackColorInactive="@color/lakbay_cream" />
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_filter_collapse"
-                        android:layout_width="48dp"
-                        android:layout_height="40dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:padding="0dp"
-                        android:text="▼"
-                        android:textColor="@color/white"
+                    <TextView
+                        android:id="@+id/tv_distance_value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/default_distance_value"
                         android:textSize="14sp"
-                        android:backgroundTint="#FF8C8C"
-                        app:cornerRadius="20dp"
-                        style="@style/Widget.Material3.Button.IconButton" />
+                        android:textStyle="bold"
+                        android:textColor="@color/black"
+                        android:minWidth="60dp"
+                        android:gravity="end"
+                        android:layout_marginStart="12dp" />
                 </LinearLayout>
 
-                <!-- Collapsible content: keep all existing filter controls here -->
-                <LinearLayout
-                    android:id="@+id/filter_collapsible_content"
+                <!-- Sort Options -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sort_by"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginBottom="6dp" />
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chip_group_sort"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="12dp">
+                    app:singleSelection="true"
+                    app:chipSpacingHorizontal="8dp">
 
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/chip_group_category"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:singleSelection="false"
-                        app:chipSpacingHorizontal="8dp">
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_all"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:backgroundTint="@color/lakbay_cream"
-                            android:text="@string/all_filter"
-                            android:checked="true" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_scenic"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:backgroundTint="@color/lakbay_cream"
-                            android:text="@string/scenic_filter" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_coastal"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:backgroundTint="@color/lakbay_cream"
-                            android:text="@string/coastal_filter" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_mountain"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:backgroundTint="@color/lakbay_cream"
-                            android:text="@string/mountain_filter" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_historic"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:backgroundTint="@color/lakbay_cream"
-                            android:text="@string/historic_filter" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_food"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:backgroundTint="@color/lakbay_cream"
-                            android:text="@string/food_filter" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_nature"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:backgroundTint="@color/lakbay_cream"
-                            android:text="@string/nature_filter" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_culture"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:backgroundTint="@color/lakbay_cream"
-                            android:text="@string/culture_filter" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_shopping"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:backgroundTint="@color/lakbay_cream"
-                            android:text="@string/shopping_filter" />
-
-                    </com.google.android.material.chip.ChipGroup>
-
-                    <!-- Distance Filter -->
-                    <TextView
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_sort_distance"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/maximum_distance"
-                        android:textSize="15sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/text_primary"
-                        android:layout_marginTop="12dp"
-                        android:layout_marginBottom="6dp" />
+                        android:backgroundTint="@color/lakbay_cream"
+                        android:text="@string/distance_sort"
+                        android:checked="true" />
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <com.google.android.material.slider.Slider
-                            android:id="@+id/slider_distance"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:valueFrom="1.0"
-                            android:valueTo="100.0"
-                            android:value="50.0"
-                            android:stepSize="1.0"
-                            app:labelBehavior="gone"
-                            app:thumbColor="@color/lakbay_red"
-                            app:trackColorActive="@color/lakbay_red"
-                            app:trackColorInactive="@color/lakbay_cream" />
-
-                        <TextView
-                            android:id="@+id/tv_distance_value"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/default_distance_value"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/black"
-                            android:minWidth="60dp"
-                            android:gravity="end"
-                            android:layout_marginStart="12dp" />
-                    </LinearLayout>
-
-                    <!-- Sort Options -->
-                    <TextView
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_sort_scenic"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/sort_by"
-                        android:textSize="15sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/text_primary"
-                        android:layout_marginTop="12dp"
-                        android:layout_marginBottom="6dp" />
+                        android:backgroundTint="@color/lakbay_cream"
+                        android:text="@string/scenic_score_sort" />
 
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/chip_group_sort"
-                        android:layout_width="match_parent"
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_sort_name"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:singleSelection="true"
-                        app:chipSpacingHorizontal="8dp">
+                        android:backgroundTint="@color/lakbay_cream"
+                        android:text="@string/name_sort" />
+                </com.google.android.material.chip.ChipGroup>
 
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_sort_distance"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:backgroundTint="@color/lakbay_cream"
-                            android:text="@string/distance_sort"
-                            android:checked="true" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_sort_scenic"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:backgroundTint="@color/lakbay_cream"
-                            android:text="@string/scenic_score_sort" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_sort_name"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:backgroundTint="@color/lakbay_cream"
-                            android:text="@string/name_sort" />
-                    </com.google.android.material.chip.ChipGroup>
-
-                </LinearLayout>
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
-        <!-- Loading Progress -->
-        <ProgressBar
-            android:id="@+id/progress_loading"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:visibility="gone"
-            tools:visibility="visible" />
+    <!-- Recommendations list area anchored below the top card -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        android:fillViewport="true"
+        android:clipToPadding="false"
+        android:paddingTop="160dp"> <!-- leave space for the card overlay -->
 
-        <!-- Towns List (moved from programmatic creation) -->
-        <ListView
-            android:id="@+id/lv_towns"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:dividerHeight="1dp"
-            android:choiceMode="singleChoice" />
-
-        <!-- Empty State -->
         <LinearLayout
-            android:id="@+id/empty_state"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp"
-            android:gravity="center"
-            android:visibility="gone"
-            tools:visibility="gone">
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
 
-            <TextView
+            <!-- Loading Progress -->
+            <ProgressBar
+                android:id="@+id/progress_loading"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/map_emoji"
-                android:textSize="56sp"
-                android:layout_marginBottom="12dp" />
+                android:layout_gravity="center"
+                android:visibility="gone"
+                tools:visibility="visible" />
 
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Empty State -->
+            <LinearLayout
+                android:id="@+id/empty_state"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/no_recommendations_yet"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary"
-                android:layout_marginBottom="6dp" />
+                android:orientation="vertical"
+                android:padding="24dp"
+                android:gravity="center"
+                android:visibility="gone"
+                tools:visibility="gone">
 
-            <TextView
-                android:id="@+id/empty_state_message"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/plan_route_message"
-                android:textSize="14sp"
-                android:textColor="@color/text_secondary"
-                android:textAlignment="center"
-                android:layout_marginBottom="12dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/map_emoji"
+                    android:textSize="56sp"
+                    android:layout_marginBottom="12dp" />
 
-            <Button
-                android:id="@+id/btn_curate_empty"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/curate_now"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:visibility="visible" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/no_recommendations_yet"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="6dp" />
+
+                <TextView
+                    android:id="@+id/empty_state_message"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/plan_route_message"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_secondary"
+                    android:textAlignment="center"
+                    android:layout_marginBottom="12dp" />
+
+                <Button
+                    android:id="@+id/btn_curate_empty"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/curate_now"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:visibility="visible" />
+
+            </LinearLayout>
+
+            <!-- Swipe + RecyclerView for recommendations -->
+            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/swipe_refresh"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_recommendations"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:paddingBottom="80dp"
+                    tools:listitem="@layout/poi_item"
+                    tools:itemCount="5" />
+
+            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
         </LinearLayout>
-
-        <!-- Recommendations List -->
-        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-            android:id="@+id/swipe_refresh"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1">
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rv_recommendations"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:clipToPadding="false"
-                android:paddingBottom="80dp"
-                tools:listitem="@layout/poi_item"
-                tools:itemCount="5" />
-
-        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-    </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
     <!-- Curate Floating Action Button -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
