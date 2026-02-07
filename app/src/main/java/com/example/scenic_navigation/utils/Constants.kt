@@ -19,7 +19,10 @@ object Constants {
     const val CATEGORY_MOUNTAIN = "mountain"
     const val CATEGORY_HISTORIC = "historic"
     const val CATEGORY_FOOD = "food"
-    const val CATEGORY_CULTURE = "culture"
+    const val CATEGORY_CULTURAL = "cultural"
+    const val CATEGORY_NATURAL = "natural"
+    const val CATEGORY_TOURISM = "tourism"
+    const val CATEGORY_SHOPPING = "shopping"
 
     // Preferences Keys
     const val PREF_LAST_LOCATION = "last_location"
@@ -27,4 +30,3 @@ object Constants {
     const val PREF_OCEANIC_ROUTE = "oceanic_route"
     const val PREF_MOUNTAIN_ROUTE = "mountain_route"
 }
-
