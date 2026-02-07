@@ -6,83 +6,111 @@
     android:layout_height="match_parent"
     android:background="@color/background">
 
-    <androidx.core.widget.NestedScrollView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="12dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <LinearLayout
+        <!-- Header Section -->
+<!--        <com.google.android.material.card.MaterialCardView-->
+<!--            android:id="@+id/header_card"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            app:cardCornerRadius="12dp"-->
+<!--            app:cardElevation="2dp"-->
+<!--            app:cardBackgroundColor="@color/card_background"-->
+<!--            android:layout_marginBottom="12dp">-->
+
+<!--            <LinearLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:orientation="vertical"-->
+<!--                android:padding="16dp">-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="@string/scenic_destinations"-->
+<!--                    android:textSize="20sp"-->
+<!--                    android:textStyle="bold"-->
+<!--                    android:textColor="@color/text_primary"-->
+<!--                    android:layout_marginBottom="6dp" />-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="@string/discover_description"-->
+<!--                    android:textSize="13sp"-->
+<!--                    android:textColor="@color/text_secondary" />-->
+
+<!--                <TextView-->
+<!--                    android:id="@+id/tv_model_metrics"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text=""-->
+<!--                    android:textSize="12sp"-->
+<!--                    android:textColor="@color/text_secondary"-->
+<!--                    android:layout_marginTop="8dp" />-->
+<!--            </LinearLayout>-->
+<!--        </com.google.android.material.card.MaterialCardView>-->
+
+        <!-- Filter Section (styled like fragment_route input card: red header + collapsible content) -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="@color/card_background"
+            android:layout_marginBottom="14dp">
 
-
-            <!-- Header Section -->
-            <com.google.android.material.card.MaterialCardView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="4dp"
-                app:cardBackgroundColor="@color/card_background"
-                android:layout_marginBottom="16dp">
+                android:orientation="vertical">
 
+                <!-- Header with collapse button, visually matching fragment_route -->
                 <LinearLayout
+                    android:id="@+id/filter_header"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
+                    android:orientation="horizontal"
+                    android:padding="12dp"
+                    android:background="@color/lakbay_red"
+                    android:gravity="center_vertical">
 
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="@string/scenic_destinations"
-                        android:textSize="22sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/text_primary"
-                        android:layout_marginBottom="8dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/discover_description"
-                        android:textSize="14sp"
-                        android:textColor="@color/text_secondary" />
-
-                    <TextView
-                        android:id="@+id/tv_model_metrics"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text=""
-                        android:textSize="12sp"
-                        android:textColor="@color/text_secondary"
-                        android:layout_marginTop="8dp" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Filter Section -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
-                app:cardBackgroundColor="@color/card_background"
-                android:layout_marginBottom="20dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
                         android:text="@string/filter_by_category"
-                        android:textSize="16sp"
+                        android:textSize="15sp"
                         android:textStyle="bold"
-                        android:textColor="@color/text_primary"
-                        android:layout_marginBottom="12dp" />
+                        android:textColor="@color/white" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_filter_collapse"
+                        android:layout_width="48dp"
+                        android:layout_height="40dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:padding="0dp"
+                        android:text="▼"
+                        android:textColor="@color/white"
+                        android:textSize="14sp"
+                        android:backgroundTint="#FF8C8C"
+                        app:cornerRadius="20dp"
+                        style="@style/Widget.Material3.Button.IconButton" />
+                </LinearLayout>
+
+                <!-- Collapsible content: keep all existing filter controls here -->
+                <LinearLayout
+                    android:id="@+id/filter_collapsible_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
 
                     <com.google.android.material.chip.ChipGroup
                         android:id="@+id/chip_group_category"
@@ -141,6 +169,20 @@
                             android:backgroundTint="@color/lakbay_cream"
                             android:text="@string/nature_filter" />
 
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_culture"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:backgroundTint="@color/lakbay_cream"
+                            android:text="@string/culture_filter" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_shopping"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:backgroundTint="@color/lakbay_cream"
+                            android:text="@string/shopping_filter" />
+
                     </com.google.android.material.chip.ChipGroup>
 
                     <!-- Distance Filter -->
@@ -148,11 +190,11 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/maximum_distance"
-                        android:textSize="16sp"
+                        android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="8dp" />
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="6dp" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -172,8 +214,7 @@
                             app:labelBehavior="gone"
                             app:thumbColor="@color/lakbay_red"
                             app:trackColorActive="@color/lakbay_red"
-                            app:trackColorInactive="@color/lakbay_cream"
-                                />
+                            app:trackColorInactive="@color/lakbay_cream" />
 
                         <TextView
                             android:id="@+id/tv_distance_value"
@@ -193,11 +234,11 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/sort_by"
-                        android:textSize="16sp"
+                        android:textSize="15sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="8dp" />
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="6dp" />
 
                     <com.google.android.material.chip.ChipGroup
                         android:id="@+id/chip_group_sort"
@@ -230,80 +271,104 @@
                     </com.google.android.material.chip.ChipGroup>
 
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-            <!-- Loading Progress -->
-            <ProgressBar
-                android:id="@+id/progress_loading"
+        <!-- Loading Progress -->
+        <ProgressBar
+            android:id="@+id/progress_loading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <!-- Towns List (moved from programmatic creation) -->
+        <ListView
+            android:id="@+id/lv_towns"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:dividerHeight="1dp"
+            android:choiceMode="singleChoice" />
+
+        <!-- Empty State -->
+        <LinearLayout
+            android:id="@+id/empty_state"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:gravity="center"
+            android:visibility="gone"
+            tools:visibility="gone">
+
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:visibility="gone"
-                tools:visibility="visible" />
+                android:text="@string/map_emoji"
+                android:textSize="56sp"
+                android:layout_marginBottom="12dp" />
 
-            <!-- Towns List (moved from programmatic creation) -->
-            <ListView
-                android:id="@+id/lv_towns"
-                android:layout_width="match_parent"
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:visibility="gone"
-                android:dividerHeight="1dp"
-                android:choiceMode="singleChoice" />
+                android:text="@string/no_recommendations_yet"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:layout_marginBottom="6dp" />
 
-            <!-- Empty State -->
-            <LinearLayout
-                android:id="@+id/empty_state"
-                android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/empty_state_message"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="32dp"
-                android:gravity="center"
-                android:visibility="gone"
-                tools:visibility="gone">
+                android:text="@string/plan_route_message"
+                android:textSize="14sp"
+                android:textColor="@color/text_secondary"
+                android:textAlignment="center"
+                android:layout_marginBottom="12dp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/map_emoji"
-                    android:textSize="64sp"
-                    android:layout_marginBottom="16dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/no_recommendations_yet"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_primary"
-                    android:layout_marginBottom="8dp" />
-
-                <TextView
-                    android:id="@+id/empty_state_message"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/plan_route_message"
-                    android:textSize="14sp"
-                    android:textColor="@color/text_secondary"
-                    android:textAlignment="center" />
-            </LinearLayout>
-
-            <!-- Recommendations List -->
-            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-                android:id="@+id/swipe_refresh"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rv_recommendations"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:clipToPadding="false"
-                    tools:listitem="@layout/poi_item"
-                    tools:itemCount="5" />
-
-            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+            <Button
+                android:id="@+id/btn_curate_empty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/curate_now"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:visibility="visible" />
 
         </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+
+        <!-- Recommendations List -->
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipe_refresh"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_recommendations"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="80dp"
+                tools:listitem="@layout/poi_item"
+                tools:itemCount="5" />
+
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    </LinearLayout>
+
+    <!-- Curate Floating Action Button -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_curate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:contentDescription="@string/curate_now"
+        app:srcCompat="@drawable/ic_add_24"
+        app:backgroundTint="@color/lakbay_red"
+        app:tint="@color/white"
+        android:layout_gravity="end|bottom" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

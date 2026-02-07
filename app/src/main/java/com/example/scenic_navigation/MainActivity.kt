@@ -80,18 +80,22 @@ class MainActivity : AppCompatActivity() {
                         replace(R.id.fragment_container, RouteFragment())
                         // Removed addToBackStack(null) for tab navigation
                     }
+                    invalidateOptionsMenu()
                     true
                 }
                 R.id.nav_recommendations -> {
                     supportFragmentManager.commit {
                         replace(R.id.fragment_container, RecommendationsFragment())
                     }
+                    // when showing RecommendationsFragment we don't want the three-dot overflow
+                    invalidateOptionsMenu()
                     true
                 }
                 R.id.nav_favorites -> {
                     supportFragmentManager.commit {
                         replace(R.id.fragment_container, FavoritesFragment())
                     }
+                    invalidateOptionsMenu()
                     true
                 }
                 R.id.nav_sign_out -> {
@@ -115,8 +119,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.menu_recommendations, menu)
-        return true
+        // Disable the overflow menu globally so no three-dot menu appears beside the logo
+        // Returning false prevents any menu from being displayed.
+        return false
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

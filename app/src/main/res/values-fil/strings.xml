@@ -69,7 +69,6 @@
     <string name="save_button">I-save</string>
     <!-- Added for parity with default locale -->
     <string name="poi_image_description">Preview na larawan para sa POI</string>
-    <string name="poi_rating_star">Bituin ng rating ng POI</string>
     <string name="directions">Mga direksyon</string>
     <string name="save">I-save</string>
     <string name="nearby">Malapit</string>
@@ -98,6 +97,8 @@
     <string name="historic_filter">🏛️ Makasaysayan</string>
     <string name="food_filter">🍽️ Pagkain</string>
     <string name="nature_filter">🌳 Kalikasan</string>
+    <string name="culture_filter">🎭 Kultura</string>
+    <string name="shopping_filter">🛍️ Pamimili</string>
     <string name="maximum_distance">📍 Pinakamalaking Distansya</string>
     <string name="sort_by">📊 Ayusin Ayon sa</string>
     <string name="distance_sort">Distansya</string>
@@ -125,4 +126,21 @@
     <string name="map_style_summary">Piliin ang estilo ng map tile</string>
     <string name="language_title">Wika</string>
     <string name="language_summary">Piliin ang wika ng app</string>
+    <!-- Added translations so locale keys match default strings.xml -->
+    <string name="default_distance_value">50 km</string>
+    <string name="map_emoji">🗺️</string>
+    <string name="personalization_title">I-personalize ang mga rekomendasyon</string>
+    <string name="personalization_summary">Paganahin ang paggamit ng iyong interaksyon para iangkop ang mga rekomendadong lugar (lokal na iniimbak)</string>
+    <string name="personalization_enabled_summary">Personalization AY ON — ang mga rekomendasyon ay nag-aangkop sa iyong interaksyon</string>
+    <string name="personalization_disabled_summary">Personalization AY OFF — ang mga rekomendasyon ay gumagamit lamang ng pangkalahatang signal</string>
+    <string name="distance_value_fmt">%1$d km</string>
+    <string name="no_scenic_destinations">Walang natagpuang scenic destinations. Subukan magplano ng ruta o suriin ang iyong koneksyon.</string>
+    <string name="no_pois_match_filters">Walang POI na tumutugma sa iyong mga filter.\nSubukang ayusin ang distance o category filters.</string>
+    <string name="no_pois_found_in_town">Walang POI na natagpuan sa %1$s.</string>
+    <string name="no_recommendations_available">Walang mga rekomendasyon na magagamit.\nMagplano muna ng ruta para makita ang mga rekomendasyon sa daan!</string>
+    <string name="poi_fallback">POI</string>
+    <string name="like_poi">Gusto ang POI</string>
+    <string name="poi_liked">Nagustuhan ang %1$s</string>
+    <string name="curate_now">I-curate ngayon</string>
+    <string name="poi_rating_star">Bituin ng rating ng POI</string>
 </resources>

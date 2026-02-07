@@ -117,6 +117,17 @@
                 tools:text="A stunning viewpoint with panoramic views of the coastline and mountains" />
         </LinearLayout>
 
+        <!-- Like button -->
+        <ImageButton
+            android:id="@+id/btn_like"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/like_poi"
+            android:src="@drawable/ic_favorite_border_24"
+            app:tint="?android:attr/textColorSecondary" />
+
         <!-- Chevron icon -->
         <ImageView
             android:layout_width="24dp"
