@@ -1,10 +1,7 @@
 package com.example.scenic_navigation
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -36,6 +33,14 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         auth = FirebaseAuth.getInstance()
+
+        // Require user sign-in: if no user is signed in, send them to the LoginActivity
+        if (auth.currentUser == null) {
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+            finish()
+            return
+        }
 
         FavoriteStore.init(this)
 
@@ -79,10 +84,18 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_sign_out -> {
-                    auth.signOut()
-                    val intent = Intent(this, LoginActivity::class.java)
-                    startActivity(intent)
-                    finish()
+                    // Confirm before signing out
+                    androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setTitle("Sign out")
+                        .setMessage("Are you sure you want to sign out?")
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .setPositiveButton(android.R.string.ok) { _, _ ->
+                            auth.signOut()
+                            val intent = Intent(this, LoginActivity::class.java)
+                            startActivity(intent)
+                            finish()
+                        }
+                        .show()
                     true
                 }
                 else -> false

@@ -3,6 +3,7 @@ package com.example.scenic_navigation.services
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Semaphore
@@ -10,6 +11,8 @@ import kotlinx.coroutines.sync.withPermit
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.osmdroid.util.GeoPoint
+import java.util.Collections
+import java.util.LinkedHashMap
 
 /**
  * Service for fetching routes using OSRM API
@@ -24,9 +27,9 @@ class RoutingService {
             .build()
     }
     // Cache for segment routes: key is "fromLon,fromLat;toLon,toLat"
-    private val segmentCache: MutableMap<String, List<org.osmdroid.util.GeoPoint>> = java.util.Collections.synchronizedMap(
-        object : java.util.LinkedHashMap<String, List<org.osmdroid.util.GeoPoint>>(64, 0.75f, true) {
-            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<org.osmdroid.util.GeoPoint>>?): Boolean {
+    private val segmentCache: MutableMap<String, List<GeoPoint>> = Collections.synchronizedMap(
+        object : LinkedHashMap<String, List<GeoPoint>>(64, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<GeoPoint>>?): Boolean {
                 return size > 200
             }
         }
@@ -85,15 +88,47 @@ class RoutingService {
         )
     )
     private val coastalWaypoints = mapOf(
-        // LUZON ROUTES
-        "luzon_north" to listOf(
-            GeoPoint(15.7800, 120.2800), // Zambales coast
-            GeoPoint(16.0500, 120.3300), // La Union coast
-            GeoPoint(16.8800, 120.4500), // Vigan, Ilocos Sur coast
-            GeoPoint(17.5800, 120.3800), // Ilocos Norte coast
-            GeoPoint(17.6100, 120.3200), // Laoag, Ilocos Norte
-            GeoPoint(18.1700, 120.5900)  // Northern tip before going to Aparri
+        // LUZON ROUTES (re-grouped for clearer regions)
+        "luzon_manila_bay" to listOf(
+            GeoPoint(14.5876, 120.9760), // Port of Manila (approx)
+            GeoPoint(14.5499, 120.9822), // Roxas Blvd / Pasay coastline
+            GeoPoint(14.5206, 120.9847), // Cavite Bay approach (offshore)
+            GeoPoint(14.4500, 120.9000), // Cavite City / Bacoor approach
+            GeoPoint(14.5800, 120.9700)  // Manila Bay entrance (legacy anchor)
         ),
+
+        // Bataan + Zambales (Subic/Olongapo corridor)
+        "luzon_bataan_zambales" to listOf(
+            GeoPoint(14.6762, 120.5306), // Balanga (Bataan capital)
+            GeoPoint(14.5833, 120.3811), // Bagac, Bataan
+            GeoPoint(14.4500, 120.5200), // near Mariveles / Bataan
+            GeoPoint(14.3800, 120.6500), // Orion/Bagac stretch
+            GeoPoint(14.3000, 120.7000), // Limay/Bataan coast
+            GeoPoint(14.2000, 120.7000), // Morong outer coast
+            GeoPoint(14.1500, 120.6000), // Morong beaches
+            GeoPoint(14.0500, 120.5600), // Bataan northern coast
+            GeoPoint(14.7800, 120.2500), // Subic Bay
+            GeoPoint(14.8300, 120.2800), // Olongapo City
+            GeoPoint(14.9200, 120.0800), // San Antonio, Zambales
+            GeoPoint(15.0500, 119.9000), // Zambales connector
+            GeoPoint(15.2900, 120.0000), // Botolan, Zambales
+            GeoPoint(15.3400, 119.9500)  // Iba, Zambales
+        ),
+
+        // Ilocos / La Union northern Luzon coast
+        "luzon_ilocos" to listOf(
+            GeoPoint(15.7800, 120.2800), // northern Zambales coast (connector)
+            GeoPoint(16.0500, 120.3300), // La Union coast
+            GeoPoint(16.8800, 120.4500), // Vigan / Ilocos Sur coast
+            GeoPoint(17.7000, 120.4500), // Ilocos Norte mid-coast
+            GeoPoint(17.8000, 120.4000), // Currimao / northern Ilocos approach
+            GeoPoint(17.6100, 120.3200), // Laoag, Ilocos Norte
+            GeoPoint(17.5800, 120.3800), // Ilocos Norte coast
+            GeoPoint(18.0000, 120.6000), // Ilocos Norte northern coast anchor
+            GeoPoint(18.3646, 120.5154), // Bangui (windmills)
+            GeoPoint(18.5228, 120.7599)  // Pagudpud (northern beaches)
+        ),
+
         "luzon_aurora" to listOf(
             GeoPoint(15.7617, 121.5603)  // Baler, Aurora coast
         ),
@@ -195,6 +230,7 @@ class RoutingService {
     )
 
     // Expose a read-only view of known coastal waypoint keys for UI selection
+    @Suppress("unused")
     fun getCoastalWaypointKeys(): List<String> = coastalWaypoints.keys.toList()
 
     // Return a coastal waypoint set for a given key, or null if not found
@@ -245,11 +281,13 @@ class RoutingService {
     private fun findBestWaypointSet(start: GeoPoint, dest: GeoPoint, allWaypointSets: Map<String, List<GeoPoint>>, isLongDistanceOceanic: Boolean = false): List<GeoPoint> {
         if (allWaypointSets.isEmpty()) return emptyList()
 
+        // Primary selection: prefer the waypoint set that has the single coastal anchor
+        // closest to the destination (min distance). Fall back to avg-projected distance
+        // only to break ties or when multiple sets have very similar min distances.
         var bestSet: List<GeoPoint> = emptyList()
-        var minAvgDistance = Double.MAX_VALUE
-        // Compute distances of each waypoint to the projected point on the line segment start->dest.
-        // This avoids misleading average distances to the route midpoint when the route is long or
-        // when coastal waypoints are spread along the coastline.
+        var bestMinDist = Double.MAX_VALUE
+        var bestTieBreaker = Double.MAX_VALUE
+
         val sx = start.longitude
         val sy = start.latitude
         val dx = dest.longitude - sx
@@ -259,52 +297,63 @@ class RoutingService {
         for ((key, waypoints) in allWaypointSets) {
             if (waypoints.isEmpty()) continue
 
-            // Skip aurora waypoints for northern destinations (latitude > 17.0) to avoid favoring east coast over west coast Ilocos routes
-            if (dest.latitude > 17.0 && key == "luzon_aurora") continue
+            // Skip aurora only when route direction indicates it's irrelevant (preserve for NE destinations)
+            if (key == "luzon_aurora" && dest.latitude > 17.0 && dest.longitude < start.longitude) continue
 
-            val avgDistance = if (denom == 0.0) {
-                // fallback to midpoint distance if start==dest
-                val routeMidPoint = GeoPoint(
-                    (start.latitude + dest.latitude) / 2.0,
-                    (start.longitude + dest.longitude) / 2.0
-                )
-                waypoints.sumOf { it.distanceToAsDouble(routeMidPoint) } / waypoints.size
-            } else {
+            // min distance from any waypoint in the set to the destination (primary metric)
+            val minDistToDest = waypoints.minOf { wp ->
+                try {
+                    com.example.scenic_navigation.utils.GeoUtils.haversine(wp.latitude, wp.longitude, dest.latitude, dest.longitude)
+                } catch (_: Exception) {
+                    wp.distanceToAsDouble(dest)
+                }
+            }
+
+            // tie-breaker: average projected distance to the route (smaller is better)
+            val avgProjected = try {
                 waypoints.sumOf { wp ->
-                    val wx = wp.longitude - sx
-                    val wy = wp.latitude - sy
-                    var t = (wx * dx + wy * dy) / denom
-                    if (t < 0.0) t = 0.0
-                    if (t > 1.0) t = 1.0
-                    val projLon = sx + t * dx
-                    val projLat = sy + t * dy
-                    try {
-                        com.example.scenic_navigation.utils.GeoUtils.haversine(wp.latitude, wp.longitude, projLat, projLon)
-                    } catch (_: Exception) {
-                        wp.distanceToAsDouble(GeoPoint(projLat, projLon))
+                    if (denom == 0.0) {
+                        wp.distanceToAsDouble(GeoPoint((start.latitude + dest.latitude) / 2.0, (start.longitude + dest.longitude) / 2.0))
+                    } else {
+                        val wx = wp.longitude - sx
+                        val wy = wp.latitude - sy
+                        var t = (wx * dx + wy * dy) / denom
+                        t = t.coerceIn(0.0, 1.0)
+                        val projLon = sx + t * dx
+                        val projLat = sy + t * dy
+                        try {
+                            com.example.scenic_navigation.utils.GeoUtils.haversine(wp.latitude, wp.longitude, projLat, projLon)
+                        } catch (_: Exception) {
+                            wp.distanceToAsDouble(GeoPoint(projLat, projLon))
+                        }
                     }
                 } / waypoints.size
+            } catch (_: Exception) {
+                Double.MAX_VALUE
             }
 
-            // Apply bias for northern destinations to prefer luzon_north (Ilocos route)
-            var adjustedAvgDistance = avgDistance
-            if (key == "luzon_north" && dest.latitude > 17.0) {
-                adjustedAvgDistance *= 0.5 // Reduce distance by half to favor Ilocos route for Cagayan destinations
+            // Small bias: if destination is in northern Luzon, slightly favor northern coastal sets
+            var effectiveMinDist = minDistToDest
+            if (dest.latitude > 17.0) {
+                if (key == "luzon_ilocos") {
+                    // Favor Ilocos/Cagayan waypoint sets for northern destinations like Aparri
+                    effectiveMinDist *= 0.85
+                }
             }
 
-            if (adjustedAvgDistance < minAvgDistance) {
-                minAvgDistance = adjustedAvgDistance
+            // Choose by primary metric first, then tie-break by avgProjected
+            if (effectiveMinDist < bestMinDist || (kotlin.math.abs(effectiveMinDist - bestMinDist) < 1.0 && avgProjected < bestTieBreaker)) {
+                bestMinDist = effectiveMinDist
+                bestTieBreaker = avgProjected
                 bestSet = waypoints
-                Log.d("RoutingService", "New best waypoint set: $key with adjusted avg projected distance=${"%.0f".format(adjustedAvgDistance)}m")
+                Log.d("RoutingService", "New best waypoint set: $key minDistToDest=${"%.0f".format(minDistToDest)}m avgProj=${"%.0f".format(avgProjected)}m")
             }
         }
 
-        // Relaxed thresholds: coastal/marine routes can be more spread out; allow more permissive matching.
-        val threshold = if (isLongDistanceOceanic) 400_000 else 100_000
-
-        if (minAvgDistance > threshold) {
-            Log.w("RoutingService", "Closest waypoint set avg distance ${"%.0f".format(minAvgDistance)}m exceeds threshold ${threshold}m. Falling back to nearest set as a best-effort.")
-            // Return the nearest set anyway as a fallback so oceanic/mountain flows still get waypoints.
+        // Relaxed acceptance threshold: allow more permissive matching for long oceanic routes
+        val threshold = if (isLongDistanceOceanic) 400_000.0 else 100_000.0
+        if (bestMinDist > threshold) {
+            Log.w("RoutingService", "Closest waypoint set min distance ${"%.0f".format(bestMinDist)}m exceeds threshold ${threshold}m. Returning best-effort set.")
             return bestSet
         }
 
@@ -416,12 +465,40 @@ class RoutingService {
             sortedWaypoints
         }
 
-        val allPoints = listOf(start) + limitedWaypoints + listOf(dest)
+        // Enforce initial efficient segment: reserve first 15% of the route (cap 2.5km)
+        val directDistance = try {
+            com.example.scenic_navigation.utils.GeoUtils.haversine(start.latitude, start.longitude, dest.latitude, dest.longitude)
+        } catch (_: Exception) {
+            start.distanceToAsDouble(dest)
+        }
+        val initialClearDistanceMeters = kotlin.math.min(directDistance * 0.15, 2_500.0)
+        val initialClearFraction = if (directDistance > 0.0) (initialClearDistanceMeters / directDistance).coerceIn(0.0, 1.0) else 1.0
+
+        val waypointsRespectingInitialClear = if (limitedWaypoints.isNotEmpty()) {
+            val sx = start.longitude
+            val sy = start.latitude
+            val dx = dest.longitude - sx
+            val dy = dest.latitude - sy
+            val denom = dx * dx + dy * dy
+            val filtered = limitedWaypoints.filter { wp ->
+                try {
+                    val wx = wp.longitude - sx
+                    val wy = wp.latitude - sy
+                    val t = if (denom == 0.0) 1.0 else (wx * dx + wy * dy) / denom
+                    t >= initialClearFraction
+                } catch (_: Exception) {
+                    true
+                }
+            }
+            if (filtered.isNotEmpty()) filtered else limitedWaypoints
+        } else limitedWaypoints
+
+        val allPoints = listOf(start) + waypointsRespectingInitialClear + listOf(dest)
         // Fetch segments in parallel with limited concurrency
-        val semaphore = kotlinx.coroutines.sync.Semaphore(4)
+        val semaphore = Semaphore(4)
         val deferred = mutableListOf<kotlinx.coroutines.Deferred<Pair<Int, List<GeoPoint>>>>()
 
-        return kotlinx.coroutines.coroutineScope {
+        return coroutineScope {
             for (i in 0 until allPoints.size - 1) {
                 val idx = i
                 val from = allPoints[i]
@@ -464,7 +541,7 @@ class RoutingService {
             }
 
             // Wait and collect in order
-            val segments = deferred.map { it.await() }.sortedBy { it.first }.map { it.second }
+            val segments = deferred.awaitAll().sortedBy { it.first }.map { it.second }
 
             // Assemble full route while avoiding exact/near-duplicate consecutive points
             val fullRoute = mutableListOf<GeoPoint>()
@@ -534,6 +611,7 @@ class RoutingService {
             return fetchRoute(start, dest, packageName, "default")
         }
 
+        // Pick waypoint set based primarily on proximity to the destination (per requirement)
         val bestWaypoints = findBestWaypointSet(start, dest, coastalWaypoints, isLongDistance)
 
         if (bestWaypoints.isEmpty()) {
@@ -543,7 +621,21 @@ class RoutingService {
 
         // Order the waypoint set along the route direction then sample down to a few representative points
         val ordered = orderWaypointsAlongRoute(start, dest, bestWaypoints)
-        val sampled = sampleWaypoints(ordered, maxPoints = if (isLongDistance) 5 else 1)
+        // If this is not a long-distance oceanic route, pick a single anchor nearest to the destination
+        val sampled = if (!isLongDistance) {
+            if (ordered.isEmpty()) emptyList<GeoPoint>() else {
+                val nearest = ordered.minByOrNull { wp ->
+                    try {
+                        com.example.scenic_navigation.utils.GeoUtils.haversine(wp.latitude, wp.longitude, dest.latitude, dest.longitude)
+                    } catch (_: Exception) {
+                        wp.distanceToAsDouble(dest)
+                    }
+                } ?: ordered.first()
+                listOf(nearest)
+            }
+        } else {
+            sampleWaypoints(ordered, maxPoints = 5)
+        }
         Log.d("RoutingService", "Using coastal waypoints. original=${bestWaypoints.size} ordered=${ordered.size} sampled=${sampled.size}")
         try {
             Log.d("RoutingService", "Coastal ordered coords: ${ordered.joinToString(";") { "${it.latitude},${it.longitude}" }}")

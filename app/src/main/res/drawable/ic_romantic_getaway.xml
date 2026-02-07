@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Circle background -->
+    <path
+        android:fillColor="#F06292"
+        android:pathData="M12,2 A10,10 0 1,1 12,22 A10,10 0 1,1 12,2 Z"/>
+
+    <!-- Inner circle background -->
+    <path
+        android:fillColor="#FCE4EC"
+        android:pathData="M12,4 A8,8 0 1,1 12,20 A8,8 0 1,1 12,4 Z"/>
+
+    <!-- Large heart -->
+    <path
+        android:fillColor="#C2185B"
+        android:pathData="M12,16.5 L9,13.5 Q8,12.5 8,11.2 Q8,10 9,9.5 Q10,9 11,9.8 L12,10.5 L13,9.8 Q14,9 15,9.5 Q16,10 16,11.2 Q16,12.5 15,13.5 Z"/>
+
+    <!-- Heart highlight -->
+    <path
+        android:fillColor="#E91E63"
+        android:pathData="M10.5,10.5 A0.8,0.8 0 1,1 10.5,12.1 A0.8,0.8 0 1,1 10.5,10.5 Z"/>
+
+    <!-- Small sparkle top left -->
+    <path
+        android:fillColor="#AD1457"
+        android:pathData="M8.5,8 L8.8,8.8 L9.6,9.1 L8.8,9.4 L8.5,10.2 L8.2,9.4 L7.4,9.1 L8.2,8.8 Z"/>
+
+    <!-- Small sparkle top right -->
+    <path
+        android:fillColor="#AD1457"
+        android:pathData="M15.5,8 L15.8,8.8 L16.6,9.1 L15.8,9.4 L15.5,10.2 L15.2,9.4 L14.4,9.1 L15.2,8.8 Z"/>
+
+    <!-- Small sparkle bottom right -->
+    <path
+        android:fillColor="#AD1457"
+        android:pathData="M16,13.5 L16.2,14 L16.7,14.2 L16.2,14.4 L16,14.9 L15.8,14.4 L15.3,14.2 L15.8,14 Z"/>
+
+    <!-- Tiny hearts floating -->
+    <path
+        android:fillColor="#F8BBD0"
+        android:pathData="M10,7.5 L9.3,8.2 Q9,8.5 9,8.8 Q9,9 9.2,9.1 Q9.5,9.2 9.7,9 L10,8.7 L10.3,9 Q10.5,9.2 10.8,9.1 Q11,9 11,8.8 Q11,8.5 10.7,8.2 Z"/>
+
+    <path
+        android:fillColor="#F8BBD0"
+        android:pathData="M14,7.5 L13.3,8.2 Q13,8.5 13,8.8 Q13,9 13.2,9.1 Q13.5,9.2 13.7,9 L14,8.7 L14.3,9 Q14.5,9.2 14.8,9.1 Q15,9 15,8.8 Q15,8.5 14.7,8.2 Z"/>
+
+</vector>

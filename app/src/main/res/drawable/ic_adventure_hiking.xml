@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Circle background -->
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M12,2 A10,10 0 1,1 12,22 A10,10 0 1,1 12,2 Z"/>
+
+    <!-- Inner circle background -->
+    <path
+        android:fillColor="#E8F5E9"
+        android:pathData="M12,4 A8,8 0 1,1 12,20 A8,8 0 1,1 12,4 Z"/>
+
+    <!-- Mountain - back -->
+    <path
+        android:fillColor="#66BB6A"
+        android:pathData="M7,16 L11,8 L15,16 Z"/>
+
+    <!-- Mountain - front -->
+    <path
+        android:fillColor="#388E3C"
+        android:pathData="M10,16 L14,10 L18,16 Z"/>
+
+    <!-- Snow cap on front mountain -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M14,10 L14.8,11.5 L13.2,11.5 Z"/>
+
+    <!-- Hiker figure - body -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M9,12 L9,14.5 L10,14.5 L10,12 Z"/>
+
+    <!-- Hiker figure - head -->
+    <path
+        android:fillColor="#1B5E20"
+        android:pathData="M9.5,11 A0.5,0.5 0 1,1 9.5,12 A0.5,0.5 0 1,1 9.5,11 Z"/>
+
+    <!-- Hiker - backpack -->
+    <path
+        android:fillColor="#1B5E20"
+        android:pathData="M8.8,12.5 L8.8,14 L9.2,14 L9.2,12.5 Z"/>
+
+    <!-- Hiking stick -->
+    <path
+        android:fillColor="#6D4C41"
+        android:pathData="M10.2,13 L11.5,15.5"
+        android:strokeWidth="0.3"
+        android:strokeColor="#6D4C41"/>
+
+    <!-- Trail path -->
+    <path
+        android:fillColor="#81C784"
+        android:pathData="M6,16 Q8,15.5 10,16 T14,16 Q16,15.5 18,16"
+        android:strokeWidth="0.4"
+        android:strokeColor="#43A047" />
+
+</vector>
