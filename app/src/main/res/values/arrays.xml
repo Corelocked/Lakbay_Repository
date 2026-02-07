@@ -2,7 +2,8 @@
 <resources>
     <string-array name="seeing_options">
         <item>Oceanic View</item>
-        <item>Mountain Ranges</item>
+        <item>Mountain View</item>
+        <item>Generic</item>
     </string-array>
 
     <string-array name="activity_options">
