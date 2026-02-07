@@ -30,11 +30,24 @@
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
+<<<<<<< Updated upstream
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
+=======
+
+        <!-- Filter Section (styled like fragment_route input card: red header + collapsible content) -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="6dp"
+            app:cardBackgroundColor="@color/card_background"
+            android:layout_marginBottom="14dp">
+>>>>>>> Stashed changes
 
             <!-- Header Section -->
             <com.google.android.material.card.MaterialCardView
@@ -46,6 +59,7 @@
                 android:layout_marginBottom="16dp">
 
                 <LinearLayout
+<<<<<<< Updated upstream
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
@@ -92,6 +106,75 @@
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
                         android:layout_marginBottom="12dp" />
+=======
+                    android:id="@+id/filter_header"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:background="@color/lakbay_red"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/filter_by_category"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/white" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_filter_collapse"
+                        android:layout_width="48dp"
+                        android:layout_height="40dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:padding="0dp"
+                        android:text="@string/collapse_arrow"
+                        android:textColor="@color/white"
+                        android:textSize="14sp"
+                        android:backgroundTint="#FF8C8C"
+                        app:cornerRadius="20dp"
+                        style="@style/Widget.Material3.Button.IconButton" />
+                </LinearLayout>
+
+                <!-- Collapsible content: keep all existing filter controls here -->
+                <LinearLayout
+                    android:id="@+id/filter_collapsible_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:paddingTop="20dp"
+                    android:paddingBottom="20dp">
+
+                    <!-- Seeing selection dropdown (exposed menu) -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/til_seeing"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                        android:hint="@string/seeing_hint"
+                        android:layout_marginBottom="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxStrokeColor="@color/lakbay_yellow"
+                        app:hintTextColor="@color/black">
+
+                        <AutoCompleteTextView
+                            android:id="@+id/actv_seeing"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            style="@style/Widget.App.AutoCompleteTextView.Popup"
+                            android:inputType="none"
+                            android:entries="@array/seeing_options"
+                            android:contentDescription="@string/seeing_hint" />
+                    </com.google.android.material.textfield.TextInputLayout>
+>>>>>>> Stashed changes
 
                     <com.google.android.material.chip.ChipGroup
                         android:id="@+id/chip_group_category"
@@ -157,6 +240,31 @@
                             android:backgroundTint="@color/lakbay_cream"
                             android:text="@string/nature_filter" />
 
+<<<<<<< Updated upstream
+=======
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_culture"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:backgroundTint="@color/lakbay_cream"
+                            android:text="@string/culture_filter" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_shopping"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:backgroundTint="@color/lakbay_cream"
+                            android:text="@string/shopping_filter" />
+
+                        <!-- New dataset category chip: tourism -->
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_tourism"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:backgroundTint="@color/lakbay_cream"
+                            android:text="@string/tourism_filter" />
+
+>>>>>>> Stashed changes
                     </com.google.android.material.chip.ChipGroup>
 
                     <!-- Distance Filter -->
