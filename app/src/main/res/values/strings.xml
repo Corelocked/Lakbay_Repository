@@ -89,6 +89,15 @@
     <string name="historic_filter">🏛️ Historic</string>
     <string name="food_filter">🍽️ Food</string>
     <string name="nature_filter">🌳 Nature</string>
+<<<<<<< Updated upstream
+=======
+    <string name="culture_filter">🎭 Culture</string>
+    <string name="shopping_filter">🛍️ Shopping</string>
+    <string name="tourism_filter">🏷️ Tourism</string>
+    <string name="collapse_arrow">▼</string>
+    <string name="expand_arrow">▲</string>
+
+>>>>>>> Stashed changes
     <string name="maximum_distance">📍 Maximum Distance</string>
     <string name="sort_by">📊 Sort By</string>
     <string name="distance_sort">Distance</string>
@@ -116,4 +125,5 @@
     <string name="map_style_summary">Choose the map tile style</string>
     <string name="language_title">Language</string>
     <string name="language_summary">Choose the app language</string>
+    <string name="center_on_user">Center on user</string>
 </resources>

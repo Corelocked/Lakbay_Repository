@@ -2,6 +2,7 @@ package com.example.scenic_navigation
 
 import android.app.Application
 import com.example.scenic_navigation.utils.LocaleHelper
+import org.osmdroid.config.Configuration
 
 class ScenicNavigationApplication : Application() {
     override fun attachBaseContext(base: android.content.Context) {
@@ -12,6 +13,11 @@ class ScenicNavigationApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        // Remove the locale setting from here - we'll handle it in activities
+        // Ensure osmdroid has a proper user-agent for remote tile requests (MapTiler, etc.)
+        try {
+            Configuration.getInstance().userAgentValue = this.packageName
+        } catch (_: Exception) {
+            // ignore if osmdroid not available at build-time in analysis
+        }
     }
 }
