@@ -139,6 +139,20 @@ class SettingsFragment : PreferenceFragmentCompat() {
             requireActivity().startActivity(requireActivity().intent)
             true
         }
+
+        // Personalization switch: show friendly summary and notify app on change
+        val personalizationPref = findPreference<androidx.preference.SwitchPreference>("personalization_enabled")
+        personalizationPref?.summaryProvider = androidx.preference.Preference.SummaryProvider<androidx.preference.SwitchPreference> { pref ->
+            if (pref.isChecked) getString(R.string.personalization_summary) else getString(R.string.personalization_summary)
+        }
+        personalizationPref?.setOnPreferenceChangeListener { pref, newValue ->
+            val enabled = newValue as? Boolean ?: true
+            // Persist to the same shared prefs so SettingsStore and ViewModels see it
+            preferenceManager.sharedPreferences?.edit()?.putBoolean("personalization_enabled", enabled)?.apply()
+            // Notify other components (ViewModels) that settings changed
+            com.example.scenic_navigation.events.SettingsBus.notifySettingsChanged()
+            true
+        }
     }
 
     // Intercept EditTextPreference dialogs to provide OK-button disabling while typing

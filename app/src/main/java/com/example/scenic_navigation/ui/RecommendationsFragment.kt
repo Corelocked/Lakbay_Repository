@@ -8,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.ListView
-import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -17,18 +16,19 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.coroutines.launch
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import com.example.scenic_navigation.R
 import com.example.scenic_navigation.databinding.FragmentRecommendationsBinding
 import com.example.scenic_navigation.models.Poi
 import com.example.scenic_navigation.services.LocationService
 import com.example.scenic_navigation.viewmodel.RecommendationsViewModel
 import com.example.scenic_navigation.viewmodel.SharedRouteViewModel
-import com.google.android.material.slider.Slider
+import kotlinx.coroutines.launch
+import android.widget.Toast
+import java.util.Locale
 import kotlin.math.roundToInt
 
-// RecommendationsFragment is deprecated and no longer used
-@Deprecated("Discover page is no longer used", ReplaceWith(""))
 class RecommendationsFragment : Fragment() {
     private var _binding: FragmentRecommendationsBinding? = null
     private val binding get() = _binding!!
@@ -68,10 +68,12 @@ class RecommendationsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         locationService = LocationService(requireContext())
+        // Personalization is now handled in Settings; no in-UI switch here.
+
         getUserLocation()
 
         setupRecyclerView()
-        setupTownsList(view)
+        setupTownsList()
         setupFilters()
         observeViewModel()
 
@@ -96,16 +98,35 @@ class RecommendationsFragment : Fragment() {
             // Fetch general recommendations if no route exists
             viewModel.fetchRecommendations()
         }
+
+        // Swipe to refresh triggers re-fetch
+        binding.swipeRefresh.setOnRefreshListener {
+            viewModel.fetchRecommendations()
+        }
+
+        // Populate compact model metrics text from model_metadata.json in assets
+        try {
+            val metaStream = requireContext().assets.open("models/model_metadata.json")
+            val content = metaStream.bufferedReader().use { it.readText() }
+            val j = org.json.JSONObject(content)
+            val auc = j.optJSONObject("metrics")?.optDouble("auc", Double.NaN)
+            val n = j.optInt("n_samples", -1)
+            if (auc != null && !auc.isNaN()) {
+                binding.root.findViewById<android.widget.TextView>(R.id.tv_model_metrics)?.text = "Model AUC: ${String.format("%.3f", auc)} • samples: ${if (n > 0) n else "n/a"}"
+            }
+        } catch (_: Exception) {
+            // ignore — metrics view will stay empty
+        }
     }
 
     private fun setupRecyclerView() {
-        adapter = RecommendationsAdapter(emptyList(), userLat, userLon)
+        adapter = RecommendationsAdapter()
         // Use view binding to access recycler view
         binding.rvRecommendations.layoutManager = LinearLayoutManager(requireContext())
         binding.rvRecommendations.adapter = adapter
     }
 
-    private fun setupTownsList(view: View) {
+    private fun setupTownsList() {
         // Use the ListView defined in layout and initialize it
         val lv = binding.lvTowns
         lv.visibility = View.VISIBLE
@@ -121,7 +142,7 @@ class RecommendationsFragment : Fragment() {
         // Distance slider
         binding.sliderDistance.addOnChangeListener { _, value, _ ->
             maxDistance = value
-            binding.tvDistanceValue.text = "${value.roundToInt()} km"
+            binding.tvDistanceValue.text = getString(R.string.distance_value_fmt, value.roundToInt())
             applyFilters()
         }
 
@@ -212,10 +233,11 @@ class RecommendationsFragment : Fragment() {
                     location?.let {
                         userLat = it.latitude
                         userLon = it.longitude
-                        // Update adapter with new location
-                        adapter.updateData(filteredPois.ifEmpty { allPois }, userLat, userLon)
+                        // Update adapter with new location and refresh the currently shown list
+                        adapter.updateUserLocation(userLat, userLon)
+                        adapter.submitList(filteredPois.ifEmpty { allPois })
                     }
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     // Use default location
                 }
             }
@@ -267,7 +289,7 @@ class RecommendationsFragment : Fragment() {
         if (towns.isEmpty()) {
             townsListView.visibility = View.GONE
             binding.emptyState.visibility = View.VISIBLE
-            binding.emptyStateMessage.text = "No scenic destinations found. Try planning a route or check your connection."
+            binding.emptyStateMessage.text = getString(R.string.no_scenic_destinations)
             view?.findViewById<RecyclerView>(R.id.rv_recommendations)?.visibility = View.GONE
             return
         }
@@ -304,22 +326,23 @@ class RecommendationsFragment : Fragment() {
     }
 
     private fun updateRecommendationsList(recommendations: List<Poi>) {
-        val recyclerView = view?.findViewById<RecyclerView>(R.id.rv_recommendations)
-        if (recommendations.isEmpty()) {
+         val recyclerView = view?.findViewById<RecyclerView>(R.id.rv_recommendations)
+         if (recommendations.isEmpty()) {
             binding.emptyState.visibility = View.VISIBLE
             recyclerView?.visibility = View.GONE
             val emptyMessage = if (selectedCategories.isNotEmpty() || maxDistance < 50f) {
-                "No POIs match your filters.\nTry adjusting the distance or category filters."
+                getString(R.string.no_pois_match_filters)
             } else if (selectedTown != null) {
-                "No POIs found in $selectedTown."
+                getString(R.string.no_pois_found_in_town, selectedTown)
             } else {
-                "No recommendations available.\nPlan a route first to see recommendations along the way!"
+                getString(R.string.no_recommendations_available)
             }
-            binding.emptyStateMessage.text = emptyMessage
+             binding.emptyStateMessage.text = emptyMessage
         } else {
             binding.emptyState.visibility = View.GONE
             recyclerView?.visibility = View.VISIBLE
-            adapter.updateData(recommendations, userLat, userLon)
+            adapter.updateUserLocation(userLat, userLon)
+            adapter.submitList(recommendations)
         }
     }
 
@@ -349,7 +372,23 @@ class RecommendationsFragment : Fragment() {
         viewModel.isLoading.observe(viewLifecycleOwner) { loading ->
             if (!sharedViewModel.hasRecommendations()) {
                 binding.progressLoading.visibility = if (loading) View.VISIBLE else View.GONE
+                // stop the swipe refresh when loading is done
+                if (!loading) binding.swipeRefresh.isRefreshing = false
             }
+        }
+    }
+
+    private fun getModelAuc(): String {
+        // read metadata file and return auc if present
+        return try {
+            val metaStream = requireContext().assets.open("models/model_metadata.json")
+            val content = metaStream.bufferedReader().use { it.readText() }
+            val j = org.json.JSONObject(content)
+            val metrics = j.optJSONObject("metrics")
+            val auc = metrics?.optDouble("auc", Double.NaN)
+            if (auc != null && !auc.isNaN()) "AUC: ${String.format("%.3f", auc)}" else "AUC: n/a"
+        } catch (e: Exception) {
+            "AUC: n/a"
         }
     }
 
@@ -359,11 +398,10 @@ class RecommendationsFragment : Fragment() {
     }
 }
 
-class RecommendationsAdapter(
-    private var items: List<Poi>,
-    private var userLat: Double = 14.5995,
-    private var userLon: Double = 120.9842
-) : RecyclerView.Adapter<RecommendationsAdapter.ViewHolder>() {
+class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolder>(DIFF) {
+    var userLat: Double = 14.5995
+    var userLon: Double = 120.9842
+    private val PAYLOAD_USER_LOCATION = "payload_user_location"
 
     class ViewHolder(val binding: com.example.scenic_navigation.databinding.PoiItemBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -372,21 +410,56 @@ class RecommendationsAdapter(
         return ViewHolder(binding)
     }
 
+    // Full bind used when payloads are empty
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val item = items[position]
+        val item = getItem(position)
+        bindFull(holder, item)
+    }
+
+    // Partial bind for payload updates (e.g., only user location changed)
+    override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
+        if (payloads.isEmpty()) {
+            super.onBindViewHolder(holder, position, payloads)
+            return
+        }
+        val item = getItem(position)
+        // If payload indicates user location update, update only distance text/views
+        if (payloads.any { it == PAYLOAD_USER_LOCATION }) {
+            with(holder.binding) {
+                if (item.lat != null && item.lon != null) {
+                    val distanceMeters = haversine(userLat, userLon, item.lat!!, item.lon!!)
+                    val distanceKm = distanceMeters / 1000.0
+                    tvDistance.text = when {
+                        distanceKm < 1.0 -> String.format(Locale.ROOT, "%d m", distanceMeters.toInt())
+                        distanceKm < 10.0 -> String.format(Locale.ROOT, "%.1f km", distanceKm)
+                        else -> String.format(Locale.ROOT, "%.0f km", distanceKm)
+                    }
+                    tvDistance.visibility = View.VISIBLE
+                    categoryBadge.visibility = View.VISIBLE
+                } else {
+                    tvDistance.visibility = View.GONE
+                    categoryBadge.visibility = View.GONE
+                }
+            }
+        } else {
+            // Fallback to full bind
+            bindFull(holder, item)
+        }
+    }
+
+    private fun bindFull(holder: ViewHolder, item: Poi) {
         with(holder.binding) {
             tvName.text = item.name
             tvCategory.text = item.category?.uppercase() ?: "POI"
             tvDescription.text = item.description
 
-            // Calculate and show distance
             if (item.lat != null && item.lon != null) {
                 val distanceMeters = haversine(userLat, userLon, item.lat!!, item.lon!!)
                 val distanceKm = distanceMeters / 1000.0
                 tvDistance.text = when {
-                    distanceKm < 1.0 -> "${(distanceMeters).toInt()} m"
-                    distanceKm < 10.0 -> String.format("%.1f km", distanceKm)
-                    else -> String.format("%.0f km", distanceKm)
+                    distanceKm < 1.0 -> String.format(Locale.ROOT, "%d m", distanceMeters.toInt())
+                    distanceKm < 10.0 -> String.format(Locale.ROOT, "%.1f km", distanceKm)
+                    else -> String.format(Locale.ROOT, "%.0f km", distanceKm)
                 }
                 tvDistance.visibility = View.VISIBLE
                 categoryBadge.visibility = View.VISIBLE
@@ -395,6 +468,14 @@ class RecommendationsAdapter(
                 categoryBadge.visibility = View.GONE
             }
         }
+    }
+
+    fun updateUserLocation(lat: Double, lon: Double) {
+        userLat = lat
+        userLon = lon
+        // Only notify that user location changed so onBindViewHolder can update distances only
+        val count = currentList.size
+        if (count > 0) notifyItemRangeChanged(0, count, PAYLOAD_USER_LOCATION)
     }
 
     private fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
@@ -408,12 +489,16 @@ class RecommendationsAdapter(
         return R * c
     }
 
-    override fun getItemCount(): Int = items.size
+    companion object {
+        private val DIFF = object : DiffUtil.ItemCallback<Poi>() {
+            override fun areItemsTheSame(oldItem: Poi, newItem: Poi): Boolean {
+                // Best-effort: use name + municipality as stable identifier
+                return oldItem.name == newItem.name && oldItem.municipality == newItem.municipality
+            }
 
-    fun updateData(newItems: List<Poi>, lat: Double = userLat, lon: Double = userLon) {
-        items = newItems
-        userLat = lat
-        userLon = lon
-        notifyDataSetChanged()
+            override fun areContentsTheSame(oldItem: Poi, newItem: Poi): Boolean {
+                return oldItem == newItem
+            }
+        }
     }
 }

@@ -6,25 +6,6 @@
     android:layout_height="match_parent"
     android:background="@color/background">
 
-    <!-- Discover page deprecated -->
-    <!--
-    <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/app_bar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/gradient_primary"
-        app:elevation="4dp">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:title="🌟 Discover Places"
-            app:titleTextColor="@color/white" />
-
-    </com.google.android.material.appbar.AppBarLayout>
-    -->
-
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -35,6 +16,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
+
 
             <!-- Header Section -->
             <com.google.android.material.card.MaterialCardView
@@ -66,6 +48,15 @@
                         android:text="@string/discover_description"
                         android:textSize="14sp"
                         android:textColor="@color/text_secondary" />
+
+                    <TextView
+                        android:id="@+id/tv_model_metrics"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=""
+                        android:textSize="12sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="8dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -102,7 +93,6 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_all"
-                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
@@ -111,7 +101,6 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_scenic"
-                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
@@ -119,7 +108,6 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_coastal"
-                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
@@ -127,7 +115,6 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_mountain"
-                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
@@ -135,7 +122,6 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_historic"
-                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
@@ -143,7 +129,6 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_food"
-                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
@@ -151,7 +136,6 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_nature"
-                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
@@ -195,7 +179,7 @@
                             android:id="@+id/tv_distance_value"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="50 km"
+                            android:text="@string/default_distance_value"
                             android:textSize="14sp"
                             android:textStyle="bold"
                             android:textColor="@color/black"
@@ -224,7 +208,6 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_sort_distance"
-                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
@@ -233,7 +216,6 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_sort_scenic"
-                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
@@ -241,7 +223,6 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_sort_name"
-                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:backgroundTint="@color/lakbay_cream"
@@ -283,7 +264,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🗺️"
+                    android:text="@string/map_emoji"
                     android:textSize="64sp"
                     android:layout_marginBottom="16dp" />
 
@@ -307,13 +288,20 @@
             </LinearLayout>
 
             <!-- Recommendations List -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rv_recommendations"
+            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/swipe_refresh"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:clipToPadding="false"
-                tools:listitem="@layout/poi_item"
-                tools:itemCount="5" />
+                android:layout_height="wrap_content">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_recommendations"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipToPadding="false"
+                    tools:listitem="@layout/poi_item"
+                    tools:itemCount="5" />
+
+            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

@@ -41,6 +41,24 @@ android {
     }
 }
 
+// Copy model artifacts (TFLite + metadata) from tools/ or a central location into app assets at build time.
+// This helps CI/package deterministic model versions without manually checking files into app/assets.
+val modelSourceDirProp = rootProject.layout.projectDirectory.dir("tools/app/src/main/assets/models")
+val modelTargetDirProp = layout.projectDirectory.dir("src/main/assets/models")
+
+tasks.register<Copy>("copyModelAssets") {
+    description = "Copy model artifacts (tflite, metadata, feature_stats) into app assets"
+    // use DirectoryProperty providers to avoid capturing File objects at configuration time
+    from(modelSourceDirProp)
+    into(modelTargetDirProp)
+    include("**/*.tflite", "**/*.keras", "**/*.json", "**/*.pb")
+    // do not call blocking filesystem ops during configuration; Copy will gracefully handle missing source
+}
+
+// Ensure model assets are copied before packaging assets
+tasks.named("preBuild") {
+    dependsOn("copyModelAssets")
+}
 
 dependencies {
     implementation(libs.androidx.core.ktx)
@@ -83,6 +101,9 @@ dependencies {
 
     // TensorFlow Lite for on-device inference (ensure version matches your trainer runtime)
     implementation("org.tensorflow:tensorflow-lite:2.12.0")
+
+    // SwipeRefreshLayout for pull-to-refresh in Recommendations
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
