@@ -26,8 +26,11 @@ import com.example.scenic_navigation.viewmodel.RecommendationsViewModel
 import com.example.scenic_navigation.viewmodel.SharedRouteViewModel
 import kotlinx.coroutines.launch
 import android.widget.Toast
+import android.util.Log
 import java.util.Locale
 import kotlin.math.roundToInt
+import android.content.Context
+import com.example.scenic_navigation.utils.GeoUtils
 
 class RecommendationsFragment : Fragment() {
     private var _binding: FragmentRecommendationsBinding? = null
@@ -37,7 +40,9 @@ class RecommendationsFragment : Fragment() {
     private lateinit var adapter: RecommendationsAdapter
     private lateinit var locationService: LocationService
 
-    private var showingTowns = true
+    // We no longer show the interim towns list — always display POIs directly
+    private var showingTowns = false
+    private var forceShowPois = false
     private var selectedTown: String? = null
     private var allPois: List<Poi> = emptyList()
     private var filteredPois: List<Poi> = emptyList()
@@ -50,6 +55,7 @@ class RecommendationsFragment : Fragment() {
     private var maxDistance: Float = 50f // km
     private var selectedCategories = mutableSetOf<String>()
     private var sortBy: SortOption = SortOption.DISTANCE
+    private var filterCollapsed = false
 
     enum class SortOption {
         DISTANCE, SCENIC_SCORE, NAME
@@ -75,17 +81,15 @@ class RecommendationsFragment : Fragment() {
         setupRecyclerView()
         setupTownsList()
         setupFilters()
+        setupFilterCollapse()
         observeViewModel()
 
         // Back press handling for navigation between towns and POIs
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (!showingTowns) {
-                    showTownsList(allPois)
-                } else {
-                    isEnabled = false
-                    requireActivity().onBackPressed()
-                }
+                // With towns view removed, just perform normal back navigation
+                isEnabled = false
+                requireActivity().onBackPressed()
             }
         })
 
@@ -100,8 +104,30 @@ class RecommendationsFragment : Fragment() {
         }
 
         // Swipe to refresh triggers re-fetch
-        binding.swipeRefresh.setOnRefreshListener {
+        binding.swipeRefresh?.setOnRefreshListener {
             viewModel.fetchRecommendations()
+        }
+
+        // FAB and empty-state button trigger curation flow (open a lightweight curator — here we just show a toast)
+        binding.fabCurate.setOnClickListener {
+            // Provide quick feedback and trigger a fresh recommendation fetch.
+            Log.i("RecommendationsFrag", "FAB clicked — preparing UI and triggering fetchRecommendations()")
+            // Set UI to expect POIs first to avoid a race where the ViewModel emits before we flip the flag.
+            showingTowns = false
+            forceShowPois = true
+            // Hide towns list and empty state so the POI list (or loading) becomes visible immediately.
+            try { townsListView.visibility = View.GONE } catch (_: Exception) {}
+            binding.emptyState.visibility = View.GONE
+            binding.rvRecommendations.visibility = View.VISIBLE
+            // Clear shared recommendations so local recommendations take precedence
+            sharedViewModel.updateRecommendations(emptyList())
+            Toast.makeText(requireContext(), getString(R.string.curate_now), Toast.LENGTH_SHORT).show()
+            // Trigger the ViewModel to (re)fetch recommendations — this updates the observed LiveData
+            // and will update the UI when results arrive.
+            viewModel.fetchRecommendations()
+        }
+        binding.btnCurateEmpty?.setOnClickListener {
+            binding.fabCurate.performClick()
         }
 
         // Populate compact model metrics text from model_metadata.json in assets
@@ -112,7 +138,7 @@ class RecommendationsFragment : Fragment() {
             val auc = j.optJSONObject("metrics")?.optDouble("auc", Double.NaN)
             val n = j.optInt("n_samples", -1)
             if (auc != null && !auc.isNaN()) {
-                binding.root.findViewById<android.widget.TextView>(R.id.tv_model_metrics)?.text = "Model AUC: ${String.format("%.3f", auc)} • samples: ${if (n > 0) n else "n/a"}"
+                binding.tvModelMetrics?.text = "Model AUC: ${String.format("%.3f", auc)} • samples: ${if (n > 0) n else "n/a"}"
             }
         } catch (_: Exception) {
             // ignore — metrics view will stay empty
@@ -120,85 +146,167 @@ class RecommendationsFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        adapter = RecommendationsAdapter()
-        // Use view binding to access recycler view
-        binding.rvRecommendations.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvRecommendations.adapter = adapter
-    }
+         adapter = RecommendationsAdapter()
+         // Use view binding to access recycler view
+         binding.rvRecommendations.layoutManager = LinearLayoutManager(requireContext())
+         binding.rvRecommendations.adapter = adapter
+          // When placed inside a NestedScrollView, disable nested scrolling so RecyclerView measures correctly
+          binding.rvRecommendations.isNestedScrollingEnabled = false
+
+          // Handle like clicks from adapter
+         adapter.onLikeClick = { poi ->
+            try {
+                val prefs = requireContext().getSharedPreferences("scenic_prefs", Context.MODE_PRIVATE)
+                val set = prefs.getStringSet("curated_pois", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+                val added = set.add(poi.name)
+                if (!added) {
+                    // if already present, remove (toggle behavior)
+                    set.remove(poi.name)
+                }
+                // commit synchronously so subsequent reads immediately reflect change
+                prefs.edit().putStringSet("curated_pois", set).commit()
+                // immediate UI feedback
+                val pos = adapter.currentList.indexOfFirst { it.name == poi.name && it.municipality == poi.municipality }
+                if (pos >= 0) adapter.notifyItemChanged(pos)
+                Toast.makeText(requireContext(), getString(if (added) R.string.poi_liked else R.string.poi_unliked, poi.name), Toast.LENGTH_SHORT).show()
+                // let ViewModel process curation side-effects (increment category & rerank)
+                if (added) {
+                    viewModel.likePoi(poi)
+                } else {
+                    viewModel.removeCuratedPoiName(poi.name)
+                }
+                viewModel.fetchRecommendations()
+            } catch (e: Exception) {
+                Log.w("RecommendationsFrag", "Failed to update curated set: ${e.message}")
+            }
+         }
+
+         // Smoothly fade header when the user scrolls to give more space for list items
+         binding.rvRecommendations.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            // small threshold to avoid toggling on minor movements
+            private val THRESHOLD = 6
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                val header = binding.headerCard
+                try {
+                    if (dy > THRESHOLD) {
+                        // scrolling down — hide header smoothly
+                        if (header.alpha > 0.05f) header.animate().alpha(0f).setDuration(180).start()
+                    } else if (dy < -THRESHOLD) {
+                        // scrolling up — show header smoothly
+                        if (header.alpha < 0.95f) header.animate().alpha(1f).setDuration(180).start()
+                    }
+                } catch (_: Exception) {
+                    // ignore animation failures
+                }
+            }
+         })
+     }
 
     private fun setupTownsList() {
-        // Use the ListView defined in layout and initialize it
+        // Keep the view in the layout for legacy reasons but hide it — we don't show towns anymore.
         val lv = binding.lvTowns
-        lv.visibility = View.VISIBLE
-        lv.setOnItemClickListener { _, _, position, _ ->
-            val town = townsAdapter.getItem(position)
-            selectedTown = town
-            showPoisForTown(town)
-        }
+        lv.visibility = View.GONE
         townsListView = lv
     }
 
     private fun setupFilters() {
-        // Distance slider
-        binding.sliderDistance.addOnChangeListener { _, value, _ ->
-            maxDistance = value
-            binding.tvDistanceValue.text = getString(R.string.distance_value_fmt, value.roundToInt())
-            applyFilters()
-        }
+         // Distance slider
+         binding.sliderDistance.addOnChangeListener { _, value, _ ->
+             maxDistance = value
+             binding.tvDistanceValue.text = getString(R.string.distance_value_fmt, value.roundToInt())
+             applyFilters()
+         }
 
-        // Category chips
-        binding.chipAll.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                selectedCategories.clear()
-                uncheckOtherCategoryChips()
+         // Category chips
+         binding.chipAll.setOnCheckedChangeListener { _, isChecked ->
+             if (isChecked) {
+                 selectedCategories.clear()
+                 uncheckOtherCategoryChips()
+             }
+             applyFilters()
+         }
+
+         binding.chipScenic.setOnCheckedChangeListener { _, isChecked ->
+             handleCategoryChip("scenic", isChecked)
+         }
+
+         binding.chipCoastal.setOnCheckedChangeListener { _, isChecked ->
+             handleCategoryChip("coastal", isChecked)
+         }
+
+         binding.chipMountain.setOnCheckedChangeListener { _, isChecked ->
+             handleCategoryChip("mountain", isChecked)
+         }
+
+         binding.chipHistoric.setOnCheckedChangeListener { _, isChecked ->
+             handleCategoryChip("historic", isChecked)
+         }
+
+         binding.chipFood.setOnCheckedChangeListener { _, isChecked ->
+             handleCategoryChip("food", isChecked)
+         }
+
+         binding.chipNature.setOnCheckedChangeListener { _, isChecked ->
+             handleCategoryChip("nature", isChecked)
+         }
+
+         // New category chips
+         binding.chipCulture.setOnCheckedChangeListener { _, isChecked ->
+             handleCategoryChip("culture", isChecked)
+         }
+
+         binding.chipShopping.setOnCheckedChangeListener { _, isChecked ->
+             handleCategoryChip("shopping", isChecked)
+         }
+
+         // Sort chips
+         binding.chipSortDistance.setOnCheckedChangeListener { _, isChecked ->
+             if (isChecked) {
+                 sortBy = SortOption.DISTANCE
+                 applyFilters()
+             }
+         }
+
+         binding.chipSortScenic.setOnCheckedChangeListener { _, isChecked ->
+             if (isChecked) {
+                 sortBy = SortOption.SCENIC_SCORE
+                 applyFilters()
+             }
+         }
+
+         binding.chipSortName.setOnCheckedChangeListener { _, isChecked ->
+             if (isChecked) {
+                 sortBy = SortOption.NAME
+                 applyFilters()
+             }
+         }
+     }
+
+    private fun setupFilterCollapse() {
+        // Wire the header collapse button to toggle the filter content using view binding.
+        try {
+            val btn = binding.btnFilterCollapse
+            val content = binding.filterCollapsibleContent
+            // initialize state
+            content.visibility = if (filterCollapsed) View.GONE else View.VISIBLE
+            content.alpha = if (filterCollapsed) 0f else 1f
+
+            btn.setOnClickListener {
+                filterCollapsed = !filterCollapsed
+                if (filterCollapsed) {
+                    // hide with fade
+                    content.animate().alpha(0f).setDuration(180).withEndAction { content.visibility = View.GONE }.start()
+                    btn.text = "▲"
+                } else {
+                    content.visibility = View.VISIBLE
+                    content.alpha = 0f
+                    content.animate().alpha(1f).setDuration(180).start()
+                    btn.text = "▼"
+                }
             }
-            applyFilters()
-        }
-
-        binding.chipScenic.setOnCheckedChangeListener { _, isChecked ->
-            handleCategoryChip("scenic", isChecked)
-        }
-
-        binding.chipCoastal.setOnCheckedChangeListener { _, isChecked ->
-            handleCategoryChip("coastal", isChecked)
-        }
-
-        binding.chipMountain.setOnCheckedChangeListener { _, isChecked ->
-            handleCategoryChip("mountain", isChecked)
-        }
-
-        binding.chipHistoric.setOnCheckedChangeListener { _, isChecked ->
-            handleCategoryChip("historic", isChecked)
-        }
-
-        binding.chipFood.setOnCheckedChangeListener { _, isChecked ->
-            handleCategoryChip("food", isChecked)
-        }
-
-        binding.chipNature.setOnCheckedChangeListener { _, isChecked ->
-            handleCategoryChip("nature", isChecked)
-        }
-
-        // Sort chips
-        binding.chipSortDistance.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                sortBy = SortOption.DISTANCE
-                applyFilters()
-            }
-        }
-
-        binding.chipSortScenic.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                sortBy = SortOption.SCENIC_SCORE
-                applyFilters()
-            }
-        }
-
-        binding.chipSortName.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                sortBy = SortOption.NAME
-                applyFilters()
-            }
+        } catch (_: Exception) {
+            // binding may not be available in rare cases; ignore safely
         }
     }
 
@@ -222,6 +330,8 @@ class RecommendationsFragment : Fragment() {
         binding.chipHistoric.isChecked = false
         binding.chipFood.isChecked = false
         binding.chipNature.isChecked = false
+        binding.chipCulture.isChecked = false
+        binding.chipShopping.isChecked = false
     }
 
     private fun getUserLocation() {
@@ -274,62 +384,27 @@ class RecommendationsFragment : Fragment() {
 
         filteredPois = filtered
 
-        if (!showingTowns) {
-            updateRecommendationsList(filteredPois)
-        }
+        // Always show POIs directly (towns list removed)
+        updateRecommendationsList(filteredPois)
     }
 
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        return haversine(lat1, lon1, lat2, lon2)
+        return GeoUtils.haversine(lat1, lon1, lat2, lon2)
     }
 
     private fun showTownsList(pois: List<Poi>) {
-        showingTowns = true
-        val towns = pois.map { it.municipality }.filter { it.isNotBlank() }.distinct().sorted()
-        if (towns.isEmpty()) {
-            townsListView.visibility = View.GONE
-            binding.emptyState.visibility = View.VISIBLE
-            binding.emptyStateMessage.text = getString(R.string.no_scenic_destinations)
-            view?.findViewById<RecyclerView>(R.id.rv_recommendations)?.visibility = View.GONE
-            return
-        }
-        townsListView.visibility = View.VISIBLE
-        binding.emptyState.visibility = View.GONE
-        view?.findViewById<RecyclerView>(R.id.rv_recommendations)?.visibility = View.GONE
-        townsAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, towns)
-        townsListView.adapter = townsAdapter
-        // If only one town, show POIs directly
-        if (towns.size == 1) {
-            showPoisForTown(towns.first())
-        }
-    }
-
-    private fun showPoisForTown(town: String?) {
-        showingTowns = false
-        townsListView.visibility = View.GONE
-        selectedTown = town
-
-        // Filter POIs for this town and apply other filters
-        allPois = allPois.filter { it.municipality == town }
-        applyFilters()
-    }
-
-    private fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        val R = 6371000.0 // Earth radius in meters
-        val dLat = Math.toRadians(lat2 - lat1)
-        val dLon = Math.toRadians(lon2 - lon1)
-        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2)
-        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-        return R * c
+        // Towns list UI removed — directly show POIs instead
+        updateRecommendationsList(pois)
     }
 
     private fun updateRecommendationsList(recommendations: List<Poi>) {
-         val recyclerView = view?.findViewById<RecyclerView>(R.id.rv_recommendations)
+         val recyclerView = binding.rvRecommendations
+         Log.i("RecommendationsFrag", "updateRecommendationsList called: recommendations.size=${recommendations.size}")
          if (recommendations.isEmpty()) {
             binding.emptyState.visibility = View.VISIBLE
-            recyclerView?.visibility = View.GONE
+            recyclerView.visibility = View.GONE
+            // also hide towns list when showing empty POI results
+            townsListView.visibility = View.GONE
             val emptyMessage = if (selectedCategories.isNotEmpty() || maxDistance < 50f) {
                 getString(R.string.no_pois_match_filters)
             } else if (selectedTown != null) {
@@ -338,28 +413,52 @@ class RecommendationsFragment : Fragment() {
                 getString(R.string.no_recommendations_available)
             }
              binding.emptyStateMessage.text = emptyMessage
-        } else {
-            binding.emptyState.visibility = View.GONE
-            recyclerView?.visibility = View.VISIBLE
-            adapter.updateUserLocation(userLat, userLon)
-            adapter.submitList(recommendations)
-        }
-    }
+         } else {
+             binding.emptyState.visibility = View.GONE
+             // hide towns list when showing POIs
+             townsListView.visibility = View.GONE
+             recyclerView.visibility = View.VISIBLE
+             adapter.updateUserLocation(userLat, userLon)
+             adapter.submitList(recommendations)
+             // After layout, ensure list scrolls to top so new results are visible
+             recyclerView.post {
+                 try { if (adapter.itemCount > 0) recyclerView.scrollToPosition(0) } catch (_: Exception) {}
+             }
+         }
+     }
 
     private fun observeViewModel() {
         // Observe shared ViewModel for route recommendations
         sharedViewModel.recommendations.observe(viewLifecycleOwner) { recommendations ->
             if (recommendations.isNotEmpty()) {
                 allPois = recommendations
-                showTownsList(recommendations)
+                // Towns list UI removed — directly show POIs instead
+                updateRecommendationsList(recommendations)
             }
         }
 
         // Fallback to local ViewModel for general recommendations
         viewModel.recommendations.observe(viewLifecycleOwner) { recommendations ->
-            if (!sharedViewModel.hasRecommendations() && recommendations.isNotEmpty()) {
+            Log.i("RecommendationsFrag", "viewModel.recommendations observed: count=${recommendations.size}, showingTowns=$showingTowns, sharedHas=${sharedViewModel.hasRecommendations()}, forceShowPois=$forceShowPois")
+            if (recommendations.isNotEmpty()) {
                 allPois = recommendations
-                showTownsList(recommendations)
+                // If the user explicitly requested POIs via FAB, force showing POIs and clear the flag.
+                if (forceShowPois) {
+                    forceShowPois = false
+                    Log.i("RecommendationsFrag", "Force-displaying POIs due to user request")
+                    updateRecommendationsList(recommendations)
+                    return@observe
+                }
+                // Otherwise follow normal behavior driven by showingTowns
+                if (!showingTowns) {
+                    Log.i("RecommendationsFrag", "Displaying POIs directly (user expected)")
+                    updateRecommendationsList(recommendations)
+                } else {
+                    Log.i("RecommendationsFrag", "Displaying towns list (default behavior)")
+                    showTownsList(recommendations)
+                }
+            } else {
+                Log.i("RecommendationsFrag", "No recommendations in local ViewModel")
             }
         }
 
@@ -373,7 +472,7 @@ class RecommendationsFragment : Fragment() {
             if (!sharedViewModel.hasRecommendations()) {
                 binding.progressLoading.visibility = if (loading) View.VISIBLE else View.GONE
                 // stop the swipe refresh when loading is done
-                if (!loading) binding.swipeRefresh.isRefreshing = false
+                if (!loading) binding.swipeRefresh?.isRefreshing = false
             }
         }
     }
@@ -401,6 +500,7 @@ class RecommendationsFragment : Fragment() {
 class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolder>(DIFF) {
     var userLat: Double = 14.5995
     var userLon: Double = 120.9842
+    var onLikeClick: ((Poi) -> Unit)? = null
     private val PAYLOAD_USER_LOCATION = "payload_user_location"
 
     class ViewHolder(val binding: com.example.scenic_navigation.databinding.PoiItemBinding) : RecyclerView.ViewHolder(binding.root)
@@ -427,7 +527,7 @@ class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolde
         if (payloads.any { it == PAYLOAD_USER_LOCATION }) {
             with(holder.binding) {
                 if (item.lat != null && item.lon != null) {
-                    val distanceMeters = haversine(userLat, userLon, item.lat!!, item.lon!!)
+                    val distanceMeters = GeoUtils.haversine(userLat, userLon, item.lat!!, item.lon!!)
                     val distanceKm = distanceMeters / 1000.0
                     tvDistance.text = when {
                         distanceKm < 1.0 -> String.format(Locale.ROOT, "%d m", distanceMeters.toInt())
@@ -448,13 +548,32 @@ class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolde
     }
 
     private fun bindFull(holder: ViewHolder, item: Poi) {
-        with(holder.binding) {
-            tvName.text = item.name
-            tvCategory.text = item.category?.uppercase() ?: "POI"
-            tvDescription.text = item.description
+         with(holder.binding) {
+             tvName.text = item.name
+             tvCategory.text = item.category?.uppercase() ?: "POI"
+             // Prefix description with scenic score when present
+             val desc = buildString {
+                 val score = item.scenicScore ?: 0f
+                 if (score > 0f) {
+                     append("Scenic score: ${score.toInt()} • ")
+                 }
+                 append(item.description)
+             }
+             tvDescription.text = desc
+
+            // Set like button based on persisted curated POIs stored in shared prefs
+            try {
+                val prefs = holder.binding.root.context.getSharedPreferences("scenic_prefs", Context.MODE_PRIVATE)
+                val curated = prefs.getStringSet("curated_pois", emptySet()) ?: emptySet()
+                if (curated.contains(item.name)) {
+                    btnLike.setImageResource(R.drawable.ic_favorite_24)
+                } else {
+                    btnLike.setImageResource(R.drawable.ic_favorite_border_24)
+                }
+            } catch (_: Exception) {}
 
             if (item.lat != null && item.lon != null) {
-                val distanceMeters = haversine(userLat, userLon, item.lat!!, item.lon!!)
+                val distanceMeters = GeoUtils.haversine(userLat, userLon, item.lat!!, item.lon!!)
                 val distanceKm = distanceMeters / 1000.0
                 tvDistance.text = when {
                     distanceKm < 1.0 -> String.format(Locale.ROOT, "%d m", distanceMeters.toInt())
@@ -467,6 +586,11 @@ class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolde
                 tvDistance.visibility = View.GONE
                 categoryBadge.visibility = View.GONE
             }
+
+            // Like button handling — the fragment will set onLikeClick and maintain curated state
+            btnLike.setOnClickListener {
+                onLikeClick?.invoke(item)
+            }
         }
     }
 
@@ -478,17 +602,7 @@ class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolde
         if (count > 0) notifyItemRangeChanged(0, count, PAYLOAD_USER_LOCATION)
     }
 
-    private fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        val R = 6371000.0 // Earth radius in meters
-        val dLat = Math.toRadians(lat2 - lat1)
-        val dLon = Math.toRadians(lon2 - lon1)
-        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2)
-        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-        return R * c
-    }
-
+    // use GeoUtils.haversine for distance calculations
     companion object {
         private val DIFF = object : DiffUtil.ItemCallback<Poi>() {
             override fun areItemsTheSame(oldItem: Poi, newItem: Poi): Boolean {

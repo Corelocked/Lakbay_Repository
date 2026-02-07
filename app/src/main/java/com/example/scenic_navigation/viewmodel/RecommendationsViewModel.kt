@@ -24,6 +24,10 @@ import android.content.SharedPreferences
 class RecommendationsViewModel(application: Application) : AndroidViewModel(application) {
     private val settingsStore = SettingsStore(application.applicationContext)
     private val prefStore = UserPreferenceStore(application.applicationContext)
+    // Service instances used by the ViewModel — create once from application context
+    private val locationService: LocationService = LocationService(application.applicationContext)
+    private val scenicPlanner: ScenicRoutePlanner = ScenicRoutePlanner(application.applicationContext)
+    private val poiService: PoiService = PoiService(application.applicationContext)
     // Make the reranker swappable so we can enable/disable personalization at runtime
     private var poiReranker: PoiReranker
     private val sharedPrefs: SharedPreferences = application.applicationContext.getSharedPreferences("scenic_prefs", Context.MODE_PRIVATE)
@@ -57,6 +61,9 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
     private val _recommendations = MutableLiveData<List<Poi>>(emptyList())
     val recommendations: LiveData<List<Poi>> = _recommendations
 
+    // Keep a small curated list (by POI name) persisted so users can curate POIs they like
+    private val CURATED_KEY = "curated_pois"
+
     // Simple CSV parser to handle quoted fields
     private fun parseCsvLine(line: String): List<String> {
         val result = mutableListOf<String>()
@@ -76,6 +83,40 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
         return result
     }
 
+    /**
+     * Allow user to 'like' or curate a POI. This increments the category count (used by personalization)
+     * and persists the POI name in a curated set so future suggestions can prioritize it.
+     */
+    fun likePoi(poi: Poi) {
+        viewModelScope.launch {
+            try {
+                val cat = poi.category ?: "unknown"
+                prefStore.incrementCategory(cat)
+                // persist curated name
+                val set = sharedPrefs.getStringSet(CURATED_KEY, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+                set.add(poi.name)
+                sharedPrefs.edit().putStringSet(CURATED_KEY, set).apply()
+                Log.i("RecommendationsVM", "Liked POI: ${poi.name} (category=$cat)")
+            } catch (e: Exception) {
+                Log.w("RecommendationsVM", "Failed to like POI: ${e.message}")
+            }
+        }
+    }
+
+    fun removeCuratedPoiName(name: String) {
+        viewModelScope.launch {
+            val set = sharedPrefs.getStringSet(CURATED_KEY, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+            if (set.remove(name)) {
+                sharedPrefs.edit().putStringSet(CURATED_KEY, set).apply()
+            }
+        }
+    }
+
+    private fun isCurated(poi: Poi): Boolean {
+        val set = sharedPrefs.getStringSet(CURATED_KEY, emptySet()) ?: emptySet()
+        return set.contains(poi.name)
+    }
+
     fun fetchRecommendations() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -93,10 +134,10 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
                         val parts = parseCsvLine(line)
                         if (parts.size >= 6) {
                             val poi = Poi(
-                                name = parts[0].trim().removeSurrounding("\""),
-                                category = parts[1].trim().removeSurrounding("\""),
-                                description = parts[5].trim().removeSurrounding("\""),
-                                municipality = parts[2].trim().removeSurrounding("\""),
+                                name = parts[0].trim().removeSurrounding("\"") ,
+                                category = parts[1].trim().removeSurrounding("\"") ,
+                                description = parts[5].trim().removeSurrounding("\"") ,
+                                municipality = parts[2].trim().removeSurrounding("\"") ,
                                 lat = parts[3].trim().removeSurrounding("\"" ).toDoubleOrNull(),
                                 lon = parts[4].trim().removeSurrounding("\"" ).toDoubleOrNull()
                             )
@@ -122,7 +163,7 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
                         val nearby = listOf(center, GeoPoint(center.latitude + 0.05, center.longitude + 0.05))
                         val scenicPois = scenicPlanner.fetchScenicPois(nearby, packageName, "generic", null)
                         if (scenicPois.isNotEmpty()) {
-                            val converted = scenicPois.map { sp ->
+                            val converted = scenicPois.map { sp: com.example.scenic_navigation.models.ScenicPoi ->
                                 Poi(
                                     name = sp.name,
                                     category = sp.type,
@@ -382,7 +423,16 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
                      sortedPois
                  }
 
-                _recommendations.value = reranked.take(20)
+                // Boost curated POIs (if user has curated any) by moving them to the top
+                val curatedSet = sharedPrefs.getStringSet(CURATED_KEY, emptySet()) ?: emptySet()
+                val finalList = if (curatedSet.isNotEmpty()) {
+                    val (curated, others) = reranked.partition { curatedSet.contains(it.name) }
+                    curated + others
+                } else {
+                    reranked
+                }
+
+                _recommendations.value = finalList.take(20)
 
             } catch (e: Exception) {
                 Log.e("RecommendationsVM", "Unexpected error fetching recommendations: ${e.message}")

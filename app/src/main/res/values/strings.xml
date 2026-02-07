@@ -69,6 +69,7 @@
     <string name="save_button">Save</string>
     <!-- Added strings used by the POI preview header and action icons -->
     <string name="poi_image_description">Preview image for POI</string>
+    <string name="poi_rating_star">POI rating star</string>
     <string name="directions">Directions</string>
     <string name="save">Save</string>
     <string name="nearby">Nearby</string>
@@ -96,6 +97,8 @@
     <string name="historic_filter">🏛️ Historic</string>
     <string name="food_filter">🍽️ Food</string>
     <string name="nature_filter">🌳 Nature</string>
+    <string name="culture_filter">🎭 Culture</string>
+    <string name="shopping_filter">🛍️ Shopping</string>
     <string name="maximum_distance">📍 Maximum Distance</string>
     <string name="sort_by">📊 Sort By</string>
     <string name="distance_sort">Distance</string>
@@ -143,4 +146,8 @@
 
     <!-- POI fallback string resource used by adapters -->
     <string name="poi_fallback">POI</string>
+    <string name="like_poi">Like POI</string>
+    <string name="poi_liked">Liked %1$s</string>
+    <string name="poi_unliked">Removed from favorites: %1$s</string>
+    <string name="curate_now">Curate now</string>
 </resources>
