@@ -124,4 +124,23 @@
     <string name="language_title">Language</string>
     <string name="language_summary">Choose the app language</string>
     <string name="center_on_user">Center on user</string>
+    <!-- Added to avoid hardcoded text in fragment_recommendations.xml -->
+    <string name="default_distance_value">50 km</string>
+    <string name="map_emoji">🗺️</string>
+
+    <!-- Personalization setting labels -->
+    <string name="personalization_title">Personalize recommendations</string>
+    <string name="personalization_summary">Enable using your interactions to tailor recommended places (stored locally)</string>
+    <string name="personalization_enabled_summary">Personalization is ON — recommendations adapt to your interactions</string>
+    <string name="personalization_disabled_summary">Personalization is OFF — recommendations use general signals only</string>
+
+    <!-- Recommendations fragment strings -->
+    <string name="distance_value_fmt">%1$d km</string>
+    <string name="no_scenic_destinations">No scenic destinations found. Try planning a route or check your connection.</string>
+    <string name="no_pois_match_filters">No POIs match your filters.\nTry adjusting the distance or category filters.</string>
+    <string name="no_pois_found_in_town">No POIs found in %1$s.</string>
+    <string name="no_recommendations_available">No recommendations available.\nPlan a route first to see recommendations along the way!</string>
+
+    <!-- POI fallback string resource used by adapters -->
+    <string name="poi_fallback">POI</string>
 </resources>

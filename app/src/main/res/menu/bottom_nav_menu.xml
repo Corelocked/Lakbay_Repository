@@ -4,11 +4,13 @@
         android:id="@+id/nav_route"
         android:icon="@android:drawable/ic_menu_directions"
         android:title="@string/nav_route" />
-    <!-- Discover/Recommendations page deprecated -->
-    <!-- <item
+
+    <!-- Re-enable Discover/Recommendations page -->
+    <item
         android:id="@+id/nav_recommendations"
         android:icon="@android:drawable/ic_menu_view"
-        android:title="Discover" /> -->
+        android:title="@string/scenic_destinations" />
+
     <item
         android:id="@+id/nav_favorites"
         android:icon="@android:drawable/btn_star_big_on"

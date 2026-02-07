@@ -6,7 +6,7 @@ import android.util.Log
 import org.tensorflow.lite.Interpreter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import android.content.res.AssetManager
+import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -15,6 +15,7 @@ import java.io.FileInputStream
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import kotlin.math.max
+import org.json.JSONObject
 
 /**
  * ML inference wrapper that uses TensorFlow Lite Interpreter. If the Interpreter fails to initialize
@@ -34,6 +35,29 @@ class MlInferenceEngine(private val context: Context, private val modelAssetPath
     private var inputFeatureCount: Int = -1
 
     init {
+        // Log model metadata if present
+        try {
+            val metaStream = context.assets.open("models/model_metadata.json")
+            BufferedReader(InputStreamReader(metaStream)).use { br ->
+                val content = br.readText()
+                val j = JSONObject(content)
+                val name = j.optString("model_name", "unknown")
+                val version = j.optString("version", "unknown")
+                val trainedOn = j.optString("trained_on", "unknown")
+                Log.i("MlInferenceEngine", "Model metadata - name:$name version:$version trained_on:$trainedOn")
+                // Log metrics if present
+                val metrics = j.optJSONObject("metrics")
+                if (metrics != null) {
+                    val auc = metrics.optDouble("auc", Double.NaN)
+                    val acc = metrics.optDouble("accuracy", Double.NaN)
+                    val n = j.optInt("n_samples", -1)
+                    Log.i("MlInferenceEngine", "Model metrics - auc:${if (!auc.isNaN()) String.format("%.4f", auc) else "n/a"} accuracy:${if (!acc.isNaN()) String.format("%.3f", acc) else "n/a"} samples:${if (n>=0) n else "n/a"}")
+                }
+            }
+        } catch (e: Exception) {
+            Log.i("MlInferenceEngine", "No model metadata found or failed to read it: ${e.message}")
+        }
+
         try {
             val modelBuffer = loadModelFile(context, modelAssetPath)
             val options = Interpreter.Options().apply { setNumThreads(defaultNumThreads) }

@@ -27,6 +27,12 @@
         android:defaultValue="true"
         android:summary="@string/prefer_coastal_summary" />
 
+    <SwitchPreference
+        android:key="personalization_enabled"
+        android:title="@string/personalization_title"
+        android:defaultValue="true"
+        android:summary="@string/personalization_summary" />
+
     <ListPreference
         android:key="map_style"
         android:title="@string/map_style_title"

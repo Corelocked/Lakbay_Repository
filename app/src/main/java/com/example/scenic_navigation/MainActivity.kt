@@ -2,6 +2,9 @@ package com.example.scenic_navigation
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -10,10 +13,12 @@ import androidx.fragment.app.commit
 import com.example.scenic_navigation.ui.FavoritesFragment
 import com.example.scenic_navigation.ui.LoginActivity
 import com.example.scenic_navigation.ui.RouteFragment
+import com.example.scenic_navigation.ui.RecommendationsFragment
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.FirebaseAuth
 import org.osmdroid.config.Configuration
+import java.io.BufferedReader
 
 class MainActivity : AppCompatActivity() {
 
@@ -77,6 +82,12 @@ class MainActivity : AppCompatActivity() {
                     }
                     true
                 }
+                R.id.nav_recommendations -> {
+                    supportFragmentManager.commit {
+                        replace(R.id.fragment_container, RecommendationsFragment())
+                    }
+                    true
+                }
                 R.id.nav_favorites -> {
                     supportFragmentManager.commit {
                         replace(R.id.fragment_container, FavoritesFragment())
@@ -100,6 +111,49 @@ class MainActivity : AppCompatActivity() {
                 }
                 else -> false
             }
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_recommendations, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_model_info -> {
+                showModelInfoDialog()
+                true
+            }
+            R.id.action_settings -> {
+                startActivity(Intent(this, com.example.scenic_navigation.ui.SettingsActivity::class.java))
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun showModelInfoDialog() {
+        try {
+            val stream = assets.open("models/model_metadata.json")
+            val content = stream.bufferedReader().use(BufferedReader::readText)
+            val pretty = try {
+                val json = org.json.JSONObject(content)
+                json.toString(2)
+            } catch (_: Exception) {
+                content
+            }
+            AlertDialog.Builder(this)
+                .setTitle("Model metadata")
+                .setMessage(pretty)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+        } catch (e: Exception) {
+            AlertDialog.Builder(this)
+                .setTitle("Model metadata")
+                .setMessage("No metadata available")
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
         }
     }
 
