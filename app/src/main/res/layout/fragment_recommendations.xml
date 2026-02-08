@@ -248,7 +248,8 @@
                     android:id="@+id/chip_group_sort"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:singleSelection="true"
+                    app:singleSelection="false"
+                    app:selectionRequired="false"
                     app:chipSpacingHorizontal="8dp">
 
                     <com.google.android.material.chip.Chip
@@ -256,14 +257,15 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:backgroundTint="@color/lakbay_cream"
-                        android:text="@string/distance_sort"
-                        android:checked="true" />
+                        android:checkable="true"
+                        android:text="@string/distance_sort" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_sort_scenic"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:backgroundTint="@color/lakbay_cream"
+                        android:checkable="true"
                         android:text="@string/scenic_score_sort" />
 
                     <com.google.android.material.chip.Chip
@@ -271,6 +273,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:backgroundTint="@color/lakbay_cream"
+                        android:checkable="true"
                         android:text="@string/name_sort" />
                 </com.google.android.material.chip.ChipGroup>
 

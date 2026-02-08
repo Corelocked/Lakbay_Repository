@@ -32,7 +32,8 @@ class FavoritesAdapter(
             val tintOff = androidx.core.content.ContextCompat.getColor(ctx, R.color.text_secondary)
             ivFavorite.setImageResource(if (isFav) R.drawable.ic_star_filled else R.drawable.ic_star_outline)
             ivFavorite.imageTintList = android.content.res.ColorStateList.valueOf(if (isFav) tintOn else tintOff)
-            ivFavorite.contentDescription = if (isFav) ctx.getString(R.string.poi_unliked, poi.name) else ctx.getString(R.string.like_poi)
+            // Use the non-formatted unlike label for contentDescription to avoid missing resource issues
+            ivFavorite.contentDescription = if (isFav) ctx.getString(R.string.unlike_poi) else ctx.getString(R.string.like_poi)
             ivFavorite.setOnClickListener {
                 val wasFav = try { FavoriteStore.isFavorite(key) } catch (_: Exception) { false }
                 if (wasFav) {
@@ -48,7 +49,7 @@ class FavoritesAdapter(
                         FavoriteStore.addFavorite(key, poi)
                         ivFavorite.setImageResource(R.drawable.ic_star_filled)
                         ivFavorite.imageTintList = android.content.res.ColorStateList.valueOf(tintOn)
-                        ivFavorite.contentDescription = ctx.getString(R.string.poi_unliked, poi.name)
+                        ivFavorite.contentDescription = ctx.getString(R.string.unlike_poi)
                         ivFavorite.animate().scaleX(1f).scaleY(1f).setDuration(140).start()
                     }.start()
                 }
