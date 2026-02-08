@@ -70,13 +70,23 @@ class RecommendationsFragment : Fragment() {
     // Make sortBy nullable so the user can clear sorting by unchecking chips
     // Start with no active sort by default to make deselection intuitive
     private var sortBy: SortOption? = null
-    private var filterCollapsed = false
+    private var filterCollapsed = true
 
     // Track last effective categories used for a fetch so we can detect overly-strict filters
     private var lastEffectiveCategories: Set<String> = emptySet()
     private var didRelaxOnce = false
     // Suppress programmatic chip events to avoid recursive listener triggers and UI flicker
     private var suppressFilterEvents = false
+
+    // Helper function to update chip stroke width based on checked state
+    private fun updateChipStroke(chip: Chip, isChecked: Boolean) {
+        val strokeWidth = if (isChecked) {
+            (2 * requireContext().resources.displayMetrics.density).toInt()
+        } else {
+            0
+        }
+        chip.chipStrokeWidth = strokeWidth.toFloat()
+    }
 
     enum class SortOption {
         DISTANCE, SCENIC_SCORE, NAME
@@ -130,6 +140,7 @@ class RecommendationsFragment : Fragment() {
         }
 
         // FAB and empty-state button trigger curation flow (open a lightweight curator — here we just show a toast)
+        /*
         binding.fabCurate.setOnClickListener {
             // Provide quick feedback and trigger a fresh recommendation fetch.
             Log.i("RecommendationsFrag", "FAB clicked — preparing UI and triggering fetchRecommendations()")
@@ -148,7 +159,7 @@ class RecommendationsFragment : Fragment() {
         }
         binding.btnCurateEmpty?.setOnClickListener {
             binding.fabCurate.performClick()
-        }
+        }*/
     }
 
     private fun setupRecyclerView() {
@@ -270,8 +281,19 @@ class RecommendationsFragment : Fragment() {
                  chip.text = label
                  chip.isCheckable = true
                  chip.isChecked = selectedActivityLabels.contains(label)
+                 // Set initial stroke width: 0dp for unchecked, 2dp for checked
+                 val strokeWidth = if (chip.isChecked) {
+                     (2 * requireContext().resources.displayMetrics.density).toInt()
+                 } else {
+                     0
+                 }
+                 chip.chipStrokeWidth = strokeWidth.toFloat()
+                 chip.chipStrokeColor = ContextCompat.getColorStateList(requireContext(), R.color.lakbay_red)
+                 chip.chipBackgroundColor = ContextCompat.getColorStateList(requireContext(), R.color.lakbay_cream)
                  chip.setOnCheckedChangeListener { _: CompoundButton, checked: Boolean ->
                      Log.d("RecommendationsFrag", "Activity chip '$label' checked=$checked")
+                     // Update stroke width based on checked state
+                     updateChipStroke(chip, checked)
                      if (checked) selectedActivityLabels.add(label) else selectedActivityLabels.remove(label)
                      // Let applyFilters() merge activity-derived tokens with explicit category chips —
                      // do NOT overwrite selectedCategories here.
@@ -303,6 +325,10 @@ class RecommendationsFragment : Fragment() {
             binding.chipSortDistance.isChecked = false
             binding.chipSortScenic.isChecked = false
             binding.chipSortName.isChecked = false
+            // Update stroke width for initial unselected state
+            updateChipStroke(binding.chipSortDistance, false)
+            updateChipStroke(binding.chipSortScenic, false)
+            updateChipStroke(binding.chipSortName, false)
             suppressFilterEvents = false
             sortBy = null
         } catch (_: Exception) {}
@@ -339,6 +365,10 @@ class RecommendationsFragment : Fragment() {
                         // User tapped an already-checked chip -> clear all selection
                         suppressFilterEvents = true
                         try { binding.chipGroupSort.clearCheck() } catch (_: Exception) {}
+                        // Update stroke for all chips to unselected state
+                        updateChipStroke(binding.chipSortDistance, false)
+                        updateChipStroke(binding.chipSortScenic, false)
+                        updateChipStroke(binding.chipSortName, false)
                         suppressFilterEvents = false
                         sortBy = null
                         Log.i("RecommendationsFrag", "Sort cleared (Distance click)")
@@ -347,6 +377,10 @@ class RecommendationsFragment : Fragment() {
                         suppressFilterEvents = true
                         binding.chipSortScenic.isChecked = false
                         binding.chipSortName.isChecked = false
+                        // Update stroke: distance selected, others unselected
+                        updateChipStroke(binding.chipSortDistance, true)
+                        updateChipStroke(binding.chipSortScenic, false)
+                        updateChipStroke(binding.chipSortName, false)
                         suppressFilterEvents = false
                         sortBy = SortOption.DISTANCE
                         Log.i("RecommendationsFrag", "Sort set to DISTANCE (Distance click)")
@@ -362,6 +396,10 @@ class RecommendationsFragment : Fragment() {
                     if (lastTouchedChipId == v.id && lastTouchedWasChecked) {
                         suppressFilterEvents = true
                         try { binding.chipGroupSort.clearCheck() } catch (_: Exception) {}
+                        // Update stroke for all chips to unselected state
+                        updateChipStroke(binding.chipSortDistance, false)
+                        updateChipStroke(binding.chipSortScenic, false)
+                        updateChipStroke(binding.chipSortName, false)
                         suppressFilterEvents = false
                         sortBy = null
                         Log.i("RecommendationsFrag", "Sort cleared (Scenic click)")
@@ -369,6 +407,10 @@ class RecommendationsFragment : Fragment() {
                         suppressFilterEvents = true
                         binding.chipSortDistance.isChecked = false
                         binding.chipSortName.isChecked = false
+                        // Update stroke: scenic selected, others unselected
+                        updateChipStroke(binding.chipSortDistance, false)
+                        updateChipStroke(binding.chipSortScenic, true)
+                        updateChipStroke(binding.chipSortName, false)
                         suppressFilterEvents = false
                         sortBy = SortOption.SCENIC_SCORE
                         Log.i("RecommendationsFrag", "Sort set to SCENIC (Scenic click)")
@@ -384,6 +426,10 @@ class RecommendationsFragment : Fragment() {
                     if (lastTouchedChipId == v.id && lastTouchedWasChecked) {
                         suppressFilterEvents = true
                         try { binding.chipGroupSort.clearCheck() } catch (_: Exception) {}
+                        // Update stroke for all chips to unselected state
+                        updateChipStroke(binding.chipSortDistance, false)
+                        updateChipStroke(binding.chipSortScenic, false)
+                        updateChipStroke(binding.chipSortName, false)
                         suppressFilterEvents = false
                         sortBy = null
                         Log.i("RecommendationsFrag", "Sort cleared (Name click)")
@@ -391,6 +437,10 @@ class RecommendationsFragment : Fragment() {
                         suppressFilterEvents = true
                         binding.chipSortDistance.isChecked = false
                         binding.chipSortScenic.isChecked = false
+                        // Update stroke: name selected, others unselected
+                        updateChipStroke(binding.chipSortDistance, false)
+                        updateChipStroke(binding.chipSortScenic, false)
+                        updateChipStroke(binding.chipSortName, true)
                         suppressFilterEvents = false
                         sortBy = SortOption.NAME
                         Log.i("RecommendationsFrag", "Sort set to NAME (Name click)")
@@ -408,6 +458,8 @@ class RecommendationsFragment : Fragment() {
              // initialize state and ensure touch blocking matches initial visibility
              content.visibility = if (filterCollapsed) View.GONE else View.VISIBLE
              content.alpha = if (filterCollapsed) 0f else 1f
+             // Set initial button text based on collapsed state
+             btn.text = if (filterCollapsed) getString(R.string.expand_arrow) else getString(R.string.collapse_arrow)
              // Ensure the card is above other content at runtime
              try { binding.cardFilter.bringToFront() } catch (_: Exception) {}
              // rely on XML layering and clickable attribute to block empty-area taps

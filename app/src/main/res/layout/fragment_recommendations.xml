@@ -19,7 +19,7 @@
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         android:fillViewport="true"
         android:clipToPadding="false"
-        android:paddingTop="160dp"> <!-- leave space for the card overlay -->
+        android:paddingTop="80dp"> <!-- leave space for the collapsed filter card overlay -->
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -89,6 +89,7 @@
                 android:id="@+id/swipe_refresh"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
+
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rv_recommendations"
@@ -254,27 +255,39 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_sort_distance"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:backgroundTint="@color/lakbay_cream"
                         android:checkable="true"
-                        android:text="@string/distance_sort" />
+                        android:text="@string/distance_sort"
+                        app:checkedIconVisible="false"
+                        app:chipStrokeWidth="0dp"
+                        app:chipStrokeColor="@color/lakbay_red" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_sort_scenic"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:backgroundTint="@color/lakbay_cream"
                         android:checkable="true"
-                        android:text="@string/scenic_score_sort" />
+                        android:text="@string/scenic_score_sort"
+                        app:checkedIconVisible="false"
+                        app:chipStrokeWidth="0dp"
+                        app:chipStrokeColor="@color/lakbay_red" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chip_sort_name"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:backgroundTint="@color/lakbay_cream"
                         android:checkable="true"
-                        android:text="@string/name_sort" />
+                        android:text="@string/name_sort"
+                        app:checkedIconVisible="false"
+                        app:chipStrokeWidth="0dp"
+                        app:chipStrokeColor="@color/lakbay_red" />
                 </com.google.android.material.chip.ChipGroup>
 
             </LinearLayout>
@@ -283,6 +296,7 @@
 
 
     <!-- Curate Floating Action Button -->
+    <!--
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_curate"
         android:layout_width="wrap_content"
@@ -292,6 +306,6 @@
         app:srcCompat="@drawable/ic_add_24"
         app:backgroundTint="@color/lakbay_red"
         app:tint="@color/white"
-        android:layout_gravity="end|bottom" />
+        android:layout_gravity="end|bottom" /> -->
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
