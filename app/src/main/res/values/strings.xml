@@ -118,14 +118,8 @@
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
-    <string name="cluster_eps_title">Cluster EPS (meters)</string>
-    <string name="cluster_eps_dialog_title">Cluster EPS (meters)</string>
-    <string name="min_points_title">Minimum points per cluster</string>
-    <string name="min_points_dialog_title">Minimum points per cluster</string>
     <string name="reset_defaults_title">Reset to defaults</string>
-    <string name="reset_defaults_summary">Restore default tuning values</string>
-    <string name="prefer_coastal_title">Prefer coastal sets for long oceanic trips</string>
-    <string name="prefer_coastal_summary">When enabled, long oceanic routes will favor built-in coastal waypoint sets.</string>
+    <string name="reset_defaults_summary">Reset personalization, map style, and language to defaults</string>
     <string name="map_style_title">Map Style</string>
     <string name="map_style_summary">Choose the map tile style</string>
     <string name="language_title">Language</string>
