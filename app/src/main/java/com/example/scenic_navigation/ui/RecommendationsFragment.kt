@@ -30,7 +30,6 @@ import android.widget.Toast
 import android.util.Log
 import java.util.Locale
 import kotlin.math.roundToInt
-import android.content.Context
 import android.graphics.Color
 import android.view.ViewGroup
 import android.widget.CompoundButton
@@ -40,6 +39,7 @@ import com.example.scenic_navigation.MainActivity
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import android.widget.LinearLayout
+import com.example.scenic_navigation.FavoriteStore
 
 class RecommendationsFragment : Fragment() {
     private var _binding: FragmentRecommendationsBinding? = null
@@ -239,19 +239,6 @@ class RecommendationsFragment : Fragment() {
     }
 
     private fun setupFilters() {
-         // Hide existing chips (we use spinners instead)
-         try {
-             binding.chipAll.visibility = View.GONE
-             binding.chipScenic.visibility = View.GONE
-             binding.chipCoastal.visibility = View.GONE
-             binding.chipMountain.visibility = View.GONE
-             binding.chipHistoric.visibility = View.GONE
-             binding.chipFood.visibility = View.GONE
-             binding.chipNature.visibility = View.GONE
-             binding.chipCulture.visibility = View.GONE
-             binding.chipShopping.visibility = View.GONE
-             binding.chipTourism.visibility = View.GONE
-         } catch (_: Exception) {}
 
          // Wire the exposed dropdown (AutoCompleteTextView) for Seeing selection
          try {
@@ -390,40 +377,6 @@ class RecommendationsFragment : Fragment() {
          } catch (_: Exception) {
              // binding may not be available in rare cases; ignore safely
          }
-    }
-
-    private fun handleCategoryChip(category: String, isChecked: Boolean) {
-        if (suppressFilterEvents) return
-        if (isChecked) {
-            selectedCategories.add(category)
-            // turn off "All" without triggering its listener
-            suppressFilterEvents = true
-            binding.chipAll.isChecked = false
-            suppressFilterEvents = false
-        } else {
-            selectedCategories.remove(category)
-            if (selectedCategories.isEmpty()) {
-                suppressFilterEvents = true
-                binding.chipAll.isChecked = true
-                suppressFilterEvents = false
-            }
-        }
-        applyFilters()
-    }
-
-    private fun uncheckOtherCategoryChips() {
-        // Uncheck programmatically while suppressing events
-        suppressFilterEvents = true
-        binding.chipScenic.isChecked = false
-        binding.chipCoastal.isChecked = false
-        binding.chipMountain.isChecked = false
-        binding.chipHistoric.isChecked = false
-        binding.chipFood.isChecked = false
-        binding.chipNature.isChecked = false
-        binding.chipCulture.isChecked = false
-        binding.chipShopping.isChecked = false
-        binding.chipTourism.isChecked = false
-        suppressFilterEvents = false
     }
 
     private fun getUserLocation() {
@@ -701,14 +654,9 @@ class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolde
 
             // Set like button based on persisted curated POIs stored in shared prefs using canonical key
             try {
-                val prefs = holder.binding.root.context.getSharedPreferences("scenic_prefs", Context.MODE_PRIVATE)
-                val curated = prefs.getStringSet("curated_pois", emptySet()) ?: emptySet()
                 val key = RecommendationsAdapter.canonicalKey(item)
-                if (curated.contains(key)) {
-                    btnLike.setImageResource(R.drawable.ic_favorite_24)
-                } else {
-                    btnLike.setImageResource(R.drawable.ic_favorite_border_24)
-                }
+                val isFav = try { FavoriteStore.isFavorite(key) } catch (_: Exception) { false }
+                btnLike.setImageResource(if (isFav) android.R.drawable.btn_star_big_on else android.R.drawable.btn_star_big_off)
             } catch (_: Exception) {}
 
             if (item.lat != null && item.lon != null) {
