@@ -12,7 +12,99 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Top overlay filter card (styled like fragment_route input card) -->
+    <!-- Recommendations list area anchored below the top card -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        android:fillViewport="true"
+        android:clipToPadding="false"
+        android:paddingTop="160dp"> <!-- leave space for the card overlay -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <!-- Loading Progress -->
+            <ProgressBar
+                android:id="@+id/progress_loading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <!-- Empty State -->
+            <LinearLayout
+                android:id="@+id/empty_state"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp"
+                android:gravity="center"
+                android:visibility="gone"
+                tools:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/map_emoji"
+                    android:textSize="56sp"
+                    android:layout_marginBottom="12dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/no_recommendations_yet"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="6dp" />
+
+                <TextView
+                    android:id="@+id/empty_state_message"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/plan_route_message"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_secondary"
+                    android:textAlignment="center"
+                    android:layout_marginBottom="12dp" />
+
+                <Button
+                    android:id="@+id/btn_curate_empty"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/curate_now"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:visibility="visible" />
+
+            </LinearLayout>
+
+            <!-- Swipe + RecyclerView for recommendations -->
+            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/swipe_refresh"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_recommendations"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:paddingBottom="80dp"
+                    tools:listitem="@layout/poi_item"
+                    tools:itemCount="5" />
+
+            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Now place the top overlay filter card after the scrolling content so it is drawn on top -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/card_filter"
         android:layout_width="match_parent"
@@ -20,7 +112,7 @@
         android:layout_margin="12dp"
         android:layout_gravity="top"
         app:cardCornerRadius="20dp"
-        app:cardElevation="6dp"
+        app:cardElevation="12dp"
         app:cardBackgroundColor="@color/card_background">
 
         <LinearLayout
@@ -62,13 +154,15 @@
                     style="@style/Widget.Material3.Button.IconButton" />
             </LinearLayout>
 
-            <!-- Collapsible content: filter controls (kept identical to previous layout) -->
+            <!-- Collapsible content: make clickable so empty areas consume taps -->
             <LinearLayout
                 android:id="@+id/filter_collapsible_content"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="12dp">
+                android:padding="12dp"
+                android:clickable="true"
+                android:focusable="true">
 
                 <!-- Seeing selection dropdown (exposed menu) -->
                 <com.google.android.material.textfield.TextInputLayout
@@ -264,97 +358,6 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Recommendations list area anchored below the top card -->
-    <androidx.core.widget.NestedScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        android:fillViewport="true"
-        android:clipToPadding="false"
-        android:paddingTop="160dp"> <!-- leave space for the card overlay -->
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp">
-
-            <!-- Loading Progress -->
-            <ProgressBar
-                android:id="@+id/progress_loading"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:visibility="gone"
-                tools:visibility="visible" />
-
-            <!-- Empty State -->
-            <LinearLayout
-                android:id="@+id/empty_state"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="24dp"
-                android:gravity="center"
-                android:visibility="gone"
-                tools:visibility="gone">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/map_emoji"
-                    android:textSize="56sp"
-                    android:layout_marginBottom="12dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/no_recommendations_yet"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_primary"
-                    android:layout_marginBottom="6dp" />
-
-                <TextView
-                    android:id="@+id/empty_state_message"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/plan_route_message"
-                    android:textSize="14sp"
-                    android:textColor="@color/text_secondary"
-                    android:textAlignment="center"
-                    android:layout_marginBottom="12dp" />
-
-                <Button
-                    android:id="@+id/btn_curate_empty"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/curate_now"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                    android:visibility="visible" />
-
-            </LinearLayout>
-
-            <!-- Swipe + RecyclerView for recommendations -->
-            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-                android:id="@+id/swipe_refresh"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rv_recommendations"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:clipToPadding="false"
-                    android:paddingBottom="80dp"
-                    tools:listitem="@layout/poi_item"
-                    tools:itemCount="5" />
-
-            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
 
     <!-- Curate Floating Action Button -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
