@@ -28,20 +28,19 @@ class PoiPreviewAdapter(
             root.contentDescription = root.context.getString(com.example.scenic_navigation.R.string.poi_card_desc, poi.name, poi.category)
 
             ivFavorite?.let { iv ->
-                val key = "${poi.name}_${poi.lat}_${poi.lon}"
-                val isFav = try { FavoriteStore.isFavorite(key) } catch (e: Exception) { false }
+                val isFav = try { FavoriteStore.isFavorite(poi) } catch (e: Exception) { false }
                 iv.setImageResource(if (isFav) android.R.drawable.btn_star_big_on else android.R.drawable.btn_star_big_off)
                 iv.setOnClickListener {
-                    val wasFav = FavoriteStore.isFavorite(key)
+                    val wasFav = FavoriteStore.isFavorite(poi)
                     if (wasFav) {
                         iv.animate().scaleX(0.8f).scaleY(0.8f).setDuration(140).withEndAction {
-                            FavoriteStore.removeFavorite(key)
+                            FavoriteStore.removeByPoi(poi)
                             iv.setImageResource(android.R.drawable.btn_star_big_off)
                             iv.animate().scaleX(1f).scaleY(1f).setDuration(140).start()
                         }.start()
                     } else {
                         iv.animate().scaleX(1.3f).scaleY(1.3f).setDuration(140).withEndAction {
-                            FavoriteStore.addFavorite(key, poi)
+                            FavoriteStore.addOrReplaceFavorite(poi)
                             iv.setImageResource(android.R.drawable.btn_star_big_on)
                             iv.animate().scaleX(1f).scaleY(1f).setDuration(140).start()
                         }.start()

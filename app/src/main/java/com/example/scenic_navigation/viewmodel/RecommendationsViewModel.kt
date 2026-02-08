@@ -104,8 +104,8 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
             // also increment category preference
             val cat = poi.category ?: "unknown"
             prefStore.incrementCategory(cat)
-            // Add to FavoriteStore as a persisted favorite
-            try { FavoriteStore.addFavorite(key, poi) } catch (_: Exception) {}
+            // Add to FavoriteStore as a persisted favorite using robust API that deduplicates
+            try { FavoriteStore.addOrReplaceFavorite(poi) } catch (_: Exception) {}
             Log.i("RecommendationsVM", "Added curated key: $key")
             viewModelScope.launch { fetchRecommendations() }
         } catch (e: Exception) {
@@ -120,8 +120,8 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
             if (set.remove(key)) {
                 sharedPrefs.edit().putStringSet(CURATED_KEY, set).apply()
                 Log.i("RecommendationsVM", "Removed curated key: $key")
-                // Remove from FavoriteStore as well to keep favorites in sync
-                try { FavoriteStore.removeFavorite(key) } catch (_: Exception) {}
+                // Remove from FavoriteStore as well to keep favorites in sync; remove all matching legacy/duplicate entries
+                try { FavoriteStore.removeByPoi(poi) } catch (_: Exception) {}
                 viewModelScope.launch { fetchRecommendations() }
             }
         } catch (e: Exception) {
@@ -380,39 +380,39 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
             when {
                 t.contains("scenic") -> {
                     filters += listOf("viewpoint", "attraction", "park")
-                    boosts.putAll(listOf("viewpoint" to 0.6, "attraction" to 0.4, "park" to 0.3))
+                    boosts.putAll(mapOf("viewpoint" to 0.6, "attraction" to 0.4, "park" to 0.3))
                 }
                 t.contains("natural") || t.contains("nature") -> {
                     filters += listOf("nature park", "park", "waterfall", "viewpoint")
-                    boosts.putAll(listOf("nature park" to 0.6, "waterfall" to 0.5, "park" to 0.3))
+                    boosts.putAll(mapOf("nature park" to 0.6, "waterfall" to 0.5, "park" to 0.3))
                 }
                 t.contains("tourism") -> {
                     filters += listOf("tourist attraction", "attraction", "viewpoint")
-                    boosts.putAll(listOf("tourist attraction" to 0.5, "attraction" to 0.4))
+                    boosts.putAll(mapOf("tourist attraction" to 0.5, "attraction" to 0.4))
                 }
                 t.contains("historic") || t.contains("landmark") -> {
                     filters += listOf("museum", "historical site", "monument", "heritage", "historic")
-                    boosts.putAll(listOf("museum" to 0.7, "historical site" to 0.6, "monument" to 0.5))
+                    boosts.putAll(mapOf("museum" to 0.7, "historical site" to 0.6, "monument" to 0.5))
                 }
                 t.contains("cultur") -> {
                     filters += listOf("museum", "historical site", "cultural spot")
-                    boosts.putAll(listOf("museum" to 0.6, "historical site" to 0.5, "cultural spot" to 0.4))
+                    boosts.putAll(mapOf("museum" to 0.6, "historical site" to 0.5, "cultural spot" to 0.4))
                 }
                 t.contains("food") || t.contains("restaurant") || t.contains("cafe") -> {
                     filters += listOf("restaurant", "cafe", "food")
-                    boosts.putAll(listOf("restaurant" to 0.5, "cafe" to 0.4, "food" to 0.3))
+                    boosts.putAll(mapOf("restaurant" to 0.5, "cafe" to 0.4, "food" to 0.3))
                 }
                 t.contains("shop") || t.contains("market") -> {
                     filters += listOf("shop", "market", "souvenir")
-                    boosts.putAll(listOf("shop" to 0.4, "market" to 0.5, "souvenir" to 0.4))
+                    boosts.putAll(mapOf("shop" to 0.4, "market" to 0.5, "souvenir" to 0.4))
                 }
                 t.contains("coast") || t.contains("beach") || t.contains("ocean") -> {
                     filters += listOf("beach", "bay", "coast", "cape")
-                    boosts.putAll(listOf("beach" to 0.7, "coast" to 0.5, "bay" to 0.4))
+                    boosts.putAll(mapOf("beach" to 0.7, "coast" to 0.5, "bay" to 0.4))
                 }
                 t.contains("mountain") || t.contains("mount") || t.contains("peak") -> {
                     filters += listOf("peak", "mountain", "volcano", "ridge")
-                    boosts.putAll(listOf("peak" to 0.7, "volcano" to 0.6, "ridge" to 0.4))
+                    boosts.putAll(mapOf("peak" to 0.7, "volcano" to 0.6, "ridge" to 0.4))
                 }
                 else -> {
                     // generic token fallback

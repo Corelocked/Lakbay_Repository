@@ -7,7 +7,7 @@ import com.example.scenic_navigation.databinding.ItemFavoriteBinding
 import com.example.scenic_navigation.models.Poi
 
 class FavoritesAdapter(
-    private val items: List<Poi>,
+    private val items: MutableList<Poi>,
     private val onClick: (Poi) -> Unit
 ) : RecyclerView.Adapter<FavoritesAdapter.ViewHolder>() {
 
@@ -24,21 +24,34 @@ class FavoritesAdapter(
             tvPoiName.text = poi.name
             tvPoiCategory.text = poi.category
             root.setOnClickListener { onClick(poi) }
-            
-            val key = "${poi.name}_${poi.lat}_${poi.lon}"
-            val isFav = try { FavoriteStore.isFavorite(key) } catch (e: Exception) { false }
+
+            val isFav = try { FavoriteStore.isFavorite(poi) } catch (e: Exception) { false }
             ivFavorite.setImageResource(if (isFav) android.R.drawable.btn_star_big_on else android.R.drawable.btn_star_big_off)
             ivFavorite.setOnClickListener {
-                val wasFav = FavoriteStore.isFavorite(key)
+                val wasFav = FavoriteStore.isFavorite(poi)
                 if (wasFav) {
                     ivFavorite.animate().scaleX(0.8f).scaleY(0.8f).setDuration(140).withEndAction {
-                        FavoriteStore.removeFavorite(key)
+                        // Remove from persistent store
+                        FavoriteStore.removeByPoi(poi)
+                        // Remove from adapter list and notify
+                        val pos = holder.bindingAdapterPosition
+                        if (pos != RecyclerView.NO_POSITION) {
+                            items.removeAt(pos)
+                            notifyItemRemoved(pos)
+                        }
+                        // Update icon
                         ivFavorite.setImageResource(android.R.drawable.btn_star_big_off)
                         ivFavorite.animate().scaleX(1f).scaleY(1f).setDuration(140).start()
                     }.start()
                 } else {
                     ivFavorite.animate().scaleX(1.3f).scaleY(1.3f).setDuration(140).withEndAction {
-                        FavoriteStore.addFavorite(key, poi)
+                        FavoriteStore.addOrReplaceFavorite(poi)
+                        // Add to list if not present
+                        val pos = items.indexOfFirst { it.name == poi.name && it.lat == poi.lat && it.lon == poi.lon }
+                        if (pos == -1) {
+                            items.add(poi)
+                            notifyItemInserted(items.size - 1)
+                        }
                         ivFavorite.setImageResource(android.R.drawable.btn_star_big_on)
                         ivFavorite.animate().scaleX(1f).scaleY(1f).setDuration(140).start()
                     }.start()
