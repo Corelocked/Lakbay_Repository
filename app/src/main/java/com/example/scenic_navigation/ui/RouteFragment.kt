@@ -170,6 +170,10 @@ class RouteFragment : Fragment(), SensorEventListener {
             // fallback: try to create programmatically
             createEndRouteButton()
         }
+
+        // Initialize button elevations: card starts expanded, so buttons should be behind it
+        binding.btnCenter.translationZ = -10f
+        view.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.translationZ = -10f
     }
 
     private var clusterPollRunnable: Runnable? = null
@@ -537,6 +541,10 @@ class RouteFragment : Fragment(), SensorEventListener {
                 .scaleY(0.95f)
                 .setDuration(200)
                 .start()
+
+            // Reset button elevation to normal when collapsed
+            binding.btnCenter.translationZ = 0f
+            view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.translationZ = 0f
         } else {
             // Expand the inputs
             binding.collapsibleContent.visibility = View.VISIBLE
@@ -548,6 +556,10 @@ class RouteFragment : Fragment(), SensorEventListener {
                 .scaleY(1.0f)
                 .setDuration(200)
                 .start()
+
+            // Lower button elevation so they appear behind the expanded card
+            binding.btnCenter.translationZ = -10f
+            view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.translationZ = -10f
         }
     }
 
@@ -579,6 +591,15 @@ class RouteFragment : Fragment(), SensorEventListener {
             binding.cardInput.isEnabled = !loading
             sharedViewModel.setLoading(loading)
             binding.progressOverlay.visibility = if (loading) View.VISIBLE else View.GONE
+
+            // Dim and disable the floating action buttons during loading
+            val buttonAlpha = if (loading) 0.3f else 1.0f
+            binding.btnCenter.alpha = buttonAlpha
+            binding.btnCenter.isEnabled = !loading
+            view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.apply {
+                alpha = buttonAlpha
+                isEnabled = !loading
+            }
         }
 
         // Observe phased loading flags for more granular UI
@@ -847,12 +868,20 @@ class RouteFragment : Fragment(), SensorEventListener {
             if (!isNavigating && locationService.hasLocationPermission()) {
                 startLocationTracking()
             }
+
+            // Show the End Route button when a route is active (handle both XML and programmatic buttons)
+            view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.visibility = View.VISIBLE
+            (view as? ViewGroup)?.findViewWithTag<View>("end_route_btn")?.visibility = View.VISIBLE
         } else {
             // Stop tracking when no route
             if (isNavigating) {
                 stopLocationTracking()
             }
             offRouteDetector = null
+
+            // Hide the End Route button when no route is active (handle both XML and programmatic buttons)
+            view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.visibility = View.GONE
+            (view as? ViewGroup)?.findViewWithTag<View>("end_route_btn")?.visibility = View.GONE
         }
     }
 
@@ -1494,6 +1523,7 @@ class RouteFragment : Fragment(), SensorEventListener {
                 text = "End Route"
                 isAllCaps = false
                 setPadding(20, 12, 20, 12)
+                visibility = View.GONE  // Initially hidden until route is active
                 // Style for visibility (use default system button background)
                 setBackgroundResource(android.R.drawable.btn_default)
                 setOnClickListener {
@@ -1528,6 +1558,10 @@ class RouteFragment : Fragment(), SensorEventListener {
              stopLocationTracking()
              offRouteDetector = null
              isNavigating = false
+
+             // Hide the End Route button (handle both XML and programmatic buttons)
+             view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.visibility = View.GONE
+             (view as? ViewGroup)?.findViewWithTag<View>("end_route_btn")?.visibility = View.GONE
 
              // Remove route overlays
              try { routePolyline?.let { binding.map.overlays.remove(it); routePolyline = null } } catch (_: Exception) {}
@@ -1580,8 +1614,22 @@ class RouteFragment : Fragment(), SensorEventListener {
                 try { binding.tvOverlayStatus.text = "" } catch (_: Exception) {}
             } catch (_: Exception) {}
 
-             // Optionally notify user
-             try { Snackbar.make(binding.root, "Route ended", Snackbar.LENGTH_SHORT).show() } catch (_: Exception) {}
+             // Expand the curate menu to allow planning a new route
+             try {
+                 if (isInputCollapsed) {
+                     isInputCollapsed = false
+                     binding.collapsibleContent.visibility = View.VISIBLE
+                     binding.btnCollapse.text = "▼"
+                     binding.cardInput.animate()
+                         .alpha(1.0f)
+                         .scaleY(1.0f)
+                         .setDuration(200)
+                         .start()
+                     // Lower button elevation so they appear behind the expanded card
+                     binding.btnCenter.translationZ = -10f
+                     view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.translationZ = -10f
+                 }
+             } catch (_: Exception) {}
          } catch (e: Exception) {
              Log.w("RouteFragment", "Failed to end route cleanly", e)
              try { Snackbar.make(binding.root, "Failed to end route", Snackbar.LENGTH_SHORT).show() } catch (_: Exception) {}
