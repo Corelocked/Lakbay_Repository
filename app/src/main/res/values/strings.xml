@@ -145,6 +145,7 @@
     <!-- POI fallback string resource used by adapters -->
     <string name="poi_fallback">POI</string>
     <string name="like_poi">Like POI</string>
+    <string name="unlike_poi">Unlike POI</string>
     <string name="poi_liked">Liked %1$s</string>
     <string name="poi_unliked">Removed from favorites: %1$s</string>
     <string name="curate_now">Curate now</string>

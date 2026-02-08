@@ -69,6 +69,9 @@ class RecommendationsFragment : Fragment() {
     private var sortBy: SortOption = SortOption.DISTANCE
     private var filterCollapsed = false
 
+    // Track last effective categories used for a fetch so we can detect overly-strict filters
+    private var lastEffectiveCategories: Set<String> = emptySet()
+    private var didRelaxOnce = false
     // Suppress programmatic chip events to avoid recursive listener triggers and UI flicker
     private var suppressFilterEvents = false
 
@@ -115,13 +118,13 @@ class RecommendationsFragment : Fragment() {
             val recommendations = sharedViewModel.recommendations.value ?: emptyList()
             updateRecommendationsList(recommendations)
         } else {
-            // Fetch general recommendations if no route exists
-            viewModel.fetchRecommendations(userLat, userLon, maxDistance.toDouble(), selectedCategories)
+            // Fetch general recommendations if no route exists (use unified fetch that computes effective categories)
+            fetchWithCurrentFilters()
         }
 
         // Swipe to refresh triggers re-fetch
         binding.swipeRefresh?.setOnRefreshListener {
-            viewModel.fetchRecommendations(userLat, userLon, maxDistance.toDouble(), selectedCategories)
+            fetchWithCurrentFilters()
         }
 
         // FAB and empty-state button trigger curation flow (open a lightweight curator — here we just show a toast)
@@ -138,9 +141,8 @@ class RecommendationsFragment : Fragment() {
             // Clear shared recommendations so local recommendations take precedence
             sharedViewModel.updateRecommendations(emptyList())
             Toast.makeText(requireContext(), getString(R.string.curate_now), Toast.LENGTH_SHORT).show()
-            // Trigger the ViewModel to (re)fetch recommendations — this updates the observed LiveData
-            // and will update the UI when results arrive.
-            viewModel.fetchRecommendations(userLat, userLon, maxDistance.toDouble(), selectedCategories)
+            // Trigger the ViewModel to (re)fetch recommendations using current UI filters
+            fetchWithCurrentFilters()
         }
         binding.btnCurateEmpty?.setOnClickListener {
             binding.fabCurate.performClick()
@@ -265,21 +267,12 @@ class RecommendationsFragment : Fragment() {
                  val chip = Chip(requireContext())
                  chip.text = label
                  chip.isCheckable = true
+                 chip.isChecked = selectedActivityLabels.contains(label)
                  chip.setOnCheckedChangeListener { _: CompoundButton, checked: Boolean ->
-                    Log.d("RecommendationsFrag", "Activity chip '$label' checked=$checked")
+                     Log.d("RecommendationsFrag", "Activity chip '$label' checked=$checked")
                      if (checked) selectedActivityLabels.add(label) else selectedActivityLabels.remove(label)
-                     // Recompute selectedCategories from activity labels + seeing selection
-                     val tokens = mutableSetOf<String>()
-                     for (l in selectedActivityLabels) tokens.addAll(mapActivityLabelToTags(l))
-                     // also include seeing-derived tags
-                     val seeingTokens = when (currentSeeingSelection.lowercase()) {
-                         "oceanic view", "oceanic" -> setOf("coastal", "beach", "bay", "ocean")
-                         "mountain view", "mountain" -> setOf("mountain", "peak", "volcano", "view")
-                         else -> emptySet()
-                     }
-                     tokens.addAll(seeingTokens)
-                     selectedCategories.clear()
-                     selectedCategories.addAll(tokens)
+                     // Let applyFilters() merge activity-derived tokens with explicit category chips —
+                     // do NOT overwrite selectedCategories here.
                      applyFilters()
                  }
                  chipGroup.addView(chip)
@@ -392,7 +385,7 @@ class RecommendationsFragment : Fragment() {
                         adapter.updateUserLocation(userLat, userLon)
                         adapter.submitList(filteredPois.ifEmpty { allPois })
                         // Fetch recommendations now that we have the user's accurate location
-                        viewModel.fetchRecommendations(userLat, userLon, maxDistance.toDouble(), selectedCategories)
+                        fetchWithCurrentFilters()
                     }
                 } catch (_: Exception) {
                     // Use default location
@@ -446,12 +439,36 @@ class RecommendationsFragment : Fragment() {
 
     private fun applyFilters() {
         Log.d("RecommendationsFrag", "applyFilters called: seeing=$currentSeeingSelection activities=${selectedActivityLabels.joinToString()} maxDistance=$maxDistance selectedCategories=$selectedCategories")
-        // Recompute selectedCategories from UI (activity chips + seeing) before delegating
-        val prefs = recomputeSelectedCategoriesFromUI()
-        selectedCategories.clear()
-        selectedCategories.addAll(prefs)
-        viewModel.fetchRecommendations(userLat, userLon, maxDistance.toDouble(), selectedCategories)
-     }
+        // Merge activity-derived tokens with explicit category chip selections.
+        // If "All" is checked, we treat it as no category filter (empty set).
+        val activityPrefs = recomputeSelectedCategoriesFromUI()
+        // Effective categories = explicit selectedCategories (from chips) union activity-derived tokens
+        val effective = mutableSetOf<String>()
+        effective.addAll(selectedCategories)
+        effective.addAll(activityPrefs)
+
+        // Do not overwrite selectedCategories here; keep explicit chip state separate from effective filter tokens.
+        Log.d("RecommendationsFrag", "applyFilters: effectiveCategories=$effective")
+        // Reset relaxation marker when user changes filters
+        didRelaxOnce = false
+        // Use central fetch to ensure all callers compute the same effective categories
+        fetchWithCurrentFilters(effective)
+    }
+
+    // Centralized fetch that accepts an optional effectiveCategories set. If not provided, it
+    // computes the effective set from current UI state (activities + seeing + explicit categories).
+    private fun fetchWithCurrentFilters(effectiveCategories: Set<String>? = null) {
+         val effective = effectiveCategories ?: run {
+                val activityPrefs = recomputeSelectedCategoriesFromUI()
+                val eff = mutableSetOf<String>()
+                eff.addAll(selectedCategories)
+                eff.addAll(activityPrefs)
+                eff
+        }
+        Log.d("RecommendationsFrag", "fetchWithCurrentFilters: calling ViewModel with effective=$effective")
+        lastEffectiveCategories = effective
+        viewModel.fetchRecommendations(userLat, userLon, maxDistance.toDouble(), effective)
+    }
 
     private fun showTownsList(pois: List<Poi>) {
         // Towns list UI removed — directly show POIs instead
@@ -520,6 +537,14 @@ class RecommendationsFragment : Fragment() {
                 }
             } else {
                 Log.i("RecommendationsFrag", "No recommendations in local ViewModel")
+                // If we had active category filters and this is the first empty result, retry without category filters
+                if (lastEffectiveCategories.isNotEmpty() && !didRelaxOnce) {
+                    didRelaxOnce = true
+                    Log.i("RecommendationsFrag", "Empty results with active filters — retrying without category filters to avoid empty UI")
+                    Toast.makeText(requireContext(), "No POIs matched filters — showing relaxed results", Toast.LENGTH_SHORT).show()
+                    fetchWithCurrentFilters(emptySet())
+                    return@observe
+                }
             }
         }
 
@@ -652,11 +677,35 @@ class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolde
                  iconBackground.background.setTint(bgColor)
              } catch (_: Exception) {}
 
-            // Set like button based on persisted curated POIs stored in shared prefs using canonical key
+            // Like button handling — the fragment will set onLikeClick and maintain curated state
+            btnLike.setOnClickListener {
+                Log.d("RecommendationsFrag", "btnLike clicked for ${item.name}")
+                onLikeClick?.invoke(item)
+            }
+
+            // POI item click handling — the fragment will set onPoiClick to plan routes
+            root.setOnClickListener {
+                Log.d("RecommendationsFrag", "POI item clicked for ${item.name}")
+                onPoiClick?.invoke(item)
+            }
+
+            // Like button state: use project drawables and apply tint
             try {
                 val key = RecommendationsAdapter.canonicalKey(item)
                 val isFav = try { FavoriteStore.isFavorite(key) } catch (_: Exception) { false }
-                btnLike.setImageResource(if (isFav) android.R.drawable.btn_star_big_on else android.R.drawable.btn_star_big_off)
+                // Use our project's star vector assets for consistent UI
+                val res = btnLike.context.resources
+                if (isFav) {
+                    btnLike.setImageResource(R.drawable.ic_star_filled)
+                    btnLike.imageTintList = android.content.res.ColorStateList.valueOf(res.getColor(R.color.lakbay_yellow, null))
+                    btnLike.contentDescription = btnLike.context.getString(R.string.unlike_poi)
+                } else {
+                    btnLike.setImageResource(R.drawable.ic_star_outline)
+                    btnLike.imageTintList = android.content.res.ColorStateList.valueOf(res.getColor(R.color.text_secondary, null))
+                    btnLike.contentDescription = btnLike.context.getString(R.string.like_poi)
+                }
+                btnLike.isClickable = true
+                btnLike.isFocusable = true
             } catch (_: Exception) {}
 
             if (item.lat != null && item.lon != null) {
@@ -672,18 +721,6 @@ class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolde
             } else {
                 tvDistance.visibility = View.GONE
                 categoryBadge.visibility = View.GONE
-            }
-
-            // Like button handling — the fragment will set onLikeClick and maintain curated state
-            btnLike.setOnClickListener {
-                Log.d("RecommendationsFrag", "btnLike clicked for ${item.name}")
-                onLikeClick?.invoke(item)
-            }
-
-            // POI item click handling — the fragment will set onPoiClick to plan routes
-            root.setOnClickListener {
-                Log.d("RecommendationsFrag", "POI item clicked for ${item.name}")
-                onPoiClick?.invoke(item)
             }
         }
     }

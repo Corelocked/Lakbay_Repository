@@ -207,6 +207,12 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
             reader.close()
             inputStream.close()
             Log.i("RecommendationsVM", "Loaded ${allPois.size} POIs from luzon_dataset.csv")
+            if (allPois.isNotEmpty()) {
+                val sample = allPois.take(5).map { it.name }
+                Log.d("RecommendationsVM", "Sample loaded POIs: $sample")
+            } else {
+                Log.w("RecommendationsVM", "No POIs found in luzon_dataset.csv after parsing (file may be missing or empty)")
+            }
         } catch (e: Exception) {
             Log.w("RecommendationsVM", "Could not load luzon_dataset.csv from assets: ${e.message}")
         }
@@ -234,6 +240,7 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
                     }
                     allPois.addAll(converted)
                     Log.i("RecommendationsVM", "Fetched ${converted.size} scenic POIs via ScenicRoutePlanner (seed=${center.latitude},${center.longitude})")
+                    Log.d("RecommendationsVM", "Sample scenic POIs: ${converted.take(5).map { it.name }}")
                 }
             } catch (e: Exception) {
                 Log.w("RecommendationsVM", "ScenicRoutePlanner fallback failed: ${e.message}")
@@ -250,6 +257,7 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
 
         // No hardcoded fallback: cache whatever we found (possibly empty) and return it.
         cachedCandidates = allPois
+        Log.i("RecommendationsVM", "loadCandidates returning ${allPois.size} candidates")
         return@withContext allPois
     }
 
@@ -258,8 +266,10 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                Log.d("RecommendationsVM", "fetchRecommendations invoked: userLat=$userLat userLon=$userLon maxDistance=$maxDistanceKm preferredCategories=$preferredCategories")
                 // Load candidates via cached loader
                 val allPois = loadCandidates().toMutableList()
+                Log.i("RecommendationsVM", "Candidates after load: ${allPois.size}")
 
                 // 5) Sort by simple category priority then rerank with ML (if available)
                 val sortedPois = allPois.sortedWith(
@@ -279,11 +289,21 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
                 val centerLat = sortedPois.getOrNull(0)?.lat ?: userLat
                 val centerLon = sortedPois.getOrNull(0)?.lon ?: userLon
 
-                val reranked = try {
-                    poiReranker.rerank(sortedPois, centerLat, centerLon, System.currentTimeMillis())
+                var reranked = try {
+                    val r = poiReranker.rerank(sortedPois, centerLat, centerLon, System.currentTimeMillis())
+                    Log.i("RecommendationsVM", "Reranker produced ${r.size} items")
+                    if (r.isNotEmpty()) {
+                        Log.d("RecommendationsVM", "Sample reranked POIs: ${r.take(5).map { it.name }}")
+                    }
+                    r
                 } catch (e: Exception) {
                     Log.w("RecommendationsVM", "ML reranker failed, using sorted list: ${e.message}")
                     sortedPois
+                }
+                // If reranker returned an empty list for some reason, fall back to the sorted list
+                if (reranked.isEmpty()) {
+                    Log.w("RecommendationsVM", "Reranker returned 0 items — falling back to sortedPois (size=${sortedPois.size})")
+                    reranked = sortedPois
                 }
 
                 // Boost curated POIs (if user has curated any) by moving them to the top while preserving rerank order
@@ -303,10 +323,19 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
                 }
 
                 // Filter by distance (radius) from provided user location
+                val beforeDistance = finalList.size
                 finalList = finalList.filter { poi ->
                     if (poi.lat == null || poi.lon == null) return@filter false
                     val dMeters = GeoUtils.haversine(userLat, userLon, poi.lat, poi.lon)
                     dMeters <= (maxDistanceKm * 1000.0)
+                }
+                Log.i("RecommendationsVM", "After distance filter (maxKm=$maxDistanceKm): before=$beforeDistance after=${finalList.size}")
+                // If distance filter removed everything (common with narrow radii), relax distance constraint
+                if (finalList.isEmpty() && preferredCategories.isNotEmpty()) {
+                    Log.i("RecommendationsVM", "Distance filter yielded 0 results; relaxing distance constraint for preferred categories")
+                    val relaxed = reranked.filter { poi -> poi.lat != null && poi.lon != null }
+                    Log.i("RecommendationsVM", "Relaxed candidate count=${relaxed.size}")
+                    finalList = relaxed
                 }
 
                 // If user has preferred categories, boost those while preserving order — preferred items first
@@ -320,6 +349,7 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
                         val cat = poi.category?.lowercase() ?: ""
                         lowerTags.any { t -> cat.contains(t) || poi.name.lowercase().contains(t) }
                     }
+                    Log.i("RecommendationsVM", "Preferred partition: preferred=${preferred.size} others=${others.size} (preferredTags=${tagFilters})")
 
                     // Within preferred, sort by how many boost tokens they match (higher first) then by name
                     val preferredSorted = preferred.sortedWith(compareByDescending<Poi> { poi ->
@@ -334,6 +364,8 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
                     finalList = preferredSorted + others
                 }
 
+                Log.i("RecommendationsVM", "Final recommendations count=${finalList.size}")
+                if (finalList.isNotEmpty()) Log.d("RecommendationsVM", "Sample final POIs=${finalList.take(5).map { it.name }}")
                 _recommendations.value = finalList.take(20)
 
             } catch (e: Exception) {
