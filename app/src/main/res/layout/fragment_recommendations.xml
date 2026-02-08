@@ -264,6 +264,16 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <!-- Transparent overlay inserted in XML so z-order and clipping are controlled by layout -->
+    <View
+        android:id="@+id/filter_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true" />
+
     <!-- Recommendations list area anchored below the top card -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
