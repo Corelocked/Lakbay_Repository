@@ -114,14 +114,8 @@
 
     <!-- Settings -->
     <string name="settings_title">Mga Setting</string>
-    <string name="cluster_eps_title">Cluster EPS (metro)</string>
-    <string name="cluster_eps_dialog_title">Cluster EPS (metro)</string>
-    <string name="min_points_title">Pinakamababang puntos bawat cluster</string>
-    <string name="min_points_dialog_title">Pinakamababang puntos bawat cluster</string>
     <string name="reset_defaults_title">Ibalik sa default</string>
-    <string name="reset_defaults_summary">Ibalik ang mga default na halaga</string>
-    <string name="prefer_coastal_title">Paboran ang coastal sets para sa mahahabang oceanic trips</string>
-    <string name="prefer_coastal_summary">Kapag naka-enable, ang mahahabang oceanic routes ay paboran ang built-in coastal waypoint sets.</string>
+    <string name="reset_defaults_summary">I-reset ang personalization, estilo ng mapa, at wika sa default</string>
     <string name="map_style_title">Estilo ng Mapa</string>
     <string name="map_style_summary">Piliin ang estilo ng map tile</string>
     <string name="language_title">Wika</string>
