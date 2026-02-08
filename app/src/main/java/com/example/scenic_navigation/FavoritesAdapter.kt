@@ -24,22 +24,31 @@ class FavoritesAdapter(
             tvPoiName.text = poi.name
             tvPoiCategory.text = poi.category
             root.setOnClickListener { onClick(poi) }
-            
-            val key = "${poi.name}_${poi.lat}_${poi.lon}"
-            val isFav = try { FavoriteStore.isFavorite(key) } catch (e: Exception) { false }
-            ivFavorite.setImageResource(if (isFav) android.R.drawable.btn_star_big_on else android.R.drawable.btn_star_big_off)
+
+            val key = try { com.example.scenic_navigation.ui.RecommendationsAdapter.canonicalKey(poi) } catch (_: Exception) { "${poi.name}_${poi.lat}_${poi.lon}" }
+            val isFav = try { FavoriteStore.isFavorite(key) } catch (_: Exception) { false }
+            val ctx = ivFavorite.context
+            val tintOn = androidx.core.content.ContextCompat.getColor(ctx, R.color.lakbay_yellow)
+            val tintOff = androidx.core.content.ContextCompat.getColor(ctx, R.color.text_secondary)
+            ivFavorite.setImageResource(if (isFav) R.drawable.ic_star_filled else R.drawable.ic_star_outline)
+            ivFavorite.imageTintList = android.content.res.ColorStateList.valueOf(if (isFav) tintOn else tintOff)
+            ivFavorite.contentDescription = if (isFav) ctx.getString(R.string.poi_unliked, poi.name) else ctx.getString(R.string.like_poi)
             ivFavorite.setOnClickListener {
-                val wasFav = FavoriteStore.isFavorite(key)
+                val wasFav = try { FavoriteStore.isFavorite(key) } catch (_: Exception) { false }
                 if (wasFav) {
                     ivFavorite.animate().scaleX(0.8f).scaleY(0.8f).setDuration(140).withEndAction {
                         FavoriteStore.removeFavorite(key)
-                        ivFavorite.setImageResource(android.R.drawable.btn_star_big_off)
+                        ivFavorite.setImageResource(R.drawable.ic_star_outline)
+                        ivFavorite.imageTintList = android.content.res.ColorStateList.valueOf(tintOff)
+                        ivFavorite.contentDescription = ctx.getString(R.string.like_poi)
                         ivFavorite.animate().scaleX(1f).scaleY(1f).setDuration(140).start()
                     }.start()
                 } else {
                     ivFavorite.animate().scaleX(1.3f).scaleY(1.3f).setDuration(140).withEndAction {
                         FavoriteStore.addFavorite(key, poi)
-                        ivFavorite.setImageResource(android.R.drawable.btn_star_big_on)
+                        ivFavorite.setImageResource(R.drawable.ic_star_filled)
+                        ivFavorite.imageTintList = android.content.res.ColorStateList.valueOf(tintOn)
+                        ivFavorite.contentDescription = ctx.getString(R.string.poi_unliked, poi.name)
                         ivFavorite.animate().scaleX(1f).scaleY(1f).setDuration(140).start()
                     }.start()
                 }

@@ -66,7 +66,7 @@ class POIDetailBottomSheet(private val poi: Poi) : BottomSheetDialogFragment() {
         tvDescription.text = if (poi.description.isNotBlank()) poi.description else "No description available for this location."
 
         btnSave.setOnClickListener {
-            val key = "${poi.name}_${poi.lat}_${poi.lon}"
+            val key = try { com.example.scenic_navigation.ui.RecommendationsAdapter.canonicalKey(poi) } catch (_: Exception) { "${poi.name}_${poi.lat}_${poi.lon}" }
             if (FavoriteStore.isFavorite(key)) {
                 FavoriteStore.removeFavorite(key)
                 Snackbar.make(requireView(), "Removed from favorites", Snackbar.LENGTH_SHORT).show()
