@@ -89,20 +89,6 @@
     <string name="no_favorites_yet">No favorites yet</string>
     <string name="save_places_description">Save places to visit them later</string>
 
-    <!-- Recommendations Filter Chips -->
-    <string name="all_filter">All</string>
-    <string name="scenic_filter">🏞️ Scenic</string>
-    <string name="coastal_filter">🌊 Coastal</string>
-    <string name="mountain_filter">⛰️ Mountain</string>
-    <string name="historic_filter">🏛️ Historic</string>
-    <string name="food_filter">🍽️ Food</string>
-    <string name="nature_filter">🌳 Nature</string>
-    <string name="culture_filter">🎭 Culture</string>
-    <string name="shopping_filter">🛍️ Shopping</string>
-    <string name="tourism_filter">🏷️ Tourism</string>
-    <string name="collapse_arrow">▼</string>
-    <string name="expand_arrow">▲</string>
-
     <string name="maximum_distance">📍 Maximum Distance</string>
     <string name="sort_by">📊 Sort By</string>
     <string name="distance_sort">Distance</string>
@@ -146,7 +132,11 @@
     <string name="poi_fallback">POI</string>
     <string name="like_poi">Like POI</string>
     <string name="unlike_poi">Unlike POI</string>
-    <string name="poi_liked">Liked %1$s</string>
     <string name="poi_unliked">Removed from favorites: %1$s</string>
+    <string name="poi_liked">Liked %1$s</string>
     <string name="curate_now">Curate now</string>
+
+    <!-- UI arrows -->
+    <string name="expand_arrow">▲</string>
+    <string name="collapse_arrow">▼</string>
 </resources>

@@ -33,6 +33,7 @@ import kotlin.math.roundToInt
 import android.graphics.Color
 import android.view.ViewGroup
 import android.widget.CompoundButton
+import android.view.MotionEvent
 import com.example.scenic_navigation.utils.GeoUtils
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.example.scenic_navigation.MainActivity
@@ -66,7 +67,9 @@ class RecommendationsFragment : Fragment() {
     private var currentSeeingSelection: String = "Oceanic View"
     // Multi-select activity labels (the UI chips)
     private val selectedActivityLabels = mutableSetOf<String>()
-    private var sortBy: SortOption = SortOption.DISTANCE
+    // Make sortBy nullable so the user can clear sorting by unchecking chips
+    // Start with no active sort by default to make deselection intuitive
+    private var sortBy: SortOption? = null
     private var filterCollapsed = false
 
     // Track last effective categories used for a fetch so we can detect overly-strict filters
@@ -99,7 +102,6 @@ class RecommendationsFragment : Fragment() {
         setupRecyclerView()
         setupTownsList()
         setupFilters()
-        setupFilterCollapse()
         observeViewModel()
 
         // Back press handling for navigation between towns and POIs
@@ -289,52 +291,116 @@ class RecommendationsFragment : Fragment() {
              applyFilters()
          }
 
-         // Sort chips
-         binding.chipSortDistance.setOnCheckedChangeListener { _, isChecked ->
-            Log.d("RecommendationsFrag", "SortDistance checked=$isChecked")
-             if (suppressFilterEvents) return@setOnCheckedChangeListener
-             if (isChecked) {
-                 sortBy = SortOption.DISTANCE
-                 Log.i("RecommendationsFrag", "Sort changed to DISTANCE")
-                 // ensure mutual exclusivity
-                 suppressFilterEvents = true
-                 binding.chipSortScenic.isChecked = false
-                 binding.chipSortName.isChecked = false
-                 suppressFilterEvents = false
-                 applyFilters()
-             }
-         }
+        // Ensure chip group allows zero selection at runtime (some themes default selectionRequired=true)
+        try {
+            binding.chipGroupSort.isSingleSelection = false
+            binding.chipGroupSort.isSelectionRequired = false
+            binding.chipSortDistance.isCheckable = true
+            binding.chipSortScenic.isCheckable = true
+            binding.chipSortName.isCheckable = true
+            // Clear any initial selection and ensure internal state consistent
+            suppressFilterEvents = true
+            binding.chipSortDistance.isChecked = false
+            binding.chipSortScenic.isChecked = false
+            binding.chipSortName.isChecked = false
+            suppressFilterEvents = false
+            sortBy = null
+        } catch (_: Exception) {}
 
-         binding.chipSortScenic.setOnCheckedChangeListener { _, isChecked ->
-            Log.d("RecommendationsFrag", "SortScenic checked=$isChecked")
-             if (suppressFilterEvents) return@setOnCheckedChangeListener
-             if (isChecked) {
-                 sortBy = SortOption.SCENIC_SCORE
-                 Log.i("RecommendationsFrag", "Sort changed to SCENIC_SCORE")
-                 suppressFilterEvents = true
-                 binding.chipSortDistance.isChecked = false
-                 binding.chipSortName.isChecked = false
-                 suppressFilterEvents = false
-                 applyFilters()
-             }
-         }
+        // Record pre-touch checked state on ACTION_DOWN and handle selection/deselection in OnClick.
+        // This avoids fighting the Chip's default toggle behavior and works even when themes
+        // attempt to enforce single-selection/selectionRequired.
+        try {
+            var lastTouchedChipId = -1
+            var lastTouchedWasChecked = false
 
-         binding.chipSortName.setOnCheckedChangeListener { _, isChecked ->
-            Log.d("RecommendationsFrag", "SortName checked=$isChecked")
-             if (suppressFilterEvents) return@setOnCheckedChangeListener
-             if (isChecked) {
-                 sortBy = SortOption.NAME
-                 Log.i("RecommendationsFrag", "Sort changed to NAME")
-                 suppressFilterEvents = true
-                 binding.chipSortDistance.isChecked = false
-                 binding.chipSortScenic.isChecked = false
-                 suppressFilterEvents = false
-                 applyFilters()
-             }
-         }
-     }
+            val recordTouch = View.OnTouchListener { v, event ->
+                if (event.action == MotionEvent.ACTION_DOWN) {
+                    lastTouchedChipId = v.id
+                    lastTouchedWasChecked = when (v.id) {
+                        binding.chipSortDistance.id -> binding.chipSortDistance.isChecked
+                        binding.chipSortScenic.id -> binding.chipSortScenic.isChecked
+                        binding.chipSortName.id -> binding.chipSortName.isChecked
+                        else -> false
+                    }
+                }
+                // Do not consume; let the default toggle behavior continue.
+                return@OnTouchListener false
+            }
 
-    private fun setupFilterCollapse() {
+            binding.chipSortDistance.setOnTouchListener(recordTouch)
+            binding.chipSortScenic.setOnTouchListener(recordTouch)
+            binding.chipSortName.setOnTouchListener(recordTouch)
+
+            binding.chipSortDistance.setOnClickListener { v ->
+                if (suppressFilterEvents) return@setOnClickListener
+                try {
+                    if (lastTouchedChipId == v.id && lastTouchedWasChecked) {
+                        // User tapped an already-checked chip -> clear all selection
+                        suppressFilterEvents = true
+                        try { binding.chipGroupSort.clearCheck() } catch (_: Exception) {}
+                        suppressFilterEvents = false
+                        sortBy = null
+                        Log.i("RecommendationsFrag", "Sort cleared (Distance click)")
+                    } else {
+                        // Chip was toggled on: enforce mutual exclusion programmatically
+                        suppressFilterEvents = true
+                        binding.chipSortScenic.isChecked = false
+                        binding.chipSortName.isChecked = false
+                        suppressFilterEvents = false
+                        sortBy = SortOption.DISTANCE
+                        Log.i("RecommendationsFrag", "Sort set to DISTANCE (Distance click)")
+                    }
+                } finally {
+                    try { updateRecommendationsList(adapter.currentList) } catch (_: Exception) {}
+                }
+            }
+
+            binding.chipSortScenic.setOnClickListener { v ->
+                if (suppressFilterEvents) return@setOnClickListener
+                try {
+                    if (lastTouchedChipId == v.id && lastTouchedWasChecked) {
+                        suppressFilterEvents = true
+                        try { binding.chipGroupSort.clearCheck() } catch (_: Exception) {}
+                        suppressFilterEvents = false
+                        sortBy = null
+                        Log.i("RecommendationsFrag", "Sort cleared (Scenic click)")
+                    } else {
+                        suppressFilterEvents = true
+                        binding.chipSortDistance.isChecked = false
+                        binding.chipSortName.isChecked = false
+                        suppressFilterEvents = false
+                        sortBy = SortOption.SCENIC_SCORE
+                        Log.i("RecommendationsFrag", "Sort set to SCENIC (Scenic click)")
+                    }
+                } finally {
+                    try { updateRecommendationsList(adapter.currentList) } catch (_: Exception) {}
+                }
+            }
+
+            binding.chipSortName.setOnClickListener { v ->
+                if (suppressFilterEvents) return@setOnClickListener
+                try {
+                    if (lastTouchedChipId == v.id && lastTouchedWasChecked) {
+                        suppressFilterEvents = true
+                        try { binding.chipGroupSort.clearCheck() } catch (_: Exception) {}
+                        suppressFilterEvents = false
+                        sortBy = null
+                        Log.i("RecommendationsFrag", "Sort cleared (Name click)")
+                    } else {
+                        suppressFilterEvents = true
+                        binding.chipSortDistance.isChecked = false
+                        binding.chipSortScenic.isChecked = false
+                        suppressFilterEvents = false
+                        sortBy = SortOption.NAME
+                        Log.i("RecommendationsFrag", "Sort set to NAME (Name click)")
+                    }
+                } finally {
+                    try { updateRecommendationsList(adapter.currentList) } catch (_: Exception) {}
+                }
+            }
+        } catch (_: Exception) {}
+
          // Wire the header collapse button to toggle the filter content using view binding.
          try {
              val btn = binding.btnFilterCollapse
@@ -383,7 +449,8 @@ class RecommendationsFragment : Fragment() {
                         userLon = it.longitude
                         // Update adapter with new location and refresh the currently shown list
                         adapter.updateUserLocation(userLat, userLon)
-                        adapter.submitList(filteredPois.ifEmpty { allPois })
+                        // Sort the list consistent with current sort selection
+                        adapter.submitList(sortPois(filteredPois.ifEmpty { allPois }))
                         // Fetch recommendations now that we have the user's accurate location
                         fetchWithCurrentFilters()
                     }
@@ -478,6 +545,7 @@ class RecommendationsFragment : Fragment() {
     private fun updateRecommendationsList(recommendations: List<Poi>) {
          val recyclerView = binding.rvRecommendations
          Log.i("RecommendationsFrag", "updateRecommendationsList called: recommendations.size=${recommendations.size}")
+         Log.d("RecommendationsFrag", "Current sortBy=$sortBy")
          if (recommendations.isEmpty()) {
             binding.emptyState.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
@@ -497,7 +565,9 @@ class RecommendationsFragment : Fragment() {
              townsListView?.visibility = View.GONE
              recyclerView.visibility = View.VISIBLE
              adapter.updateUserLocation(userLat, userLon)
-             adapter.submitList(recommendations)
+             // Sort according to current sort selection before submitting
+             val sorted = sortPois(recommendations)
+             adapter.submitList(sorted)
              // After layout, ensure list scrolls to top so new results are visible
              recyclerView.post {
                  try { if (adapter.itemCount > 0) recyclerView.scrollToPosition(0) } catch (_: Exception) {}
@@ -574,6 +644,18 @@ class RecommendationsFragment : Fragment() {
             if (auc != null && !auc.isNaN()) "AUC: ${String.format("%.3f", auc)}" else "AUC: n/a"
         } catch (e: Exception) {
             "AUC: n/a"
+        }
+    }
+
+    // New helper to sort POIs according to the selected sort option.
+    private fun sortPois(list: List<Poi>): List<Poi> {
+        val opt = sortBy ?: return list
+        return when (opt) {
+            SortOption.DISTANCE -> list.sortedWith(compareBy { poi ->
+                if (poi.lat != null && poi.lon != null) GeoUtils.haversine(userLat, userLon, poi.lat!!, poi.lon!!) else Double.MAX_VALUE
+            })
+            SortOption.SCENIC_SCORE -> list.sortedWith(compareByDescending<Poi> { it.scenicScore ?: 0f }.thenBy { it.name ?: "" })
+            SortOption.NAME -> list.sortedBy { it.name?.lowercase(Locale.ROOT) ?: "" }
         }
     }
 
