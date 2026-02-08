@@ -626,10 +626,7 @@ class RouteFragment : Fragment(), SensorEventListener {
                 binding.tvStatus.text = it
                 sharedViewModel.setStatusMessage(it)
 
-                // Show as Snackbar for important messages
-                if (!viewModel.isLoading.value!!) {
-                    Snackbar.make(binding.root, it, Snackbar.LENGTH_SHORT).show()
-                }
+                // Status messages shown only in overlay, no Snackbar popup
                 // update overlay status text if visible
                 binding.tvOverlayStatus.text = it
             }
@@ -1214,13 +1211,7 @@ class RouteFragment : Fragment(), SensorEventListener {
     private fun handleOffRoute(location: Location) {
         val newStart = GeoPoint(location.latitude, location.longitude)
 
-        Snackbar.make(
-            binding.root,
-            "You're off route! Recalculating...",
-            Snackbar.LENGTH_LONG
-        ).show()
-
-        // Recalculate route from current location
+        // Recalculate route from current location silently
         viewModel.recalculateRouteFromLocation(newStart)
     }
 
@@ -1344,10 +1335,8 @@ class RouteFragment : Fragment(), SensorEventListener {
         firestoreRepo.saveSelection(uid, intent) { success, error ->
             if (!success) {
                 Snackbar.make(binding.root, "Failed to save selection: ${error ?: "unknown"}", Snackbar.LENGTH_LONG).show()
-            } else {
-                // Optionally give feedback that the selection was saved
-                Snackbar.make(binding.root, "Selection saved", Snackbar.LENGTH_SHORT).show()
             }
+            // Selection saved silently without notification
         }
     }
 
@@ -1552,7 +1541,11 @@ class RouteFragment : Fragment(), SensorEventListener {
 
              binding.map.invalidate()
 
-             // Clear shared route state so other fragments/activities know the route ended
+             // Clear route data from both ViewModels to prevent re-generation when navigating back
+             try {
+                 viewModel.clearRoute()
+             } catch (_: Exception) {}
+
              try {
                  sharedViewModel.updateRouteData(emptyList(), emptyList())
              } catch (_: Exception) {}
