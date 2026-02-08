@@ -40,7 +40,6 @@ import com.google.android.material.chip.ChipGroup
 import android.widget.LinearLayout
 import android.view.ViewGroup
 import android.widget.CompoundButton
-import com.example.scenic_navigation.FavoriteStore
 
 class RecommendationsFragment : Fragment() {
     private var _binding: FragmentRecommendationsBinding? = null
@@ -73,8 +72,6 @@ class RecommendationsFragment : Fragment() {
     // Suppress programmatic chip events to avoid recursive listener triggers and UI flicker
     private var suppressFilterEvents = false
 
-    // Overlay view is provided by XML (@id/filter_overlay) and accessed via view binding
-
     enum class SortOption {
         DISTANCE, SCENIC_SCORE, NAME
     }
@@ -99,7 +96,6 @@ class RecommendationsFragment : Fragment() {
         setupRecyclerView()
         setupTownsList()
         setupFilters()
-        // Using XML-provided overlay (binding.filterOverlay) for z-order control
         setupFilterCollapse()
         observeViewModel()
 
@@ -149,32 +145,6 @@ class RecommendationsFragment : Fragment() {
         binding.btnCurateEmpty?.setOnClickListener {
             binding.fabCurate.performClick()
         }
-    }
-
-    // Show/hide the XML overlay and ensure filter content is above it.
-    private fun showFilterOverlay() {
-        try {
-            binding.filterOverlay.visibility = View.VISIBLE
-            // ensure overlay is below the filter content but above the list
-            binding.filterOverlay.bringToFront()
-            // bring the card and its content above the overlay so the user can interact with filters
-            try { binding.cardFilter.bringToFront() } catch (_: Exception) {}
-            try { binding.filterCollapsibleContent.bringToFront() } catch (_: Exception) {}
-        } catch (_: Exception) {}
-    }
-
-    private fun hideFilterOverlay() {
-        try { binding.filterOverlay.visibility = View.GONE } catch (_: Exception) {}
-    }
-
-    private fun hideFilterContent() {
-        try {
-            val content = binding.filterCollapsibleContent
-            content.animate().alpha(0f).setDuration(180).withEndAction { content.visibility = View.GONE }.start()
-            binding.btnFilterCollapse.setText(R.string.expand_arrow)
-            filterCollapsed = true
-            hideFilterOverlay()
-        } catch (_: Exception) {}
     }
 
     private fun setupRecyclerView() {
@@ -384,8 +354,6 @@ class RecommendationsFragment : Fragment() {
             // initialize state
             content.visibility = if (filterCollapsed) View.GONE else View.VISIBLE
             content.alpha = if (filterCollapsed) 0f else 1f
-            // ensure overlay initial state matches collapsed state
-            if (filterCollapsed) hideFilterOverlay() else showFilterOverlay()
 
             btn.setOnClickListener {
                 filterCollapsed = !filterCollapsed
@@ -393,13 +361,11 @@ class RecommendationsFragment : Fragment() {
                     // hide with fade
                     content.animate().alpha(0f).setDuration(180).withEndAction { content.visibility = View.GONE }.start()
                     btn.setText(R.string.expand_arrow) // ▲
-                    hideFilterOverlay()
                 } else {
                     content.visibility = View.VISIBLE
                     content.alpha = 0f
                     content.animate().alpha(1f).setDuration(180).start()
                     btn.setText(R.string.collapse_arrow) // ▼
-                    showFilterOverlay()
                 }
             }
         } catch (_: Exception) {
@@ -713,11 +679,12 @@ class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolde
                  iconBackground.background.setTint(bgColor)
              } catch (_: Exception) {}
 
-            // Set like button based on persisted curated POIs stored in FavoriteStore using canonical key
+            // Set like button based on persisted curated POIs stored in shared prefs using canonical key
             try {
-                val key = FavoriteStore.canonicalKey(item)
-                val isFav = try { FavoriteStore.isFavorite(key) } catch (_: Exception) { false }
-                if (isFav) {
+                val prefs = holder.binding.root.context.getSharedPreferences("scenic_prefs", Context.MODE_PRIVATE)
+                val curated = prefs.getStringSet("curated_pois", emptySet()) ?: emptySet()
+                val key = RecommendationsAdapter.canonicalKey(item)
+                if (curated.contains(key)) {
                     btnLike.setImageResource(R.drawable.ic_favorite_24)
                 } else {
                     btnLike.setImageResource(R.drawable.ic_favorite_border_24)

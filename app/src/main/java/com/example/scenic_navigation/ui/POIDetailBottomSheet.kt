@@ -66,18 +66,15 @@ class POIDetailBottomSheet(private val poi: Poi) : BottomSheetDialogFragment() {
         tvDescription.text = if (poi.description.isNotBlank()) poi.description else "No description available for this location."
 
         btnSave.setOnClickListener {
-            try {
-                val wasFav = FavoriteStore.isFavorite(poi)
-                if (wasFav) {
-                    FavoriteStore.removeByPoi(poi)
-                    Snackbar.make(requireView(), getString(R.string.poi_unliked, poi.name), Snackbar.LENGTH_SHORT).show()
-                    btnSave.text = getString(R.string.save_button)
-                } else {
-                    FavoriteStore.addOrReplaceFavorite(poi)
-                    Snackbar.make(requireView(), getString(R.string.poi_liked, poi.name), Snackbar.LENGTH_SHORT).show()
-                    btnSave.text = getString(R.string.save_button)
-                }
-            } catch (_: Exception) {
+            val key = "${poi.name}_${poi.lat}_${poi.lon}"
+            if (FavoriteStore.isFavorite(key)) {
+                FavoriteStore.removeFavorite(key)
+                Snackbar.make(requireView(), "Removed from favorites", Snackbar.LENGTH_SHORT).show()
+                btnSave.text = getString(R.string.save_button)
+            } else {
+                FavoriteStore.addFavorite(key, poi)
+                Snackbar.make(requireView(), "Saved '${poi.name}'", Snackbar.LENGTH_SHORT).show()
+                btnSave.text = getString(R.string.save_button)
             }
         }
 
