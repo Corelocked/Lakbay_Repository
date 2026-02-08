@@ -32,14 +32,14 @@ import java.util.Locale
 import kotlin.math.roundToInt
 import android.content.Context
 import android.graphics.Color
+import android.view.ViewGroup
+import android.widget.CompoundButton
 import com.example.scenic_navigation.utils.GeoUtils
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.example.scenic_navigation.MainActivity
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import android.widget.LinearLayout
-import android.view.ViewGroup
-import android.widget.CompoundButton
 
 class RecommendationsFragment : Fragment() {
     private var _binding: FragmentRecommendationsBinding? = null
@@ -166,6 +166,7 @@ class RecommendationsFragment : Fragment() {
 
          // Handle like clicks from adapter
          adapter.onLikeClick = { poi ->
+            Log.d("RecommendationsFrag", "onLikeClick invoked for ${poi.name}")
             try {
                 // Toggle curated state via ViewModel using canonical key storage
                 if (!viewModel.isCurated(poi)) {
@@ -185,6 +186,7 @@ class RecommendationsFragment : Fragment() {
 
          // Handle POI taps: plan a curated route to the POI using current filter selections
          adapter.onPoiClick = { poi ->
+            Log.d("RecommendationsFrag", "onPoiClick invoked for ${poi.name}")
             try {
                 // Map current seeing/activity to enums (fallbacks included)
                 val seeing = when (currentSeeingSelection.lowercase()) {
@@ -261,6 +263,7 @@ class RecommendationsFragment : Fragment() {
              actv?.setText(currentSeeingSelection, false)
              actv?.setOnItemClickListener { _, _, position, _ ->
                  currentSeeingSelection = seeingOptions[position]
+                 Log.d("RecommendationsFrag", "Seeing selected: ${seeingOptions[position]}")
                  applyFilters()
              }
          } catch (_: Exception) {}
@@ -276,7 +279,8 @@ class RecommendationsFragment : Fragment() {
                  chip.text = label
                  chip.isCheckable = true
                  chip.setOnCheckedChangeListener { _: CompoundButton, checked: Boolean ->
-                    if (checked) selectedActivityLabels.add(label) else selectedActivityLabels.remove(label)
+                    Log.d("RecommendationsFrag", "Activity chip '$label' checked=$checked")
+                     if (checked) selectedActivityLabels.add(label) else selectedActivityLabels.remove(label)
                      // Recompute selectedCategories from activity labels + seeing selection
                      val tokens = mutableSetOf<String>()
                      for (l in selectedActivityLabels) tokens.addAll(mapActivityLabelToTags(l))
@@ -298,6 +302,7 @@ class RecommendationsFragment : Fragment() {
 
          // Distance slider
          binding.sliderDistance.addOnChangeListener { _, value, _ ->
+            Log.d("RecommendationsFrag", "Distance slider changed: $value")
              if (suppressFilterEvents) return@addOnChangeListener
              maxDistance = value
              binding.tvDistanceValue.text = getString(R.string.distance_value_fmt, value.roundToInt())
@@ -306,6 +311,7 @@ class RecommendationsFragment : Fragment() {
 
          // Sort chips
          binding.chipSortDistance.setOnCheckedChangeListener { _, isChecked ->
+            Log.d("RecommendationsFrag", "SortDistance checked=$isChecked")
              if (suppressFilterEvents) return@setOnCheckedChangeListener
              if (isChecked) {
                  sortBy = SortOption.DISTANCE
@@ -320,6 +326,7 @@ class RecommendationsFragment : Fragment() {
          }
 
          binding.chipSortScenic.setOnCheckedChangeListener { _, isChecked ->
+            Log.d("RecommendationsFrag", "SortScenic checked=$isChecked")
              if (suppressFilterEvents) return@setOnCheckedChangeListener
              if (isChecked) {
                  sortBy = SortOption.SCENIC_SCORE
@@ -333,6 +340,7 @@ class RecommendationsFragment : Fragment() {
          }
 
          binding.chipSortName.setOnCheckedChangeListener { _, isChecked ->
+            Log.d("RecommendationsFrag", "SortName checked=$isChecked")
              if (suppressFilterEvents) return@setOnCheckedChangeListener
              if (isChecked) {
                  sortBy = SortOption.NAME
@@ -347,30 +355,41 @@ class RecommendationsFragment : Fragment() {
      }
 
     private fun setupFilterCollapse() {
-        // Wire the header collapse button to toggle the filter content using view binding.
-        try {
-            val btn = binding.btnFilterCollapse
-            val content = binding.filterCollapsibleContent
-            // initialize state
-            content.visibility = if (filterCollapsed) View.GONE else View.VISIBLE
-            content.alpha = if (filterCollapsed) 0f else 1f
+         // Wire the header collapse button to toggle the filter content using view binding.
+         try {
+             val btn = binding.btnFilterCollapse
+             val content = binding.filterCollapsibleContent
+             // initialize state and ensure touch blocking matches initial visibility
+             content.visibility = if (filterCollapsed) View.GONE else View.VISIBLE
+             content.alpha = if (filterCollapsed) 0f else 1f
+             // Ensure the card is above other content at runtime
+             try { binding.cardFilter.bringToFront() } catch (_: Exception) {}
+             // rely on XML layering and clickable attribute to block empty-area taps
 
-            btn.setOnClickListener {
-                filterCollapsed = !filterCollapsed
-                if (filterCollapsed) {
-                    // hide with fade
-                    content.animate().alpha(0f).setDuration(180).withEndAction { content.visibility = View.GONE }.start()
-                    btn.setText(R.string.expand_arrow) // ▲
-                } else {
-                    content.visibility = View.VISIBLE
-                    content.alpha = 0f
-                    content.animate().alpha(1f).setDuration(180).start()
-                    btn.setText(R.string.collapse_arrow) // ▼
-                }
-            }
-        } catch (_: Exception) {
-            // binding may not be available in rare cases; ignore safely
-        }
+             btn.setOnClickListener {
+                 filterCollapsed = !filterCollapsed
+                 if (filterCollapsed) {
+                     // hide with fade
+                     content.animate().alpha(0f).setDuration(180).withEndAction {
+                         content.visibility = View.GONE
+                         // disable clickable when hidden to keep behavior explicit
+                         try { content.isClickable = false } catch (_: Exception) {}
+                     }.start()
+                     btn.setText(R.string.expand_arrow) // ▲
+                 } else {
+                     content.visibility = View.VISIBLE
+                     content.alpha = 0f
+                     // enable touch blocking immediately so touches don't pass through during animation
+                     // ensure filter card stays on top while expanded
+                     try { binding.cardFilter.bringToFront() } catch (_: Exception) {}
+                     try { content.isClickable = true } catch (_: Exception) {}
+                     content.animate().alpha(1f).setDuration(180).start()
+                     btn.setText(R.string.collapse_arrow) // ▼
+                 }
+             }
+         } catch (_: Exception) {
+             // binding may not be available in rare cases; ignore safely
+         }
     }
 
     private fun handleCategoryChip(category: String, isChecked: Boolean) {
@@ -473,6 +492,7 @@ class RecommendationsFragment : Fragment() {
     }
 
     private fun applyFilters() {
+        Log.d("RecommendationsFrag", "applyFilters called: seeing=$currentSeeingSelection activities=${selectedActivityLabels.joinToString()} maxDistance=$maxDistance selectedCategories=$selectedCategories")
         // Recompute selectedCategories from UI (activity chips + seeing) before delegating
         val prefs = recomputeSelectedCategoriesFromUI()
         selectedCategories.clear()
@@ -708,11 +728,13 @@ class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolde
 
             // Like button handling — the fragment will set onLikeClick and maintain curated state
             btnLike.setOnClickListener {
+                Log.d("RecommendationsFrag", "btnLike clicked for ${item.name}")
                 onLikeClick?.invoke(item)
             }
 
             // POI item click handling — the fragment will set onPoiClick to plan routes
             root.setOnClickListener {
+                Log.d("RecommendationsFrag", "POI item clicked for ${item.name}")
                 onPoiClick?.invoke(item)
             }
         }
