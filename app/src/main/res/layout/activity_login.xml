@@ -9,14 +9,14 @@
 
     <ImageView
             android:id="@+id/logo_pin"
-            android:layout_width="250dp"
-            android:layout_height="250dp"
-            android:layout_marginBottom="-140dp"
+            android:layout_width="160dp"
+            android:layout_height="170dp"
+            android:layout_marginBottom="-100dp"
             android:contentDescription="@string/app_name"
             app:layout_constraintBottom_toTopOf="@+id/logo_title"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:srcCompat="@drawable/logo_pin" />
+            app:srcCompat="@drawable/logo_pin_new" />
 
     <ImageView
             android:id="@+id/logo_title"
@@ -27,7 +27,7 @@
             app:layout_constraintBottom_toTopOf="@+id/email"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:srcCompat="@drawable/logo_title" />
+            app:srcCompat="@drawable/logo_title_new" />
 
     <Button
             android:id="@+id/login_button"
