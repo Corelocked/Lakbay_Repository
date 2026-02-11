@@ -11,9 +11,9 @@
             android:id="@+id/logo_pin"
             android:layout_width="160dp"
             android:layout_height="170dp"
-            android:layout_marginBottom="-100dp"
+            android:layout_marginTop="64dp"
             android:contentDescription="@string/app_name"
-            app:layout_constraintBottom_toTopOf="@+id/logo_title"
+            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:srcCompat="@drawable/logo_pin_new" />
@@ -22,9 +22,9 @@
             android:id="@+id/logo_title"
             android:layout_width="300dp"
             android:layout_height="300dp"
-            android:layout_marginBottom="4dp"
+            android:layout_marginTop="70dp"
             android:contentDescription="@string/app_name"
-            app:layout_constraintBottom_toTopOf="@+id/email"
+            app:layout_constraintTop_toTopOf="@+id/logo_pin"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:srcCompat="@drawable/logo_title_new"
@@ -36,7 +36,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="32dp"
             android:layout_marginEnd="32dp"
-            android:layout_marginBottom="12dp"
+            android:layout_marginTop="16dp"
             android:background="@android:color/transparent"
             android:drawableStart="@drawable/ic_email"
             android:drawablePadding="12dp"
@@ -56,6 +56,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="32dp"
         android:layout_marginEnd="32dp"
+        android:layout_marginTop="12dp"
         app:layout_constraintTop_toBottomOf="@+id/email"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -83,7 +84,7 @@
             android:layout_marginStart="8dp"
             android:background="@android:color/transparent"
             android:contentDescription="@string/toggle_password_visibility"
-            android:src="@drawable/ic_visibility_off"
+            android:src="@drawable/eye_hidden"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/password"
             app:layout_constraintBottom_toBottomOf="@+id/password" />
@@ -96,7 +97,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="32dp"
             android:layout_marginEnd="32dp"
-            android:layout_marginTop="28dp"
+            android:layout_marginTop="24dp"
             android:text="@string/log_in"
             android:textColor="@android:color/white"
             android:backgroundTint="#FF3D32"
@@ -105,7 +106,6 @@
             app:layout_constraintTop_toBottomOf="@+id/password_container"
             app:layout_constraintHorizontal_bias="0.0" />
 
-    <!-- Google Sign-In button below login button -->
     <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_google_sign_in"
             android:layout_width="0dp"
@@ -114,17 +114,21 @@
             android:layout_marginEnd="32dp"
             android:layout_marginTop="12dp"
             android:text="@string/continue_with_google"
-            app:icon="@drawable/ic_google_logo"
+            android:textColor="@color/black"
+            android:backgroundTint="@color/white"
+            app:icon="@drawable/google_logo"
+            app:iconTint="@null"
             app:iconGravity="textStart"
             app:layout_constraintTop_toBottomOf="@+id/login_button"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toTopOf="@+id/signup_text" />
+            app:layout_constraintHorizontal_bias="0.0" />
 
     <TextView
             android:id="@+id/signup_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:layout_marginBottom="64dp"
             android:text="@string/no_account_signup"
             app:layout_constraintBottom_toBottomOf="parent"
