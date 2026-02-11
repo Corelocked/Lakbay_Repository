@@ -4,13 +4,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/transparent">
+    android:background="@android:color/white"> <!-- changed from transparent to white -->
 
     <!-- Map View as the background, matching fragment_route visual layout -->
+    <!-- Hidden by default so the fragment shows a white background instead of map tiles. Re-enable if needed. -->
     <org.osmdroid.views.MapView
         android:id="@+id/map_recommendations"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:visibility="gone" />
 
     <!-- Recommendations list area anchored below the top card -->
     <androidx.core.widget.NestedScrollView
@@ -147,7 +149,7 @@
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:padding="0dp"
-                    android:text="▼"
+                    android:text="@string/collapse_arrow"
                     android:textColor="@color/white"
                     android:textSize="14sp"
                     android:backgroundTint="#FF8C8C"
