@@ -81,6 +81,11 @@
     <string name="no_account_signup">No Account? Sign up here</string>
     <string name="sign_up">Sign Up</string>
     <string name="already_have_account">Already have an account? Log in</string>
+    <string name="email_hint">Email Address</string>
+    <string name="password_hint">Password</string>
+    <string name="confirm_password_hint">Confirm Password</string>
+    <string name="toggle_password_visibility">Toggle password visibility</string>
+    <string name="continue_with_google">Continue with Google</string>
 
     <!-- Favorites -->
     <string name="your_favorites">⭐ Your Favorites</string>
@@ -139,4 +144,5 @@
     <!-- UI arrows -->
     <string name="expand_arrow">▲</string>
     <string name="collapse_arrow">▼</string>
+    <string name="default_web_client_id">533429423836-k5tjhe2hlrlaln8o529v5o5q8mikvjfv.apps.googleusercontent.com</string>
 </resources>

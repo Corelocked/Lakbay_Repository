@@ -22,6 +22,7 @@ import com.example.scenic_navigation.models.ActivityType
 import com.example.scenic_navigation.models.SeeingType
 import com.example.scenic_navigation.models.CurationIntent
 import com.example.scenic_navigation.services.LocationService
+import com.example.scenic_navigation.utils.MapIconUtils
 import com.example.scenic_navigation.utils.OffRouteDetector
 import com.example.scenic_navigation.viewmodel.RouteViewModel
 import com.example.scenic_navigation.viewmodel.SharedRouteViewModel
@@ -906,12 +907,12 @@ class RouteFragment : Fragment(), SensorEventListener {
                     snippet = poi.description
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                     try {
-                        val bmp = createPoiIcon(poi)
+                        val bmp = MapIconUtils.createPoiIconPreferDrawable(requireContext(), poi, 88)
                         icon = BitmapDrawable(requireContext().resources, bmp)
                         Log.d("RouteFragment", "Assigned POI icon for '${poi.name}' (bmp ${bmp.width}x${bmp.height}) [declustered]")
                     } catch (e: Exception) {
                         Log.w("RouteFragment", "Failed to create POI icon, using fallback", e)
-                        val color = getCategoryColor(poi.category)
+                        val color = MapIconUtils.getCategoryColor(poi.category)
                         val fallback = createSolidCircleDrawable(color, 72)
                         DrawableCompat.setTintList(fallback, null)
                         fallback.clearColorFilter()
@@ -1018,12 +1019,12 @@ class RouteFragment : Fragment(), SensorEventListener {
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                     // Use custom icon based on category and scenic score
                     try {
-                        val bmp = createPoiIcon(poi)
+                        val bmp = MapIconUtils.createPoiIconPreferDrawable(requireContext(), poi, 88)
                         icon = BitmapDrawable(requireContext().resources, bmp)
                         Log.d("RouteFragment", "Assigned POI icon for '${poi.name}' (bmp ${bmp.width}x${bmp.height})")
                     } catch (e: Exception) {
                         Log.w("RouteFragment", "Failed to create POI icon, using fallback", e)
-                        val color = getCategoryColor(poi.category)
+                        val color = MapIconUtils.getCategoryColor(poi.category)
                         val fallback = createSolidCircleDrawable(color, 72)
                         DrawableCompat.setTintList(fallback, null)
                         fallback.clearColorFilter()
@@ -1104,61 +1105,6 @@ class RouteFragment : Fragment(), SensorEventListener {
         return drawable
     }
 
-    private fun getCategoryColor(category: String?): Int {
-        val cat = category?.lowercase() ?: ""
-        return when {
-            cat.contains("beach") || cat.contains("coast") || cat.contains("ocean") || cat.contains("sea") -> android.graphics.Color.parseColor("#0288D1") // blue
-            cat.contains("mount") || cat.contains("hike") || cat.contains("view") -> android.graphics.Color.parseColor("#2E7D32") // green
-            cat.contains("historic") || cat.contains("church") || cat.contains("monument") -> android.graphics.Color.parseColor("#FFA000") // amber
-            else -> android.graphics.Color.parseColor("#1976D2") // default primary
-        }
-    }
-
-    // Create a small circular icon for a POI with the initial letter and color by category
-    private fun createPoiIcon(poi: com.example.scenic_navigation.models.Poi): Bitmap {
-        val size = 72
-        val radius = size / 2f
-        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bmp)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        paint.style = Paint.Style.FILL
-        paint.alpha = 255
-        val fill = getCategoryColor(poi.category)
-        paint.color = fill
-        canvas.drawCircle(radius, radius, radius - 2f, paint)
-
-        // draw white stroke for contrast
-        val stroke = Paint(Paint.ANTI_ALIAS_FLAG)
-        stroke.style = Paint.Style.STROKE
-        stroke.strokeWidth = 3f
-        stroke.color = android.graphics.Color.WHITE
-        canvas.drawCircle(radius, radius, radius - 2f, stroke)
-
-        val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        textPaint.color = android.graphics.Color.WHITE
-        textPaint.textSize = 28f
-        textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        textPaint.isFakeBoldText = true
-        val letter = poi.name.trim().takeIf { it.isNotEmpty() }?.get(0)?.uppercaseChar() ?: '?'
-        val text = letter.toString()
-        val textWidth = textPaint.measureText(text)
-        val fm = textPaint.fontMetrics
-        val x = (size - textWidth) / 2f
-        val y = (size - fm.ascent - fm.descent) / 2f
-        canvas.drawText(text, x, y, textPaint)
-
-        // Debug: log center pixel color to help diagnose gray icon issue
-        try {
-            val cx = size / 2
-            val cy = size / 2
-            val centerColor = bmp.getPixel(cx, cy)
-            Log.d("RouteFragment", "createPoiIcon centerColor=#${Integer.toHexString(centerColor)} for poi='${poi.name}' category='${poi.category}'")
-        } catch (e: Exception) {
-            Log.w("RouteFragment", "Failed to read center pixel of POI icon", e)
-        }
-
-        return bmp
-    }
 
     private fun createClusterIcon(count: Int, avgScore: Float): Bitmap {
         val size = 120

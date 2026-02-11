@@ -89,6 +89,8 @@ dependencies {
 
     // Google Play Services Location for GPS
     implementation("com.google.android.gms:play-services-location:21.0.1")
+    // Google Play Services Auth for Google Sign-In
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
 
     // 1. Add the BoM first (highly recommended)
     implementation(platform(libs.firebase.bom))

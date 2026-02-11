@@ -90,15 +90,6 @@
     <string name="save_places_description">I-save ang mga lugar para bisitahin sa ibang pagkakataon</string>
 
     <!-- Recommendations Filter Chips -->
-    <string name="all_filter">Lahat</string>
-    <string name="scenic_filter">🏞️ Scenic</string>
-    <string name="coastal_filter">🌊 Coastal</string>
-    <string name="mountain_filter">⛰️ Bundok</string>
-    <string name="historic_filter">🏛️ Makasaysayan</string>
-    <string name="food_filter">🍽️ Pagkain</string>
-    <string name="nature_filter">🌳 Kalikasan</string>
-    <string name="culture_filter">🎭 Kultura</string>
-    <string name="shopping_filter">🛍️ Pamimili</string>
     <string name="maximum_distance">📍 Pinakamalaking Distansya</string>
     <string name="sort_by">📊 Ayusin Ayon sa</string>
     <string name="distance_sort">Distansya</string>

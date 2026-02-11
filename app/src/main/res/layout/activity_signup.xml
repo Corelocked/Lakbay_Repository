@@ -28,80 +28,137 @@
         android:background="@android:color/transparent"
         android:drawableStart="@drawable/ic_email"
         android:drawablePadding="12dp"
-        android:hint="Email Address"
+        android:hint="@string/email_hint"
+        android:autofillHints="emailAddress"
         android:inputType="textEmailAddress"
         android:padding="12dp"
-        app:layout_constraintBottom_toTopOf="@+id/password"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.65"
-        app:layout_constraintVertical_chainStyle="packed" />
+        app:layout_constraintVertical_bias="0.45" />
 
-    <EditText
-        android:id="@+id/password"
+    <!-- Password with toggle -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/password_container"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="32dp"
         android:layout_marginEnd="32dp"
-        android:layout_marginTop="12dp"
-        android:background="@android:color/transparent"
-        android:drawableStart="@drawable/ic_lock"
-        android:drawablePadding="12dp"
-        android:hint="Password"
-        android:inputType="textPassword"
-        android:padding="12dp"
-        app:layout_constraintBottom_toTopOf="@+id/confirm_password"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/email"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/email" />
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <EditText
-        android:id="@+id/confirm_password"
+        <EditText
+            android:id="@+id/password"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@android:color/transparent"
+            android:drawableStart="@drawable/ic_lock"
+            android:drawablePadding="12dp"
+            android:hint="@string/password_hint"
+            android:autofillHints="password"
+            android:inputType="textPassword"
+            android:padding="12dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btn_toggle_password" />
+
+        <ImageButton
+            android:id="@+id/btn_toggle_password"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/toggle_password_visibility"
+            android:src="@drawable/ic_visibility_off"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/password"
+            app:layout_constraintBottom_toBottomOf="@+id/password" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Confirm password with toggle -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/confirm_container"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="32dp"
         android:layout_marginEnd="32dp"
-        android:layout_marginTop="12dp"
-        android:background="@android:color/transparent"
-        android:drawableStart="@drawable/ic_lock"
-        android:drawablePadding="12dp"
-        android:hint="Confirm Password"
-        android:inputType="textPassword"
-        android:padding="12dp"
-        app:layout_constraintBottom_toTopOf="@+id/password_requirements_error"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/password_container"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/password" />
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <EditText
+                android:id="@+id/confirm_password"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:background="@android:color/transparent"
+                android:drawableStart="@drawable/ic_lock"
+                android:drawablePadding="12dp"
+                android:hint="@string/confirm_password_hint"
+                android:autofillHints="password"
+                android:inputType="textPassword"
+                android:padding="12dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/btn_toggle_confirm_password"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+        <ImageButton
+            android:id="@+id/btn_toggle_confirm_password"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/toggle_password_visibility"
+            android:src="@drawable/ic_visibility_off"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/confirm_password"
+            app:layout_constraintBottom_toBottomOf="@+id/confirm_password" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <TextView
-        android:id="@+id/password_requirements_error"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginEnd="32dp"
-        android:layout_marginTop="8dp"
-        android:textColor="@android:color/holo_red_dark"
-        app:layout_constraintBottom_toTopOf="@+id/signup_button"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/confirm_password"
-        tools:text="Password must be 8 characters or longer." />
+            android:id="@+id/password_requirements_error"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp"
+            android:textColor="@android:color/holo_red_dark"
+            app:layout_constraintBottom_toTopOf="@+id/signup_button"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/confirm_container"
+            tools:text="Password must be 8 characters or longer." />
 
     <Button
-        android:id="@+id/signup_button"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginEnd="32dp"
-        android:layout_marginTop="28dp"
-        android:backgroundTint="#FF3D32"
-        android:text="@string/sign_up"
-        android:textColor="@android:color/white"
-        app:layout_constraintBottom_toTopOf="@+id/login_text"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/password_requirements_error" />
+            android:id="@+id/signup_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp"
+            android:layout_marginTop="28dp"
+            android:backgroundTint="#FF3D32"
+            android:text="@string/sign_up"
+            android:textColor="@android:color/white"
+            app:layout_constraintBottom_toTopOf="@+id/login_text"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/password_requirements_error" />
+
+    <!-- Google Sign-In button -->
+    <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_google_sign_in"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp"
+            android:text="@string/continue_with_google"
+            app:icon="@drawable/ic_google_logo"
+            app:iconGravity="textStart"
+            app:layout_constraintTop_toBottomOf="@+id/signup_button"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/login_text" />
 
     <TextView
         android:id="@+id/login_text"

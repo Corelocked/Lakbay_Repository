@@ -22,12 +22,73 @@
             android:id="@+id/logo_title"
             android:layout_width="300dp"
             android:layout_height="300dp"
-            android:layout_marginBottom="-50dp"
+            android:layout_marginBottom="4dp"
             android:contentDescription="@string/app_name"
             app:layout_constraintBottom_toTopOf="@+id/email"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:srcCompat="@drawable/logo_title_new" />
+            app:srcCompat="@drawable/logo_title_new"
+            app:layout_constraintHorizontal_bias="0.495" />
+
+    <EditText
+            android:id="@+id/email"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp"
+            android:layout_marginBottom="12dp"
+            android:background="@android:color/transparent"
+            android:drawableStart="@drawable/ic_email"
+            android:drawablePadding="12dp"
+            android:hint="@string/email_hint"
+            android:autofillHints="emailAddress"
+            android:inputType="textEmailAddress"
+            android:padding="12dp"
+            app:layout_constraintTop_toBottomOf="@+id/logo_title"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintHorizontal_bias="0.0" />
+
+    <!-- Password field with toggle button -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/password_container"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        app:layout_constraintTop_toBottomOf="@+id/email"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <EditText
+            android:id="@+id/password"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:drawableStart="@drawable/ic_lock"
+            android:drawablePadding="12dp"
+            android:hint="@string/password_hint"
+            android:autofillHints="password"
+            android:inputType="textPassword"
+            android:padding="12dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btn_toggle_password"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <ImageButton
+            android:id="@+id/btn_toggle_password"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/toggle_password_visibility"
+            android:src="@drawable/ic_visibility_off"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/password"
+            app:layout_constraintBottom_toBottomOf="@+id/password" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <Button
             android:id="@+id/login_button"
@@ -41,45 +102,24 @@
             android:backgroundTint="#FF3D32"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/password"
+            app:layout_constraintTop_toBottomOf="@+id/password_container"
             app:layout_constraintHorizontal_bias="0.0" />
 
-    <EditText
-            android:id="@+id/email"
+    <!-- Google Sign-In button below login button -->
+    <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_google_sign_in"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="32dp"
             android:layout_marginEnd="32dp"
-            android:layout_marginBottom="12dp"
-            android:background="@android:color/transparent"
-            android:drawableStart="@drawable/ic_email"
-            android:drawablePadding="12dp"
-            android:hint="Email Address"
-            android:inputType="textEmailAddress"
-            android:padding="12dp"
-            app:layout_constraintBottom_toTopOf="@+id/password"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="12dp"
+            android:text="@string/continue_with_google"
+            app:icon="@drawable/ic_google_logo"
+            app:iconGravity="textStart"
+            app:layout_constraintTop_toBottomOf="@+id/login_button"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintHorizontal_bias="0.0" />
-
-    <EditText
-            android:id="@+id/password"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"
-            android:background="@android:color/transparent"
-            android:drawableStart="@drawable/ic_lock"
-            android:drawablePadding="12dp"
-            android:hint="Password"
-            android:inputType="textPassword"
-            android:padding="12dp"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintVertical_bias="0.609" />
+            app:layout_constraintBottom_toTopOf="@+id/signup_text" />
 
     <TextView
             android:id="@+id/signup_text"
