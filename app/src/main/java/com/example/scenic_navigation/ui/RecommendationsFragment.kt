@@ -41,6 +41,11 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import android.widget.LinearLayout
 import com.example.scenic_navigation.FavoriteStore
+import com.example.scenic_navigation.utils.MapIconUtils
+import org.osmdroid.views.overlay.Marker
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
 
 class RecommendationsFragment : Fragment() {
     private var _binding: FragmentRecommendationsBinding? = null
@@ -57,6 +62,8 @@ class RecommendationsFragment : Fragment() {
     private var selectedTown: String? = null
     private var allPois: List<Poi> = emptyList()
     private var filteredPois: List<Poi> = emptyList()
+    // Map markers for recommendations map
+    private val recMapMarkers = mutableListOf<Marker>()
     private var townsListView: ListView? = null
 
     // Filter state
@@ -333,121 +340,74 @@ class RecommendationsFragment : Fragment() {
             sortBy = null
         } catch (_: Exception) {}
 
-        // Record pre-touch checked state on ACTION_DOWN and handle selection/deselection in OnClick.
-        // This avoids fighting the Chip's default toggle behavior and works even when themes
-        // attempt to enforce single-selection/selectionRequired.
+        // Use checked-change listeners to properly support deselection and mutual exclusion.
         try {
-            var lastTouchedChipId = -1
-            var lastTouchedWasChecked = false
-
-            val recordTouch = View.OnTouchListener { v, event ->
-                if (event.action == MotionEvent.ACTION_DOWN) {
-                    lastTouchedChipId = v.id
-                    lastTouchedWasChecked = when (v.id) {
-                        binding.chipSortDistance.id -> binding.chipSortDistance.isChecked
-                        binding.chipSortScenic.id -> binding.chipSortScenic.isChecked
-                        binding.chipSortName.id -> binding.chipSortName.isChecked
-                        else -> false
+            binding.chipSortDistance.setOnCheckedChangeListener { _, isChecked ->
+                if (suppressFilterEvents) return@setOnCheckedChangeListener
+                suppressFilterEvents = true
+                if (isChecked) {
+                    // Enforce mutual exclusion
+                    binding.chipSortScenic.isChecked = false
+                    binding.chipSortName.isChecked = false
+                    updateChipStroke(binding.chipSortDistance, true)
+                    updateChipStroke(binding.chipSortScenic, false)
+                    updateChipStroke(binding.chipSortName, false)
+                    sortBy = SortOption.DISTANCE
+                    Log.i("RecommendationsFrag", "Sort set to DISTANCE (checked)")
+                } else {
+                    updateChipStroke(binding.chipSortDistance, false)
+                    // If nothing else is checked, clear sort
+                    if (!binding.chipSortScenic.isChecked && !binding.chipSortName.isChecked) {
+                        sortBy = null
+                        Log.i("RecommendationsFrag", "Sort cleared (distance unchecked)")
                     }
                 }
-                // Do not consume; let the default toggle behavior continue.
-                return@OnTouchListener false
+                suppressFilterEvents = false
+                try { updateRecommendationsList(adapter.currentList) } catch (_: Exception) {}
             }
 
-            binding.chipSortDistance.setOnTouchListener(recordTouch)
-            binding.chipSortScenic.setOnTouchListener(recordTouch)
-            binding.chipSortName.setOnTouchListener(recordTouch)
-
-            binding.chipSortDistance.setOnClickListener { v ->
-                if (suppressFilterEvents) return@setOnClickListener
-                try {
-                    if (lastTouchedChipId == v.id && lastTouchedWasChecked) {
-                        // User tapped an already-checked chip -> clear all selection
-                        suppressFilterEvents = true
-                        try { binding.chipGroupSort.clearCheck() } catch (_: Exception) {}
-                        // Update stroke for all chips to unselected state
-                        updateChipStroke(binding.chipSortDistance, false)
-                        updateChipStroke(binding.chipSortScenic, false)
-                        updateChipStroke(binding.chipSortName, false)
-                        suppressFilterEvents = false
+            binding.chipSortScenic.setOnCheckedChangeListener { _, isChecked ->
+                if (suppressFilterEvents) return@setOnCheckedChangeListener
+                suppressFilterEvents = true
+                if (isChecked) {
+                    binding.chipSortDistance.isChecked = false
+                    binding.chipSortName.isChecked = false
+                    updateChipStroke(binding.chipSortDistance, false)
+                    updateChipStroke(binding.chipSortScenic, true)
+                    updateChipStroke(binding.chipSortName, false)
+                    sortBy = SortOption.SCENIC_SCORE
+                    Log.i("RecommendationsFrag", "Sort set to SCENIC (checked)")
+                } else {
+                    updateChipStroke(binding.chipSortScenic, false)
+                    if (!binding.chipSortDistance.isChecked && !binding.chipSortName.isChecked) {
                         sortBy = null
-                        Log.i("RecommendationsFrag", "Sort cleared (Distance click)")
-                    } else {
-                        // Chip was toggled on: enforce mutual exclusion programmatically
-                        suppressFilterEvents = true
-                        binding.chipSortScenic.isChecked = false
-                        binding.chipSortName.isChecked = false
-                        // Update stroke: distance selected, others unselected
-                        updateChipStroke(binding.chipSortDistance, true)
-                        updateChipStroke(binding.chipSortScenic, false)
-                        updateChipStroke(binding.chipSortName, false)
-                        suppressFilterEvents = false
-                        sortBy = SortOption.DISTANCE
-                        Log.i("RecommendationsFrag", "Sort set to DISTANCE (Distance click)")
+                        Log.i("RecommendationsFrag", "Sort cleared (scenic unchecked)")
                     }
-                } finally {
-                    try { updateRecommendationsList(adapter.currentList) } catch (_: Exception) {}
                 }
+                suppressFilterEvents = false
+                try { updateRecommendationsList(adapter.currentList) } catch (_: Exception) {}
             }
 
-            binding.chipSortScenic.setOnClickListener { v ->
-                if (suppressFilterEvents) return@setOnClickListener
-                try {
-                    if (lastTouchedChipId == v.id && lastTouchedWasChecked) {
-                        suppressFilterEvents = true
-                        try { binding.chipGroupSort.clearCheck() } catch (_: Exception) {}
-                        // Update stroke for all chips to unselected state
-                        updateChipStroke(binding.chipSortDistance, false)
-                        updateChipStroke(binding.chipSortScenic, false)
-                        updateChipStroke(binding.chipSortName, false)
-                        suppressFilterEvents = false
+            binding.chipSortName.setOnCheckedChangeListener { _, isChecked ->
+                if (suppressFilterEvents) return@setOnCheckedChangeListener
+                suppressFilterEvents = true
+                if (isChecked) {
+                    binding.chipSortDistance.isChecked = false
+                    binding.chipSortScenic.isChecked = false
+                    updateChipStroke(binding.chipSortDistance, false)
+                    updateChipStroke(binding.chipSortScenic, false)
+                    updateChipStroke(binding.chipSortName, true)
+                    sortBy = SortOption.NAME
+                    Log.i("RecommendationsFrag", "Sort set to NAME (checked)")
+                } else {
+                    updateChipStroke(binding.chipSortName, false)
+                    if (!binding.chipSortDistance.isChecked && !binding.chipSortScenic.isChecked) {
                         sortBy = null
-                        Log.i("RecommendationsFrag", "Sort cleared (Scenic click)")
-                    } else {
-                        suppressFilterEvents = true
-                        binding.chipSortDistance.isChecked = false
-                        binding.chipSortName.isChecked = false
-                        // Update stroke: scenic selected, others unselected
-                        updateChipStroke(binding.chipSortDistance, false)
-                        updateChipStroke(binding.chipSortScenic, true)
-                        updateChipStroke(binding.chipSortName, false)
-                        suppressFilterEvents = false
-                        sortBy = SortOption.SCENIC_SCORE
-                        Log.i("RecommendationsFrag", "Sort set to SCENIC (Scenic click)")
+                        Log.i("RecommendationsFrag", "Sort cleared (name unchecked)")
                     }
-                } finally {
-                    try { updateRecommendationsList(adapter.currentList) } catch (_: Exception) {}
                 }
-            }
-
-            binding.chipSortName.setOnClickListener { v ->
-                if (suppressFilterEvents) return@setOnClickListener
-                try {
-                    if (lastTouchedChipId == v.id && lastTouchedWasChecked) {
-                        suppressFilterEvents = true
-                        try { binding.chipGroupSort.clearCheck() } catch (_: Exception) {}
-                        // Update stroke for all chips to unselected state
-                        updateChipStroke(binding.chipSortDistance, false)
-                        updateChipStroke(binding.chipSortScenic, false)
-                        updateChipStroke(binding.chipSortName, false)
-                        suppressFilterEvents = false
-                        sortBy = null
-                        Log.i("RecommendationsFrag", "Sort cleared (Name click)")
-                    } else {
-                        suppressFilterEvents = true
-                        binding.chipSortDistance.isChecked = false
-                        binding.chipSortScenic.isChecked = false
-                        // Update stroke: name selected, others unselected
-                        updateChipStroke(binding.chipSortDistance, false)
-                        updateChipStroke(binding.chipSortScenic, false)
-                        updateChipStroke(binding.chipSortName, true)
-                        suppressFilterEvents = false
-                        sortBy = SortOption.NAME
-                        Log.i("RecommendationsFrag", "Sort set to NAME (Name click)")
-                    }
-                } finally {
-                    try { updateRecommendationsList(adapter.currentList) } catch (_: Exception) {}
-                }
+                suppressFilterEvents = false
+                try { updateRecommendationsList(adapter.currentList) } catch (_: Exception) {}
             }
         } catch (_: Exception) {}
 
@@ -620,12 +580,104 @@ class RecommendationsFragment : Fragment() {
              // Sort according to current sort selection before submitting
              val sorted = sortPois(recommendations)
              adapter.submitList(sorted)
+             // Update markers on the recommendations map to match the list and use shared icons
+             try {
+                 updateMapMarkers(sorted)
+             } catch (e: Exception) {
+                 Log.w("RecommendationsFrag", "Failed to update recommendation map markers", e)
+             }
              // After layout, ensure list scrolls to top so new results are visible
              recyclerView.post {
                  try { if (adapter.itemCount > 0) recyclerView.scrollToPosition(0) } catch (_: Exception) {}
              }
          }
      }
+
+    // Place POI markers on the recommendations map using the shared MapIconUtils icons
+    private fun updateMapMarkers(pois: List<Poi>) {
+        try {
+            // Ensure map exists in binding; id is map_recommendations -> binding.mapRecommendations
+            val map = try { binding.mapRecommendations } catch (_: Exception) { null }
+             if (map == null) {
+                 Log.w("RecommendationsFrag", "Map view not present in binding; skipping marker update")
+                 return
+             }
+
+            // Clear existing markers
+            recMapMarkers.forEach { try { map.overlays.remove(it) } catch (_: Exception) {} }
+            recMapMarkers.clear()
+
+            for (poi in pois) {
+                val lat = poi.lat ?: continue
+                val lon = poi.lon ?: continue
+                val marker = Marker(map).apply {
+                    position = org.osmdroid.util.GeoPoint(lat, lon)
+                    title = poi.name
+                    snippet = poi.description
+                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                    try {
+                        val resId = MapIconUtils.getCategoryIconResource(poi.category)
+                        val d = try { androidx.core.content.res.ResourcesCompat.getDrawable(requireContext().resources, resId, null) } catch (_: Exception) { null }
+                        if (d != null) {
+                            try {
+                                Log.d("RecommendationsFrag", "Using drawable resId=$resId for POI='${poi.name}' category='${poi.category}'")
+                                // Render drawable into a bitmap at desired marker size so osmdroid shows it reliably
+                                val markerSize = 88
+                                val bmpIcon = Bitmap.createBitmap(markerSize, markerSize, Bitmap.Config.ARGB_8888)
+                                val canvasIcon = Canvas(bmpIcon)
+                                // Draw circular background first to match MapIconUtils style
+                                val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+                                bgPaint.style = Paint.Style.FILL
+                                bgPaint.color = MapIconUtils.getCategoryColor(poi.category)
+                                canvasIcon.drawCircle(markerSize/2f, markerSize/2f, markerSize/2f - 2f, bgPaint)
+                                val stroke = Paint(Paint.ANTI_ALIAS_FLAG)
+                                stroke.style = Paint.Style.STROKE
+                                stroke.strokeWidth = 3f
+                                stroke.color = android.graphics.Color.WHITE
+                                canvasIcon.drawCircle(markerSize/2f, markerSize/2f, markerSize/2f - 2f, stroke)
+                                // Scale drawable to fit inside the circle
+                                val targetSize = (markerSize * 0.72f).toInt()
+                                val left = (markerSize - targetSize) / 2
+                                val top = (markerSize - targetSize) / 2
+                                d.setBounds(left, top, left + targetSize, top + targetSize)
+                                d.draw(canvasIcon)
+                                icon = android.graphics.drawable.BitmapDrawable(requireContext().resources, bmpIcon)
+                                Log.d("RecommendationsFrag", "Rendered drawable into bitmap for POI='${poi.name}' -> ${bmpIcon.width}x${bmpIcon.height}")
+                            } catch (e: Exception) {
+                                Log.w("RecommendationsFrag", "Failed to render drawable resId=$resId for POI='${poi.name}', falling back", e)
+                                // If drawing drawable fails, fall back to bitmap generator
+                                val bmp = MapIconUtils.createPoiIconPreferDrawable(requireContext(), poi, 88)
+                                icon = android.graphics.drawable.BitmapDrawable(requireContext().resources, bmp)
+                            }
+                        } else {
+                            Log.d("RecommendationsFrag", "No drawable found for resId=$resId for POI='${poi.name}', using MapIconUtils")
+                            val bmp = MapIconUtils.createPoiIconPreferDrawable(requireContext(), poi, 88)
+                            icon = android.graphics.drawable.BitmapDrawable(requireContext().resources, bmp)
+                        }
+                    } catch (e: Exception) {
+                        // fallback: simple colored circle
+                        val fallbackBmp = Bitmap.createBitmap(72, 72, Bitmap.Config.ARGB_8888)
+                        val canvas = Canvas(fallbackBmp)
+                        val p = Paint(Paint.ANTI_ALIAS_FLAG)
+                        p.style = Paint.Style.FILL
+                        p.color = MapIconUtils.getCategoryColor(poi.category)
+                        canvas.drawCircle(36f, 36f, 34f, p)
+                        icon = android.graphics.drawable.BitmapDrawable(requireContext().resources, fallbackBmp)
+                    }
+                    setOnMarkerClickListener { _, _ ->
+                        val bottom = POIDetailBottomSheet(poi)
+                        bottom.show(parentFragmentManager, "poi_detail")
+                        true
+                    }
+                }
+                map.overlays.add(marker)
+                recMapMarkers.add(marker)
+            }
+            try { map.invalidate() } catch (_: Exception) {}
+        } catch (e: Exception) {
+            Log.w("RecommendationsFrag", "updateMapMarkers failed", e)
+        }
+    }
 
     private fun observeViewModel() {
         // Observe shared ViewModel for route recommendations
