@@ -44,10 +44,10 @@ class LoginActivity : AppCompatActivity() {
             passwordVisible = !passwordVisible
             if (passwordVisible) {
                 passwordField.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-                toggleBtn.setImageResource(R.drawable.ic_visibility)
+                toggleBtn.setImageResource(R.drawable.eye)
             } else {
                 passwordField.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-                toggleBtn.setImageResource(R.drawable.ic_visibility_off)
+                toggleBtn.setImageResource(R.drawable.eye_hidden)
             }
             passwordField.setSelection(passwordField.text.length)
         }

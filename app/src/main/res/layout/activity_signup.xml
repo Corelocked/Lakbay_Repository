@@ -7,14 +7,14 @@
     android:background="@color/lakbay_cream"
     tools:context=".ui.SignupActivity">
 
-    <!-- 2. ImageView for the Logo Title (Bottom part) -->
+    <!-- Logo at the top -->
     <ImageView
         android:id="@+id/logo_title"
         android:layout_width="300dp"
         android:layout_height="300dp"
-        android:layout_marginBottom="-50dp"
+        android:layout_marginTop="46dp"
         android:contentDescription="@string/app_name"
-        app:layout_constraintBottom_toTopOf="@+id/email"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:srcCompat="@drawable/logo_title_new" />
@@ -24,6 +24,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="32dp"
+        android:layout_marginTop="16dp"
         android:layout_marginEnd="32dp"
         android:background="@android:color/transparent"
         android:drawableStart="@drawable/ic_email"
@@ -34,8 +35,7 @@
         android:padding="12dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.45" />
+        app:layout_constraintTop_toBottomOf="@+id/logo_title" />
 
     <!-- Password with toggle -->
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -43,6 +43,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="32dp"
+        android:layout_marginTop="12dp"
         android:layout_marginEnd="32dp"
         app:layout_constraintTop_toBottomOf="@+id/email"
         app:layout_constraintStart_toStartOf="parent"
@@ -52,7 +53,6 @@
             android:id="@+id/password"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
             android:background="@android:color/transparent"
             android:drawableStart="@drawable/ic_lock"
             android:drawablePadding="12dp"
@@ -61,7 +61,8 @@
             android:inputType="textPassword"
             android:padding="12dp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/btn_toggle_password" />
+            app:layout_constraintEnd_toStartOf="@+id/btn_toggle_password"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageButton
             android:id="@+id/btn_toggle_password"
@@ -70,7 +71,7 @@
             android:layout_marginStart="8dp"
             android:background="@android:color/transparent"
             android:contentDescription="@string/toggle_password_visibility"
-            android:src="@drawable/ic_visibility_off"
+            android:src="@drawable/eye_hidden"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/password"
             app:layout_constraintBottom_toBottomOf="@+id/password" />
@@ -83,6 +84,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="32dp"
+        android:layout_marginTop="12dp"
         android:layout_marginEnd="32dp"
         app:layout_constraintTop_toBottomOf="@+id/password_container"
         app:layout_constraintStart_toStartOf="parent"
@@ -101,7 +103,7 @@
                 android:padding="12dp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/btn_toggle_confirm_password"
-                app:layout_constraintBottom_toBottomOf="parent" />
+                app:layout_constraintTop_toTopOf="parent" />
 
         <ImageButton
             android:id="@+id/btn_toggle_confirm_password"
@@ -110,7 +112,7 @@
             android:layout_marginStart="8dp"
             android:background="@android:color/transparent"
             android:contentDescription="@string/toggle_password_visibility"
-            android:src="@drawable/ic_visibility_off"
+            android:src="@drawable/eye_hidden"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/confirm_password"
             app:layout_constraintBottom_toBottomOf="@+id/confirm_password" />
@@ -122,9 +124,9 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="32dp"
+            android:layout_marginTop="8dp"
             android:layout_marginEnd="32dp"
             android:textColor="@android:color/holo_red_dark"
-            app:layout_constraintBottom_toTopOf="@+id/signup_button"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/confirm_container"
@@ -136,11 +138,10 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="32dp"
             android:layout_marginEnd="32dp"
-            android:layout_marginTop="28dp"
+            android:layout_marginTop="24dp"
             android:backgroundTint="#FF3D32"
             android:text="@string/sign_up"
             android:textColor="@android:color/white"
-            app:layout_constraintBottom_toTopOf="@+id/login_text"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/password_requirements_error" />
@@ -152,18 +153,22 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="32dp"
             android:layout_marginEnd="32dp"
+            android:layout_marginTop="12dp"
             android:text="@string/continue_with_google"
-            app:icon="@drawable/ic_google_logo"
+            android:textColor="@color/black"
+            android:backgroundTint="@color/white"
+            app:icon="@drawable/google_logo"
+            app:iconTint="@null"
             app:iconGravity="textStart"
             app:layout_constraintTop_toBottomOf="@+id/signup_button"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toTopOf="@+id/login_text" />
+            app:layout_constraintEnd_toEndOf="parent" />
 
     <TextView
         android:id="@+id/login_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
         android:layout_marginBottom="64dp"
         android:text="@string/already_have_account"
         app:layout_constraintBottom_toBottomOf="parent"
