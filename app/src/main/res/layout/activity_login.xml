@@ -21,13 +21,13 @@
     <ImageView
             android:id="@+id/logo_title"
             android:layout_width="300dp"
-            android:layout_height="300dp"
-            android:layout_marginTop="70dp"
+            android:layout_height="90dp"
+            android:layout_marginTop="170dp"
             android:contentDescription="@string/app_name"
             app:layout_constraintTop_toTopOf="@+id/logo_pin"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:srcCompat="@drawable/logo_title_new"
+            app:srcCompat="@drawable/logo_title_fixed"
             app:layout_constraintHorizontal_bias="0.495" />
 
     <!-- Dynamic content container: login / signup partials will inflate here -->
