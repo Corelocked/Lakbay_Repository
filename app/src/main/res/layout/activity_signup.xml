@@ -11,13 +11,13 @@
     <ImageView
         android:id="@+id/logo_title"
         android:layout_width="300dp"
-        android:layout_height="300dp"
+        android:layout_height="90dp"
         android:layout_marginTop="46dp"
         android:contentDescription="@string/app_name"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:srcCompat="@drawable/logo_title_new" />
+        app:srcCompat="@drawable/logo_title_fixed" />
 
     <EditText
         android:id="@+id/email"
