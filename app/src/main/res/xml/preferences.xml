@@ -2,30 +2,11 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <EditTextPreference
-        android:key="pref_cluster_eps_meters"
-        android:title="@string/cluster_eps_title"
-        android:dialogTitle="@string/cluster_eps_dialog_title"
-        android:defaultValue="2000.0"
-        android:inputType="numberDecimal" />
-
-    <EditTextPreference
-        android:key="pref_cluster_min_pts"
-        android:title="@string/min_points_title"
-        android:dialogTitle="@string/min_points_dialog_title"
-        android:defaultValue="3"
-        android:inputType="number" />
-
-    <Preference
-        android:key="pref_reset_defaults"
-        android:title="@string/reset_defaults_title"
-        android:summary="@string/reset_defaults_summary" />
-
     <SwitchPreference
-        android:key="pref_prefer_coastal_long_oceanic"
-        android:title="@string/prefer_coastal_title"
+        android:key="personalization_enabled"
+        android:title="@string/personalization_title"
         android:defaultValue="true"
-        android:summary="@string/prefer_coastal_summary" />
+        android:summary="@string/personalization_summary" />
 
     <ListPreference
         android:key="map_style"
@@ -33,7 +14,7 @@
         android:summary="@string/map_style_summary"
         android:entries="@array/map_style_options"
         android:entryValues="@array/map_style_options"
-        android:defaultValue="Basic" />
+        android:defaultValue="Streets" />
 
     <ListPreference
         android:key="language"
@@ -42,5 +23,10 @@
         android:entries="@array/language_options"
         android:entryValues="@array/language_values"
         android:defaultValue="en" />
+
+    <Preference
+        android:key="pref_reset_defaults"
+        android:title="@string/reset_defaults_title"
+        android:summary="@string/reset_defaults_summary" />
 
 </PreferenceScreen>

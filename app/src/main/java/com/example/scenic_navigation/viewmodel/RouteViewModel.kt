@@ -15,6 +15,7 @@ import androidx.lifecycle.Observer
 import android.content.SharedPreferences
 import com.example.scenic_navigation.services.LocationService
 import com.example.scenic_navigation.ml.PoiReranker
+import com.example.scenic_navigation.ml.MlInferenceEngine
 import kotlinx.coroutines.launch
 import org.osmdroid.util.GeoPoint
 import java.io.BufferedReader
@@ -33,7 +34,7 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
     private val locationService = LocationService(application)
     private val packageName = application.packageName
     private var settingsObserver: Observer<Int>? = null
-    private val poiReranker = PoiReranker(application.applicationContext)
+    private val poiReranker = PoiReranker(MlInferenceEngine(application.applicationContext, "models/poi_reranker_from_luzon.tflite"))
 
     // Simple CSV parser to handle quoted fields
     private fun parseCsvLine(line: String): List<String> {

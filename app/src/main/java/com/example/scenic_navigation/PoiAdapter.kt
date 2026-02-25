@@ -11,12 +11,19 @@ import com.example.scenic_navigation.models.Town
 import com.example.scenic_navigation.models.RecommendationItem
 import android.graphics.drawable.GradientDrawable
 import androidx.core.content.ContextCompat
+import com.example.scenic_navigation.services.UserPreferenceStore
+import com.example.scenic_navigation.services.EventLogger
+import com.example.scenic_navigation.services.SettingsStore
+import org.json.JSONObject
 
 class PoiAdapter(
     private val items: MutableList<RecommendationItem>,
     private val onPoiClick: (Poi) -> Unit,
     private val onMunicipalityClick: (ScenicMunicipality) -> Unit,
-    private val onTownClick: (Town) -> Unit
+    private val onTownClick: (Town) -> Unit,
+    private val prefStore: UserPreferenceStore? = null,
+    private val eventLogger: EventLogger? = null,
+    private val settingsStore: SettingsStore? = null
 ) : RecyclerView.Adapter<PoiAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -30,9 +37,24 @@ class PoiAdapter(
                 val poi = item.poi
                 with(holder.binding) {
                     tvName.text = poi.name
-                    tvCategory.text = poi.category
+                    tvCategory.text = poi.category ?: holder.binding.root.context.getString(R.string.poi_fallback)
                     tvDescription.text = poi.description.ifBlank { "Tap to view on map" }
-                    root.setOnClickListener { onPoiClick(poi) }
+                    root.setOnClickListener {
+                        // record preference by category
+                        prefStore?.incrementCategory(poi.category ?: "")
+                        // log event if user opted-in
+                        val opted = settingsStore?.isTelemetryEnabled() ?: false
+                        if (opted) {
+                            eventLogger?.logEvent("poi_tap", mapOf(
+                                "poi_name" to poi.name,
+                                "category" to (poi.category ?: ""),
+                                "municipality" to (poi.municipality ?: ""),
+                                "lat" to (poi.lat ?: JSONObject.NULL),
+                                "lon" to (poi.lon ?: JSONObject.NULL)
+                            ))
+                        }
+                        onPoiClick(poi)
+                    }
                 }
 
                 val cat = poi.category.lowercase()
@@ -132,9 +154,32 @@ class PoiAdapter(
     override fun getItemCount(): Int = items.size
 
     fun updateItems(newItems: List<RecommendationItem>) {
+        // Use DiffUtil to compute minimal updates when possible. For simplicity,
+        // if types/ordering drastically change, fallback to full replace.
+        val old = ArrayList(items)
+        val diff = androidx.recyclerview.widget.DiffUtil.calculateDiff(object : androidx.recyclerview.widget.DiffUtil.Callback() {
+            override fun getOldListSize(): Int = old.size
+            override fun getNewListSize(): Int = newItems.size
+            override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                val o = old[oldItemPosition]
+                val n = newItems[newItemPosition]
+                return when {
+                    o is RecommendationItem.PoiItem && n is RecommendationItem.PoiItem -> o.poi.name == n.poi.name && o.poi.municipality == n.poi.municipality
+                    o is RecommendationItem.MunicipalityItem && n is RecommendationItem.MunicipalityItem -> o.municipality.name == n.municipality.name
+                    o is RecommendationItem.TownItem && n is RecommendationItem.TownItem -> o.town.name == n.town.name
+                    o is RecommendationItem.ScenicItem && n is RecommendationItem.ScenicItem -> o.scenicPoi.name == n.scenicPoi.name
+                    else -> false
+                }
+            }
+
+            override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                return old[oldItemPosition] == newItems[newItemPosition]
+            }
+        })
+
         items.clear()
         items.addAll(newItems)
-        notifyDataSetChanged()
+        diff.dispatchUpdatesTo(this)
     }
 
     private fun setIconBackground(view: View, colorRes: Int, context: android.content.Context) {

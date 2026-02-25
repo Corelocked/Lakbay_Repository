@@ -19,5 +19,10 @@ class ScenicNavigationApplication : Application() {
         } catch (_: Exception) {
             // ignore if osmdroid not available at build-time in analysis
         }
+
+        // Initialize telemetry (opt-in respects SettingsStore)
+        try {
+            com.example.scenic_navigation.services.Telemetry.init(this)
+        } catch (_: Exception) {}
     }
 }

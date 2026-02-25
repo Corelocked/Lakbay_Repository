@@ -209,163 +209,6 @@
                         />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- ADVANCED SETTINGS, REMOVE?
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="16dp"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="2dp"
-                    app:cardBackgroundColor="@color/background"
-                    android:clickable="true"
-                    android:focusable="true">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical">
-
-
-                        <LinearLayout
-                            android:id="@+id/advanced_options_header"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:padding="16dp"
-                            android:gravity="center_vertical"
-                            android:background="?attr/selectableItemBackground">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/advanced_options"
-                                android:textSize="15sp"
-                                android:textStyle="bold"
-                                android:textColor="@color/text_primary" />
-
-                            <ImageView
-                                android:id="@+id/advanced_options_arrow"
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@android:drawable/arrow_down_float"
-                                android:contentDescription="Expand advanced options"
-                                app:tint="@color/text_secondary" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:id="@+id/advanced_options_content"
-                            android:layout_width="match_parent"
-                            android:layout_height="200dp"
-                            android:orientation="vertical"
-                            android:padding="16dp"
-                            android:visibility="gone">
-
-                            <ScrollView
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent">
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="vertical">
-
-                                    <TextView
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="@string/coastal_settings"
-                                        android:textSize="14sp"
-                                        android:textStyle="bold"
-                                        android:textColor="@color/text_primary"
-                                        android:layout_marginBottom="8dp" />
-
-                                    <LinearLayout
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:orientation="horizontal"
-                                        android:gravity="center_vertical"
-                                        android:layout_marginBottom="12dp">
-
-                                        <com.google.android.material.switchmaterial.SwitchMaterial
-                                            android:id="@+id/switchForceCoastal"
-                                            android:layout_width="wrap_content"
-                                            android:layout_height="wrap_content"
-                                            android:text="@string/force_coastal_set"
-                                            android:textSize="14sp" />
-
-                                        <Spinner
-                                            android:id="@+id/spinnerCoastalSets"
-                                            android:layout_width="0dp"
-                                            android:layout_height="48dp"
-                                            android:layout_weight="1"
-                                            android:layout_marginStart="8dp"
-                                            android:spinnerMode="dropdown" />
-                                    </LinearLayout>
-
-                                    <View
-                                        android:layout_width="match_parent"
-                                        android:layout_height="1dp"
-                                        android:background="@color/divider"
-                                        android:layout_marginVertical="8dp" />
-
-                                    <TextView
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="@string/subtypes_optional"
-                                        android:textSize="14sp"
-                                        android:textStyle="bold"
-                                        android:textColor="@color/text_primary"
-                                        android:layout_marginBottom="8dp" />
-
-                                    <LinearLayout
-                                        android:layout_width="match_parent"
-                                        android:layout_height="wrap_content"
-                                        android:orientation="vertical">
-
-                                        <com.google.android.material.checkbox.MaterialCheckBox
-                                            android:id="@+id/cbLakeside"
-                                            android:layout_width="wrap_content"
-                                            android:layout_height="wrap_content"
-                                            android:text="@string/lakeside"
-                                            android:textSize="14sp" />
-
-                                        <com.google.android.material.checkbox.MaterialCheckBox
-                                            android:id="@+id/cbForest"
-                                            android:layout_width="wrap_content"
-                                            android:layout_height="wrap_content"
-                                            android:text="@string/forest"
-                                            android:textSize="14sp" />
-
-                                        <com.google.android.material.checkbox.MaterialCheckBox
-                                            android:id="@+id/cbHiking"
-                                            android:layout_width="wrap_content"
-                                            android:layout_height="wrap_content"
-                                            android:text="@string/hiking"
-                                            android:textSize="14sp" />
-
-                                        <com.google.android.material.checkbox.MaterialCheckBox
-                                            android:id="@+id/cbAdventure"
-                                            android:layout_width="wrap_content"
-                                            android:layout_height="wrap_content"
-                                            android:text="@string/adventure"
-                                            android:textSize="14sp" />
-
-                                        <com.google.android.material.checkbox.MaterialCheckBox
-                                            android:id="@+id/cbRelax"
-                                            android:layout_width="wrap_content"
-                                            android:layout_height="wrap_content"
-                                            android:text="@string/relax"
-                                            android:textSize="14sp" />
-
-                                    </LinearLayout>
-                                </LinearLayout>
-                            </ScrollView>
-                        </LinearLayout>
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-                -->
-
                 <!-- Plan Button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_plan"
@@ -492,7 +335,8 @@
         android:visibility="gone"
         android:contentDescription="@string/center_on_user"
         android:src="@android:drawable/ic_menu_mylocation"
-        app:backgroundTint="@color/primary" />
+        app:backgroundTint="@color/primary"
+        app:tint="@color/white"    />
 
     <!-- End Route button: appears above the center button so it doesn't overlap -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -502,6 +346,7 @@
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="88dp"
         android:layout_gravity="bottom|end"
+        android:visibility="gone"
         android:contentDescription="End route"
         android:src="@android:drawable/ic_menu_close_clear_cancel"
         app:backgroundTint="@color/lakbay_red"
