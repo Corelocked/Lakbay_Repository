@@ -83,7 +83,6 @@ class MlInferenceEngine(private val context: Context, private val modelAssetPath
                     outputZeroPoint = qp2.zeroPoint
                 }
             } catch (_: Throwable) {
-                // ignore inspection errors
             }
             hasInterpreter = true
         } catch (t: Throwable) {

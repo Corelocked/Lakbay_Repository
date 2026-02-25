@@ -10,8 +10,6 @@ import com.example.scenic_navigation.services.UserPreferenceStore
  * Consider running it on a background thread when used in the UI.
  */
 class PoiReranker(inference: MlInference, private val prefStore: UserPreferenceStore? = null) {
-    // If you need a convenience constructor, call the companion factory to create MlInferenceEngine
-
     private val extractor = MlFeatureExtractor()
     private val engine: MlInference = inference
     // Blend factor between ML model score and handcrafted scenic score (0.0 = only scenic, 1.0 = only ML)
@@ -47,7 +45,6 @@ class PoiReranker(inference: MlInference, private val prefStore: UserPreferenceS
     }
 
     companion object {
-        // Factory helper if callers want to construct from Context + asset path
         @JvmStatic
         fun fromContext(context: Context, modelPath: String = "models/poi_reranker_from_luzon.tflite", prefStore: UserPreferenceStore? = null): PoiReranker {
             val engine = MlInferenceEngine(context, modelPath)

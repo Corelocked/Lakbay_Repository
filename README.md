@@ -200,197 +200,15 @@ Constants in code:
 - ML_BLEND_ALPHA = 0.75f (weight given to ML model vs scenic signal)
 - PREF_WEIGHT = 0.15f (additive weight for user preference score)
 
-Important caveat (consistency issue you should address)
+Status: scenic normalization is already implemented in code
 
-- `MlFeatureExtractor` normalizes `scenicScore` to [0,1] for the model by dividing by 250f. However, `PoiReranker`'s blending step uses the raw `poi.scenicScore` value directly (e.g., integers typically in the range ~20..120). That means:
-  - The ML score is in ~0..1, while scenic may be in the tens or hundreds, so scenic will dominate the final score and the ML model's influence will be effectively negligible.
+The codebase already normalizes the stored `poi.scenicScore` consistently for both training and inference. `MlFeatureExtractor.buildPoiFeatures` divides the app's stored scenic score by 250f to produce the model input, and `PoiReranker` also applies the same normalization when blending the ML output with the scenic signal. Concretely `PoiReranker` does:
 
-Recommendation (minimal code change)
-- Normalize scenic consistently in the final blend. For example, in `PoiReranker` replace usage of `scenic` with a normalized version:
+  val scenic = poi.scenicScore ?: 0f
+  val scenicNorm = (scenic / 250f).coerceIn(0f, 1f) // normalized to model scale
+  val blended = ML_BLEND_ALPHA * mlScore + (1f - ML_BLEND_ALPHA) * scenicNorm
 
-  val scenicNorm = (poi.scenicScore ?: 0f) / 250f
-  val blended = ML_BLEND_ALPHA * ml + (1f - ML_BLEND_ALPHA) * scenicNorm
-  val finalScore = blended + PREF_WEIGHT * prefScore
-
-This will keep ML output, scenic signal, and preference boost on a compatible scale.
-
-Personalization: how user interactions affect ranking
-
-There are three persistent interaction channels and several immediate UI-driven boosts:
-
-1) Explicit curation intent (UI selection of Seeing + Activity)
-- `CurationMapper.map(intent)` converts user choices into:
-  - `routeType` ("oceanic" / "mountain" / "generic")
-  - `poiBoosts` (map of tag -> boost value, e.g. "beach" -> 1.0)
-  - `tagFilters` (list of tags to prefer)
-- `ScenicRoutePlanner` applies these by multiplying the base POI score by `multiplier = (1.0 + totalBoost).coerceAtMost(3.0) * (matchesFilter ? 1.0 : 0.85)` — in practice a boost of 1.0 doubles the POI score before ML reranking.
-
-2) Curated favorites (hard priority)
-- `RecommendationsViewModel` persists a curated set in shared preferences (CURATED_KEY). When producing recommendations it partitions reranked items into curated + others and places `curated` first, preserving internal order. This is a hard UI-level priority.
-- `FavoriteStore` persists the actual favorite POI JSON for the Favorites UI.
-
-3) Implicit preference counts (soft personalization)
-- `UserPreferenceStore.incrementCategory(category)` is called when the user likes/curates a POI; counts are stored in `user_preferences` SharedPreferences.
-- `UserPreferenceStore.getPreferenceScore(category, k=5f)` returns `count / (count + k)` producing a smooth score in [0,1]. Example: count=5 -> 0.5.
-- `PoiReranker` adds `PREF_WEIGHT * prefScore` to the final score (PREF_WEIGHT = 0.15). So even a maxed prefScore (close to 1.0) yields only a small additive boost (~0.15) — enough to bias but not dominate.
-
-UI / short-term boosts
-- Category chips and discovery filters (Recommendations UI) are translated into `poiBoosts` and `tagFilters` via `mapCategoriesToPlannerFilters(...)` and re-applied at recommendation time to boost and partition the results.
-
-Worked numeric example (before and after recommended fix)
-
-Inputs (example):
-- POI A: distance = 2,000 m → distNorm = 0.04
-- scenicScore stored in app = 120
-- category contains sightseeing → cat_sight = 1
-- ML predicts mlScore = 0.8
-- User pref count = 5 -> prefScore = 5/(5+5) = 0.5
-
-Current code (inconsistent, scenic is unnormalized):
-- blended = 0.75 * 0.8 + 0.25 * 120 = 0.6 + 30 = 30.6
-- finalScore = 30.6 + 0.15 * 0.5 = 30.675
-=> scenic overwhelms the ML signal.
-
-After applying the recommended normalization (scenicNorm = scenicScore / 250 = 0.48):
-- blended = 0.75 * 0.8 + 0.25 * 0.48 = 0.6 + 0.12 = 0.72
-- finalScore = 0.72 + 0.15 * 0.5 = 0.795
-=> ML, scenic and preferences all meaningfully contribute.
-
-Retraining and validating a new model (commands)
-
-1) Create a Python venv and install trainer dependencies (PowerShell):
-
-```powershell
-py -3.11 -m venv .venv; .\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r tools\requirements.txt
-```
-
-2) Train a model (synthetic):
-
-```powershell
-python tools\train_poi_reranker.py --out-assets app\src\main\assets\models --epochs 10 --samples 20000
-```
-
-3) Or train from the Luzon CSV seed:
-
-```powershell
-python tools\train_from_luzon.py --out-assets app\src\main\assets\models --samples 10000 --epochs 6 --quantize
-```
-
-4) Smoke-test assets:
-
-```powershell
-python tools\smoke_tflite.py
-```
-
-5) Build the Android app (Gradle will include assets):
-
-```powershell
-./gradlew assembleDebug
-```
-
-Unit testing and sanity checks
-- Add a unit test for `MlFeatureExtractor` that constructs a deterministic POI/time and asserts the expected feature vector numeric values.
-- Add a unit test for `PoiReranker` to verify blending behavior: craft a fake MlInference implementation that returns fixed ML scores, and assert that final ordering and numeric finalScore follow the blending formula.
-
-Suggested code improvements (prioritized)
-1. Fix scenic normalization in `PoiReranker` (minimal, high impact): divide `poi.scenicScore` by 250f before blending.
-2. Optionally read `feature_stats.json` and apply standardization (mean/std) if you switch to training with standardized features; keep the same transforms in training and inference.
-3. Consider time-decayed preference counts (recent likes > older ones) so personalization adapts.
-4. Add telemetry (opt-in) to collect impressions and chosen POIs to create a real label set for retraining.
-
-
-# Machine learning: model, training, inference, and personalization (expanded)
-
-This section explains in detail how the reranker model is trained and exported, what features the app builds for inference, how the app runs the model, and precisely how personalization and user interactions affect POI boosting.
-
-Files and scripts to inspect
-- Inference and feature extraction:
-  - `app/src/main/java/com/example/scenic_navigation/ml/MlInferenceEngine.kt`
-  - `app/src/main/java/com/example/scenic_navigation/ml/MlFeatureExtractor.kt`
-  - `app/src/main/java/com/example/scenic_navigation/ml/PoiReranker.kt`
-- Trainers and data:
-  - `tools/train_poi_reranker.py` (synthetic trainer)
-  - `tools/train_from_luzon.py` (CSV-seeded trainer)
-  - `tools/luzon_dataset.csv` (seed POI data)
-- Personalization stores and UI hooks:
-  - `app/src/main/java/com/example/scenic_navigation/services/UserPreferenceStore.kt`
-  - `app/src/main/java/com/example/scenic_navigation/FavoriteStore.kt`
-  - `app/src/main/java/com/example/scenic_navigation/services/CurationMapper.kt`
-  - `app/src/main/java/com/example/scenic_navigation/viewmodel/RecommendationsViewModel.kt`
-
-Feature pipeline (exact transforms)
-
-The model expects a single-row float vector with the features in this exact order:
-1. distNorm — normalized distance from user to POI (distance_meters / 50_000, clamped to 0..1)
-2. timeSin — sin(2π * hour_of_day / 24)
-3. timeCos — cos(2π * hour_of_day / 24)
-4. cat_food — binary flag (1 if POI category tokens indicate a food place)
-5. cat_sight — binary flag (1 if POI category tokens indicate sightseeing)
-6. scenicScore — scenic score normalized to [0,1] in the feature vector (app divides stored scenic score by 250f)
-7. hasMunicipality — binary flag (1 if the POI record contains a municipality)
-
-App-side code: `MlFeatureExtractor.buildPoiFeatures` performs these transforms. Important implementation details:
-- Distances are computed with haversine and capped at 50,000 meters (50 km).
-- Time is computed from `System.currentTimeMillis()` and mapped to sine/cosine for periodic representation.
-- Category flags are tokenized and checked for common keywords.
-- scenicScore is normalized by dividing by 250f and then clamped to [0,1]. This mirrors the synthetic trainer where scenic values are in [0,1].
-
-Training & exported artifacts
-
-- `tools/train_poi_reranker.py` generates synthetic training data and trains an MLP (configurable hidden sizes). It writes:
-  - `poi_reranker.tflite` (TFLite model)
-  - `feature_stats.json` (per-feature min/max/mean/std used for diagnostics)
-
-- `tools/train_from_luzon.py` seeds the synthetic impression generation from `tools/luzon_dataset.csv`, constructs the same feature order as above, trains an MLP, and writes:
-  - `poi_reranker_from_luzon.tflite`
-  - `feature_stats_from_luzon.json`
-
-- Both scripts support exporting a Keras `.keras` model for debugging and optional post-training quantization using a representative dataset.
-
-- The project build includes a `copyModelAssets` task in `app/build.gradle.kts` that copies model files from a tools location into `app/src/main/assets/models/` during preBuild. This is convenient for CI.
-
-MlInferenceEngine runtime behavior
-
-- Loads the TFLite model from `assets/models/<model>.tflite` (default path: `models/poi_reranker_from_luzon.tflite`). If that path doesn't exist, it will scan `assets/models/` for any `.tflite` and use the first one.
-- Inspects input/output tensor types and quantization parameters (scale and zeroPoint) so it can run both float and quantized (int8/uint8) models.
-- Exposes these APIs:
-  - `predictScore(features: FloatArray): Float` — synchronous single-row inference with fallback.
-  - `predictScoreAsync(features: FloatArray): Float` — suspend wrapper for coroutine use.
-  - `predictScoresBatch(featuresBatch: List<FloatArray>): FloatArray` — batch inference to reduce interpreter overhead when scoring many POIs.
-- If model loading or inference fails the engine falls back to `heuristicScore` (deterministic linear rule combining distance, scenic, and category flags) so that the app continues to function even without a working model.
-
-PoiReranker blending math (exact code)
-
-`PoiReranker.rerank(...)` performs these steps (literal behavior):
-1. Build feature batch using `MlFeatureExtractor.buildPoiFeatures` (scenic normalized inside the features as described).
-2. Run `MlInferenceEngine.predictScoresBatch(featuresBatch)` to get ML scores (floating values expected around 0..1 for this setup).
-3. Compute a blended score per POI:
-   - ml = model score (0..1)
-   - scenic = `poi.scenicScore` (note: this is the stored app scenic score; see caveat below)
-   - prefScore = `UserPreferenceStore.getPreferenceScore(category)` (0..1)
-   - blended = ML_BLEND_ALPHA * ml + (1 - ML_BLEND_ALPHA) * scenic
-   - finalScore = blended + PREF_WEIGHT * prefScore
-4. Sort POIs by finalScore descending and return.
-
-Constants in code:
-- ML_BLEND_ALPHA = 0.75f (weight given to ML model vs scenic signal)
-- PREF_WEIGHT = 0.15f (additive weight for user preference score)
-
-Important caveat (consistency issue you should address)
-
-- `MlFeatureExtractor` normalizes `scenicScore` to [0,1] for the model by dividing by 250f. However, `PoiReranker`'s blending step uses the raw `poi.scenicScore` value directly (e.g., integers typically in the range ~20..120). That means:
-  - The ML score is in ~0..1, while scenic may be in the tens or hundreds, so scenic will dominate the final score and the ML model's influence will be effectively negligible.
-
-Recommendation (minimal code change)
-- Normalize scenic consistently in the final blend. For example, in `PoiReranker` replace usage of `scenic` with a normalized version:
-
-  val scenicNorm = (poi.scenicScore ?: 0f) / 250f
-  val blended = ML_BLEND_ALPHA * ml + (1f - ML_BLEND_ALPHA) * scenicNorm
-  val finalScore = blended + PREF_WEIGHT * prefScore
-
-This will keep ML output, scenic signal, and preference boost on a compatible scale.
+So the numeric worked example below already reflects a correct normalized blend; no immediate code change is required here. If you later change the training transforms (for example, standardizing by mean/std from `feature_stats.json`), ensure the same transforms are applied at inference time.
 
 Personalization: how user interactions affect ranking
 
@@ -538,3 +356,129 @@ If you want, I can now:
 - Or add a minimal telemetry/event schema for collecting impressions.
 
 Tell me which you want me to do next.
+
+Included code snippets (oceanic / mountain routing + curation)
+
+Below are compact, highlighted excerpts of the key functions you asked to include in the README. These are the exact locations in the codebase where the behavior is implemented:
+- Oceanic (coastal) and mountain route logic: `app/src/main/java/com/example/scenic_navigation/services/RoutingService.kt`
+- Curation mapping: `app/src/main/java/com/example/scenic_navigation/services/CurationMapper.kt`
+
+1) Oceanic / Coastal route selection (excerpt)
+
+```kotlin
+// Source: RoutingService.generateCoastalRouteViaWaypoints
+private suspend fun generateCoastalRouteViaWaypoints(start: GeoPoint, dest: GeoPoint, packageName: String): List<GeoPoint> {
+    Log.d("RoutingService", "Finding best coastal route...")
+    val directDistance = start.distanceToAsDouble(dest)
+    val isLongDistance = directDistance > 300_000
+
+    // For very short routes (<30km), don't use coastal waypoints to avoid unnecessary detours
+    if (directDistance < 30_000) {
+        Log.d("RoutingService", "Route is too short (${"%.0f".format(directDistance)}m) for coastal waypoints. Using direct route.")
+        return fetchRoute(start, dest, packageName, "default")
+    }
+
+    // Pick waypoint set based primarily on proximity to the destination
+    val bestWaypoints = findBestWaypointSet(start, dest, coastalWaypoints, isLongDistance)
+
+    if (bestWaypoints.isEmpty()) {
+        Log.w("RoutingService", "No suitable coastal waypoints found. Falling back to direct route.")
+        return fetchRoute(start, dest, packageName, "default")
+    }
+
+    val ordered = orderWaypointsAlongRoute(start, dest, bestWaypoints)
+    val sampled = if (!isLongDistance) {
+        // For short/medium oceanic routes pick a single coastal anchor nearest the destination
+        if (ordered.isEmpty()) emptyList<GeoPoint>() else {
+            val nearest = ordered.minByOrNull { wp ->
+                com.example.scenic_navigation.utils.GeoUtils.haversine(wp.latitude, wp.longitude, dest.latitude, dest.longitude)
+            } ?: ordered.first()
+            listOf(nearest)
+        }
+    } else {
+        // For long oceanic trips sample up to 5 anchors so the route follows the coast
+        sampleWaypoints(ordered, maxPoints = 5)
+    }
+
+    return generateRouteViaWaypoints(start, dest, packageName, sampled)
+}
+```
+
+Notes:
+- Coastal waypoint sets are stored in `coastalWaypoints` and chosen with `findBestWaypointSet` which favors sets whose anchors are close to the destination and reasonably near the projected route.
+- Short oceanic trips avoid detours; long trips sample multiple coastal anchors to create genuinely scenic coastal paths.
+
+2) Mountain route selection (excerpt)
+
+```kotlin
+// Source: RoutingService.generateMountainRouteViaWaypoints
+private suspend fun generateMountainRouteViaWaypoints(start: GeoPoint, dest: GeoPoint, packageName: String): List<GeoPoint> {
+    Log.d("RoutingService", "Finding best mountain route...")
+    val bestWaypoints = findBestWaypointSet(start, dest, mountainWaypoints, false)
+
+    if (bestWaypoints.isEmpty()) {
+        Log.w("RoutingService", "No suitable mountain waypoints found. Falling back to direct route.")
+        return fetchRoute(start, dest, packageName, "default")
+    }
+
+    // Order mountain waypoints along the route then sample down to a small number
+    val ordered = orderWaypointsAlongRoute(start, dest, bestWaypoints)
+    val sampled = sampleWaypoints(ordered, maxPoints = 3)
+
+    return generateRouteViaWaypoints(start, dest, packageName, sampled)
+}
+```
+
+Notes:
+- Mountain anchor sets are defined in `mountainWaypoints` and chosen similarly to coastal sets.
+- Sampled waypoints are limited to avoid overly complex routes and keep OSRM requests practical.
+
+3) Curation mapping (excerpt)
+
+```kotlin
+// Source: CurationMapper.map
+object CurationMapper {
+    fun map(intent: CurationIntent?, locale: String? = null): PlannerCurationConfig {
+        if (intent == null) return PlannerCurationConfig("generic", emptyMap(), emptyList())
+
+        val boosts = mutableMapOf<String, Double>()
+        val filters = mutableListOf<String>()
+
+        when (intent.seeing) {
+            SeeingType.OCEANIC -> {
+                filters.addAll(listOf("nature park", "historical site", "viewpoint", "beach", "coast", "museum", "restaurant"))
+                boosts["beach"] = 1.0
+                boosts["coast"] = 0.6
+                boosts["nature park"] = 0.8
+                boosts["park"] = 0.7
+            }
+            SeeingType.MOUNTAIN -> {
+                filters.addAll(listOf("nature park", "peak", "viewpoint", "waterfall", "ridge"))
+                boosts["peak"] = 1.0
+                boosts["ridge"] = 0.6
+                boosts["nature park"] = 0.8
+            }
+        }
+
+        // Activity-based boosts (sightseeing, shop-and-dine, cultural, etc.) are applied below
+        // ...existing activity->boost logic...
+
+        val routeType = when (intent.seeing) {
+            SeeingType.OCEANIC -> "oceanic"
+            SeeingType.MOUNTAIN -> "mountain"
+        }
+
+        return PlannerCurationConfig(routeType, boosts.toMap(), filters.toList())
+    }
+}
+```
+
+Notes:
+- `CurationMapper.map` converts a UI `CurationIntent` into three planner inputs: `routeType` (oceanic/mountain/generic), `poiBoosts` (tag -> multiplier), and `tagFilters` (preferred tags). The planner multiplies POI scores by `1 + totalBoost` to surface curated tags before ML reranking.
+
+Where to look next
+- Full implementations:
+  - Oceanic & mountain waypoint sets + routing helpers: `app/src/main/java/com/example/scenic_navigation/services/RoutingService.kt`
+  - Curation mapping (complete activity->tag boosts and uniqueness processing): `app/src/main/java/com/example/scenic_navigation/services/CurationMapper.kt`
+
+These snippets show the planner-level decisions controlling scenic routing and how UI curation choices translate into concrete boosts and filters applied before returned candidate POIs are reranked.
