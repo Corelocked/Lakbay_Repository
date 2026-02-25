@@ -368,6 +368,15 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
                 if (finalList.isNotEmpty()) Log.d("RecommendationsVM", "Sample final POIs=${finalList.take(5).map { it.name }}")
                 _recommendations.value = finalList.take(20)
 
+                // Telemetry: log recommendation impression snapshot (non-blocking)
+                try {
+                    val reqId = java.util.UUID.randomUUID().toString()
+                    val topKeys = finalList.take(10).map { poi ->
+                        try { com.example.scenic_navigation.ui.RecommendationsAdapter.canonicalKey(poi) } catch (_: Exception) { poi.name }
+                    }
+                    com.example.scenic_navigation.services.Telemetry.logRecommendationImpression(reqId, topKeys, settingsStore.isPersonalizationEnabled(), /* modelVersion */ null)
+                } catch (_: Exception) {}
+
             } catch (e: Exception) {
                 Log.e("RecommendationsVM", "Unexpected error fetching recommendations: ${e.message}")
                 // keep UI stable — produce empty list

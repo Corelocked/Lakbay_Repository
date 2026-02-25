@@ -65,14 +65,21 @@ class POIDetailBottomSheet(private val poi: Poi) : BottomSheetDialogFragment() {
         tvCategory.text = poi.category
         tvDescription.text = if (poi.description.isNotBlank()) poi.description else "No description available for this location."
 
+        // Telemetry: POI detail opened
+        try {
+            com.example.scenic_navigation.services.Telemetry.logPoiOpen(poi.name, poi.category, poi.municipality)
+        } catch (_: Exception) {}
+
         btnSave.setOnClickListener {
             val key = try { com.example.scenic_navigation.ui.RecommendationsAdapter.canonicalKey(poi) } catch (_: Exception) { "${poi.name}_${poi.lat}_${poi.lon}" }
             if (FavoriteStore.isFavorite(key)) {
                 FavoriteStore.removeFavorite(key)
+                try { com.example.scenic_navigation.services.Telemetry.logFavoriteRemoved(poi.name, key) } catch (_: Exception) {}
                 Snackbar.make(requireView(), "Removed from favorites", Snackbar.LENGTH_SHORT).show()
                 btnSave.text = getString(R.string.save_button)
             } else {
                 FavoriteStore.addFavorite(key, poi)
+                try { com.example.scenic_navigation.services.Telemetry.logFavoriteAdded(poi.name, key) } catch (_: Exception) {}
                 Snackbar.make(requireView(), "Saved '${poi.name}'", Snackbar.LENGTH_SHORT).show()
                 btnSave.text = getString(R.string.save_button)
             }
