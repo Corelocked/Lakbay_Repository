@@ -20,9 +20,25 @@ import com.google.firebase.auth.FirebaseAuth
 import org.osmdroid.config.Configuration
 import java.io.BufferedReader
 
+// new imports
+import com.google.android.material.card.MaterialCardView
+import android.widget.TextView
+import androidx.activity.viewModels
+import com.example.scenic_navigation.viewmodel.RouteViewModel
+import android.view.View
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
+
+    private var legendCard: MaterialCardView? = null
+    private var tvOverlayDistance: TextView? = null
+    private var tvOverlayEta: TextView? = null
+
+    private val routeViewModel: RouteViewModel by viewModels()
+
+    // Track whether a route has been calculated (non-zero distance/duration)
+    private var routeHasData: Boolean = false
 
     override fun attachBaseContext(newBase: android.content.Context) {
         val language = com.example.scenic_navigation.utils.LocaleHelper.getLanguage(newBase)
@@ -64,6 +80,41 @@ class MainActivity : AppCompatActivity() {
             WindowInsetsCompat.CONSUMED
         }
 
+        // find legend card and inner textviews
+        legendCard = findViewById(R.id.legend_overlay_card)
+        tvOverlayDistance = findViewById(R.id.tv_overlay_distance)
+        tvOverlayEta = findViewById(R.id.tv_overlay_eta)
+
+        // Observe route summary LiveData to update the overlay texts
+        routeViewModel.routeDistanceMeters.observe(this) { meters ->
+            try {
+                if (meters != null && meters > 0.0) {
+                    val km = meters / 1000.0
+                    val text = if (km >= 1.0) String.format(java.util.Locale.getDefault(), "%.1f km", km) else String.format(java.util.Locale.getDefault(), "%d m", meters.toInt())
+                    tvOverlayDistance?.text = getString(R.string.overlay_distance_placeholder).replace("—", text)
+                    routeHasData = true
+                } else {
+                    tvOverlayDistance?.text = getString(R.string.overlay_distance_placeholder)
+                }
+            } catch (_: Exception) { }
+            updateLegendVisibility()
+        }
+
+        routeViewModel.routeDurationSeconds.observe(this) { secs ->
+            try {
+                if (secs != null && secs > 0L) {
+                    val hours = secs / 3600
+                    val mins = (secs % 3600) / 60
+                    val text = if (hours > 0) String.format(java.util.Locale.getDefault(), "%dh %02dm", hours, mins) else String.format(java.util.Locale.getDefault(), "%dm", mins)
+                    tvOverlayEta?.text = getString(R.string.overlay_eta_placeholder).replace("—", text)
+                    routeHasData = true
+                } else {
+                    tvOverlayEta?.text = getString(R.string.overlay_eta_placeholder)
+                }
+            } catch (_: Exception) { }
+            updateLegendVisibility()
+        }
+
         // Show RouteFragment by default
         if (savedInstanceState == null) {
             supportFragmentManager.commit {
@@ -80,6 +131,8 @@ class MainActivity : AppCompatActivity() {
                         replace(R.id.fragment_container, RouteFragment())
                         // Removed addToBackStack(null) for tab navigation
                     }
+                    // hide legend when route is active
+                    updateLegendVisibility()
                     invalidateOptionsMenu()
                     true
                 }
@@ -87,6 +140,8 @@ class MainActivity : AppCompatActivity() {
                     supportFragmentManager.commit {
                         replace(R.id.fragment_container, RecommendationsFragment())
                     }
+                    // show legend on other tabs
+                    updateLegendVisibility()
                     // when showing RecommendationsFragment we don't want the three-dot overflow
                     invalidateOptionsMenu()
                     true
@@ -95,12 +150,13 @@ class MainActivity : AppCompatActivity() {
                     supportFragmentManager.commit {
                         replace(R.id.fragment_container, FavoritesFragment())
                     }
+                    updateLegendVisibility()
                     invalidateOptionsMenu()
                     true
                 }
                 R.id.nav_sign_out -> {
                     // Confirm before signing out
-                    androidx.appcompat.app.AlertDialog.Builder(this)
+                    AlertDialog.Builder(this)
                         .setTitle("Sign out")
                         .setMessage("Are you sure you want to sign out?")
                         .setNegativeButton(android.R.string.cancel, null)
@@ -116,6 +172,16 @@ class MainActivity : AppCompatActivity() {
                 else -> false
             }
         }
+
+        // ensure legend visibility matches initial fragment
+        updateLegendVisibility()
+    }
+
+    private fun updateLegendVisibility() {
+        val current = supportFragmentManager.findFragmentById(R.id.fragment_container)
+        val isRoute = current is RouteFragment
+        // Show overlay only when on RouteFragment and route data exists
+        legendCard?.visibility = if (isRoute && routeHasData) View.VISIBLE else View.GONE
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -153,7 +219,7 @@ class MainActivity : AppCompatActivity() {
                 .setMessage(pretty)
                 .setPositiveButton(android.R.string.ok, null)
                 .show()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             AlertDialog.Builder(this)
                 .setTitle("Model metadata")
                 .setMessage("No metadata available")

@@ -120,6 +120,10 @@
     <string name="default_distance_value">50 km</string>
     <string name="map_emoji">🗺️</string>
 
+    <!-- Accessibility / overlay toggle strings -->
+    <string name="app_logo_desc">App logo</string>
+    <string name="toggle_route_overlay">Toggle route overlay</string>
+
     <!-- Personalization setting labels -->
     <string name="personalization_title">Personalize recommendations</string>
     <string name="personalization_summary">Enable using your interactions to tailor recommended places (stored locally)</string>
@@ -145,4 +149,11 @@
     <string name="expand_arrow">▲</string>
     <string name="collapse_arrow">▼</string>
     <string name="default_web_client_id">533429423836-k5tjhe2hlrlaln8o529v5o5q8mikvjfv.apps.googleusercontent.com</string>
+
+
+    <!-- Overlay placeholders -->
+    <string name="overlay_distance_placeholder">Distance: —</string>
+    <string name="overlay_eta_placeholder">ETA: —</string>
+    <string name="overlay_distance_icon_desc">Distance icon</string>
+    <string name="overlay_eta_icon_desc">ETA icon</string>
 </resources>
