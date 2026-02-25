@@ -13,8 +13,14 @@ data class ScenicMunicipality(
     val score: Int
 )
 
-// Sealed class for recommendation items (POI or Municipality)
+// NOTE: The sealed class `RecommendationItem` was moved to models/DataModels.kt to avoid duplicate class definitions.
+// The original definition is commented out below to prevent duplicate symbol issues during build.
+
+/*
 sealed class RecommendationItem {
     data class PoiItem(val poi: Poi) : RecommendationItem()
     data class MunicipalityItem(val municipality: ScenicMunicipality) : RecommendationItem()
+    data class TownItem(val town: Town) : RecommendationItem()
+    data class ScenicItem(val scenicPoi: ScenicPoi) : RecommendationItem()
 }
+*/

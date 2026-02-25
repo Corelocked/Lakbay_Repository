@@ -6,31 +6,108 @@ import android.util.Log
 import org.tensorflow.lite.Interpreter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import org.tensorflow.lite.DataType
 import java.io.FileInputStream
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import kotlin.math.max
+import org.json.JSONObject
 
 /**
  * ML inference wrapper that uses TensorFlow Lite Interpreter. If the Interpreter fails to initialize
  * the class falls back to a deterministic heuristic so the app still functions without a model.
  */
-class MlInferenceEngine(private val context: Context, private val modelAssetPath: String = "models/poi_reranker.tflite") {
+class MlInferenceEngine(private val context: Context, private val modelAssetPath: String = "models/poi_reranker_from_luzon.tflite") : MlInference {
     private var interpreter: Interpreter? = null
     private var hasInterpreter: Boolean = false
     private val interpLock = Any()
     private val defaultNumThreads = 4
+    private var inputIsQuantized: Boolean = false
+    private var inputScale: Float = 1.0f
+    private var inputZeroPoint: Int = 0
+    private var outputIsQuantized: Boolean = false
+    private var outputScale: Float = 1.0f
+    private var outputZeroPoint: Int = 0
+    private var inputFeatureCount: Int = -1
 
     init {
+        // Log model metadata if present
+        try {
+            val metaStream = context.assets.open("models/model_metadata.json")
+            BufferedReader(InputStreamReader(metaStream)).use { br ->
+                val content = br.readText()
+                val j = JSONObject(content)
+                val name = j.optString("model_name", "unknown")
+                val version = j.optString("version", "unknown")
+                val trainedOn = j.optString("trained_on", "unknown")
+                Log.i("MlInferenceEngine", "Model metadata - name:$name version:$version trained_on:$trainedOn")
+                // Log metrics if present
+                val metrics = j.optJSONObject("metrics")
+                if (metrics != null) {
+                    val auc = metrics.optDouble("auc", Double.NaN)
+                    val acc = metrics.optDouble("accuracy", Double.NaN)
+                    val n = j.optInt("n_samples", -1)
+                    Log.i("MlInferenceEngine", "Model metrics - auc:${if (!auc.isNaN()) String.format("%.4f", auc) else "n/a"} accuracy:${if (!acc.isNaN()) String.format("%.3f", acc) else "n/a"} samples:${if (n>=0) n else "n/a"}")
+                }
+            }
+        } catch (e: Exception) {
+            Log.i("MlInferenceEngine", "No model metadata found or failed to read it: ${e.message}")
+        }
+
         try {
             val modelBuffer = loadModelFile(context, modelAssetPath)
             val options = Interpreter.Options().apply { setNumThreads(defaultNumThreads) }
             interpreter = Interpreter(modelBuffer, options)
+            Log.i("MlInferenceEngine", "Loaded model asset: $modelAssetPath")
+            // inspect input/output tensor details for quantization params
+            try {
+                val inTensor = interpreter!!.getInputTensor(0)
+                inputFeatureCount = inTensor.shape().last()
+                val inType = inTensor.dataType()
+                if (inType == DataType.UINT8 || inType == DataType.INT8) {
+                    inputIsQuantized = true
+                    val qp = inTensor.quantizationParams()
+                    inputScale = qp.scale
+                    inputZeroPoint = qp.zeroPoint
+                }
+                val outTensor = interpreter!!.getOutputTensor(0)
+                val outType = outTensor.dataType()
+                if (outType == DataType.UINT8 || outType == DataType.INT8) {
+                    outputIsQuantized = true
+                    val qp2 = outTensor.quantizationParams()
+                    outputScale = qp2.scale
+                    outputZeroPoint = qp2.zeroPoint
+                }
+            } catch (_: Throwable) {
+                // ignore inspection errors
+            }
             hasInterpreter = true
         } catch (t: Throwable) {
-            // Interpreter initialization failed — fall back to heuristic
-            hasInterpreter = false
-            interpreter = null
+            Log.w("MlInferenceEngine", "Failed to load model asset $modelAssetPath, attempting fallback...", t)
+            // Fallback: try to load any .tflite in assets/models
+            try {
+                val assets = context.assets.list("models") ?: emptyArray()
+                val tflite = assets.firstOrNull { it.endsWith(".tflite") }
+                if (tflite != null) {
+                    val candidate = "models/" + tflite
+                    val modelBuffer = loadModelFile(context, candidate)
+                    val options = Interpreter.Options().apply { setNumThreads(defaultNumThreads) }
+                    interpreter = Interpreter(modelBuffer, options)
+                    hasInterpreter = true
+                    Log.i("MlInferenceEngine", "Loaded fallback model asset: $candidate")
+                    // continue instead of returning; tryInitFlexible below will respect hasInterpreter
+                }
+            } catch (t: Throwable) {
+                Log.w("MlInferenceEngine", "No fallback model found in assets/models/", t)
+            }
+            hasInterpreter = hasInterpreter && interpreter != null
+            if (!hasInterpreter) {
+                interpreter = null
+            }
         }
         // Attempt flexible fallback if the direct load failed or if the provided
         // asset path is not present in packaged assets.
@@ -82,13 +159,35 @@ class MlInferenceEngine(private val context: Context, private val modelAssetPath
      * Run inference on a single feature vector.
      * Expects features array of shape [featureCount]. Model input should be [1, featureCount].
      */
-    fun predictScore(features: FloatArray): Float {
+    override fun predictScore(features: FloatArray): Float {
         if (hasInterpreter && interpreter != null) {
             try {
-                val input = arrayOf(features)
-                val output = Array(1) { FloatArray(1) }
-                interpreter!!.run(input, output)
-                return output[0][0]
+                if (inputIsQuantized) {
+                    // quantize features to int8/uint8 per tensor params
+                    val bb = ByteBuffer.allocateDirect(features.size).order(ByteOrder.nativeOrder())
+                    for (i in features.indices) {
+                        val q = Math.round(features[i] / inputScale) + inputZeroPoint
+                        bb.put(q.toByte())
+                    }
+                    bb.rewind()
+
+                    if (outputIsQuantized) {
+                        val outBb = ByteBuffer.allocateDirect(1).order(ByteOrder.nativeOrder())
+                        interpreter!!.run(bb, outBb)
+                        outBb.rewind()
+                        val qout = outBb.get().toInt()
+                        return (qout - outputZeroPoint) * outputScale
+                    } else {
+                        val output = Array(1) { FloatArray(1) }
+                        interpreter!!.run(bb, output)
+                        return output[0][0]
+                    }
+                } else {
+                    val input = arrayOf(features)
+                    val output = Array(1) { FloatArray(1) }
+                    interpreter!!.run(input, output)
+                    return output[0][0]
+                }
             } catch (_: Throwable) {
                 // fall through to heuristic
             }
@@ -100,14 +199,34 @@ class MlInferenceEngine(private val context: Context, private val modelAssetPath
      * Coroutine-friendly single prediction. Runs inference on Dispatchers.Default
      * and synchronizes access to the interpreter. Returns heuristic fallback on error.
      */
-    suspend fun predictScoreAsync(features: FloatArray): Float = withContext(Dispatchers.Default) {
+    override suspend fun predictScoreAsync(features: FloatArray): Float = withContext(Dispatchers.Default) {
         synchronized(interpLock) {
             if (hasInterpreter && interpreter != null) {
                 try {
-                    val input = arrayOf(features)
-                    val output = Array(1) { FloatArray(1) }
-                    interpreter!!.run(input, output)
-                    return@synchronized output[0][0]
+                    if (inputIsQuantized) {
+                        val bb = ByteBuffer.allocateDirect(features.size).order(ByteOrder.nativeOrder())
+                        for (i in features.indices) {
+                            val q = Math.round(features[i] / inputScale) + inputZeroPoint
+                            bb.put(q.toByte())
+                        }
+                        bb.rewind()
+                        if (outputIsQuantized) {
+                            val outBb = ByteBuffer.allocateDirect(1).order(ByteOrder.nativeOrder())
+                            interpreter!!.run(bb, outBb)
+                            outBb.rewind()
+                            val qout = outBb.get().toInt()
+                            return@synchronized (qout - outputZeroPoint) * outputScale
+                        } else {
+                            val output = Array(1) { FloatArray(1) }
+                            interpreter!!.run(bb, output)
+                            return@synchronized output[0][0]
+                        }
+                    } else {
+                        val input = arrayOf(features)
+                        val output = Array(1) { FloatArray(1) }
+                        interpreter!!.run(input, output)
+                        return@synchronized output[0][0]
+                    }
                 } catch (_: Throwable) {
                     // fall through to heuristic
                 }
@@ -120,15 +239,43 @@ class MlInferenceEngine(private val context: Context, private val modelAssetPath
      * Batch-predict scores for multiple feature rows. This reduces interpreter overhead
      * by running a single inference with a batch input.
      */
-    fun predictScoresBatch(featuresBatch: List<FloatArray>): FloatArray {
+    override fun predictScoresBatch(featuresBatch: List<FloatArray>): FloatArray {
         if (featuresBatch.isEmpty()) return FloatArray(0)
         synchronized(interpLock) {
             if (hasInterpreter && interpreter != null) {
                 try {
-                    val input = featuresBatch.toTypedArray()
-                    val output = Array(featuresBatch.size) { FloatArray(1) }
-                    interpreter!!.run(input, output)
-                    return FloatArray(featuresBatch.size) { i -> output[i][0] }
+                    if (inputIsQuantized) {
+                        val batchSize = featuresBatch.size
+                        val bb = ByteBuffer.allocateDirect(batchSize * featuresBatch[0].size).order(ByteOrder.nativeOrder())
+                        for (r in 0 until batchSize) {
+                            val row = featuresBatch[r]
+                            for (i in row.indices) {
+                                val q = Math.round(row[i] / inputScale) + inputZeroPoint
+                                bb.put(q.toByte())
+                            }
+                        }
+                        bb.rewind()
+                        if (outputIsQuantized) {
+                            val outBb = ByteBuffer.allocateDirect(batchSize).order(ByteOrder.nativeOrder())
+                            interpreter!!.run(bb, outBb)
+                            outBb.rewind()
+                            val out = FloatArray(batchSize)
+                            for (i in 0 until batchSize) {
+                                val qout = outBb.get().toInt()
+                                out[i] = (qout - outputZeroPoint) * outputScale
+                            }
+                            return out
+                        } else {
+                            val output = Array(batchSize) { FloatArray(1) }
+                            interpreter!!.run(bb, output)
+                            return FloatArray(batchSize) { i -> output[i][0] }
+                        }
+                    } else {
+                        val input = featuresBatch.toTypedArray()
+                        val output = Array(featuresBatch.size) { FloatArray(1) }
+                        interpreter!!.run(input, output)
+                        return FloatArray(featuresBatch.size) { i -> output[i][0] }
+                    }
                 } catch (_: Throwable) {
                     // fall through and compute heuristic per-row
                 }
@@ -153,7 +300,7 @@ class MlInferenceEngine(private val context: Context, private val modelAssetPath
         return max(0f, minOf(1f, s))
     }
 
-    fun close() {
+    override fun close() {
         try {
             interpreter?.close()
         } catch (_: Throwable) {

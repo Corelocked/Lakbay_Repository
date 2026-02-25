@@ -52,7 +52,7 @@
     <string name="adventure">🎒 Adventure</string>
     <string name="relax">😌 Relax</string>
     <string name="planning_route">Planning route...</string>
-    <string name="scenic_destinations">Scenic Destinations</string>
+    <string name="scenic_destinations">Discover</string>
     <string name="discover_description">✨ Discover beautiful places for your next adventure</string>
     <string name="filter_by_category">🔍 Filter by Category</string>
     <string name="dash_separator">--</string>
@@ -65,14 +65,27 @@
     <!-- POI Detail Bottom Sheet -->
     <string name="poi_title_placeholder">POI Title</string>
     <string name="poi_description_placeholder">Short description of the POI goes here...</string>
-    <string name="navigate_button">Navigate</string>
+    <string name="navigate_button">View on Gooogle Maps</string>
     <string name="save_button">Save</string>
+    <!-- Added strings used by the POI preview header and action icons -->
+    <string name="poi_image_description">Preview image for POI</string>
+    <string name="poi_rating_star">POI rating star</string>
+    <string name="directions">Directions</string>
+    <string name="save">Save</string>
+    <string name="nearby">Nearby</string>
+    <string name="send_to_phone">Send to phone</string>
+    <string name="share">Share</string>
 
     <!-- Login/Signup -->
     <string name="log_in">Log In</string>
     <string name="no_account_signup">No Account? Sign up here</string>
     <string name="sign_up">Sign Up</string>
     <string name="already_have_account">Already have an account? Log in</string>
+    <string name="email_hint">Email Address</string>
+    <string name="password_hint">Password</string>
+    <string name="confirm_password_hint">Confirm Password</string>
+    <string name="toggle_password_visibility">Toggle password visibility</string>
+    <string name="continue_with_google">Continue with Google</string>
 
     <!-- Favorites -->
     <string name="your_favorites">⭐ Your Favorites</string>
@@ -81,23 +94,6 @@
     <string name="no_favorites_yet">No favorites yet</string>
     <string name="save_places_description">Save places to visit them later</string>
 
-    <!-- Recommendations Filter Chips -->
-    <string name="all_filter">All</string>
-    <string name="scenic_filter">🏞️ Scenic</string>
-    <string name="coastal_filter">🌊 Coastal</string>
-    <string name="mountain_filter">⛰️ Mountain</string>
-    <string name="historic_filter">🏛️ Historic</string>
-    <string name="food_filter">🍽️ Food</string>
-    <string name="nature_filter">🌳 Nature</string>
-<<<<<<< Updated upstream
-=======
-    <string name="culture_filter">🎭 Culture</string>
-    <string name="shopping_filter">🛍️ Shopping</string>
-    <string name="tourism_filter">🏷️ Tourism</string>
-    <string name="collapse_arrow">▼</string>
-    <string name="expand_arrow">▲</string>
-
->>>>>>> Stashed changes
     <string name="maximum_distance">📍 Maximum Distance</string>
     <string name="sort_by">📊 Sort By</string>
     <string name="distance_sort">Distance</string>
@@ -113,17 +109,51 @@
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
-    <string name="cluster_eps_title">Cluster EPS (meters)</string>
-    <string name="cluster_eps_dialog_title">Cluster EPS (meters)</string>
-    <string name="min_points_title">Minimum points per cluster</string>
-    <string name="min_points_dialog_title">Minimum points per cluster</string>
     <string name="reset_defaults_title">Reset to defaults</string>
-    <string name="reset_defaults_summary">Restore default tuning values</string>
-    <string name="prefer_coastal_title">Prefer coastal sets for long oceanic trips</string>
-    <string name="prefer_coastal_summary">When enabled, long oceanic routes will favor built-in coastal waypoint sets.</string>
+    <string name="reset_defaults_summary">Reset personalization, map style, and language to defaults</string>
     <string name="map_style_title">Map Style</string>
     <string name="map_style_summary">Choose the map tile style</string>
     <string name="language_title">Language</string>
     <string name="language_summary">Choose the app language</string>
     <string name="center_on_user">Center on user</string>
+    <!-- Added to avoid hardcoded text in fragment_recommendations.xml -->
+    <string name="default_distance_value">50 km</string>
+    <string name="map_emoji">🗺️</string>
+
+    <!-- Accessibility / overlay toggle strings -->
+    <string name="app_logo_desc">App logo</string>
+    <string name="toggle_route_overlay">Toggle route overlay</string>
+
+    <!-- Personalization setting labels -->
+    <string name="personalization_title">Personalize recommendations</string>
+    <string name="personalization_summary">Enable using your interactions to tailor recommended places (stored locally)</string>
+    <string name="personalization_enabled_summary">Personalization is ON — recommendations adapt to your interactions</string>
+    <string name="personalization_disabled_summary">Personalization is OFF — recommendations use general signals only</string>
+
+    <!-- Recommendations fragment strings -->
+    <string name="distance_value_fmt">%1$d km</string>
+    <string name="no_scenic_destinations">No scenic destinations found. Try planning a route or check your connection.</string>
+    <string name="no_pois_match_filters">No POIs match your filters.\nTry adjusting the distance or category filters.</string>
+    <string name="no_pois_found_in_town">No POIs found in %1$s.</string>
+    <string name="no_recommendations_available">No recommendations available.\nPlan a route first to see recommendations along the way!</string>
+
+    <!-- POI fallback string resource used by adapters -->
+    <string name="poi_fallback">POI</string>
+    <string name="like_poi">Like POI</string>
+    <string name="unlike_poi">Unlike POI</string>
+    <string name="poi_unliked">Removed from favorites: %1$s</string>
+    <string name="poi_liked">Liked %1$s</string>
+    <string name="curate_now">Curate now</string>
+
+    <!-- UI arrows -->
+    <string name="expand_arrow">▲</string>
+    <string name="collapse_arrow">▼</string>
+    <string name="default_web_client_id">533429423836-k5tjhe2hlrlaln8o529v5o5q8mikvjfv.apps.googleusercontent.com</string>
+
+
+    <!-- Overlay placeholders -->
+    <string name="overlay_distance_placeholder">Distance: —</string>
+    <string name="overlay_eta_placeholder">ETA: —</string>
+    <string name="overlay_distance_icon_desc">Distance icon</string>
+    <string name="overlay_eta_icon_desc">ETA icon</string>
 </resources>

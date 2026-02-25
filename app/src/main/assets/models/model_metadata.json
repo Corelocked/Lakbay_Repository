@@ -1,0 +1,22 @@
+{
+  "model_name": "poi_reranker.tflite.keras",
+  "version": "unknown",
+  "trained_on": null,
+  "dataset": "luzon_dataset.csv",
+  "files": [
+    "poi_reranker_from_luzon.tflite",
+    "poi_reranker.tflite",
+    "poi_reranker.tflite.keras",
+    "feature_stats.json"
+  ],
+  "metrics": {
+    "auc": 0.6099560574522892,
+    "accuracy": 0.853
+  },
+  "notes": "Evaluation run populated by tools/evaluate_model.py",
+  "evaluation_command": "python tools/evaluate_model.py --model app/src/main/assets/models/poi_reranker.tflite.keras --test-csv tools/synthetic_features.csv --tflite app/src/main/assets/models/poi_reranker_from_luzon.tflite --out-metadata app/src/main/assets/models/model_metadata.json",
+  "last_evaluated": "2026-02-07T07:40:36.183037Z",
+  "pred_mean": 0.8553315997123718,
+  "pred_std": 0.0556340217590332,
+  "n_samples": 2000
+}

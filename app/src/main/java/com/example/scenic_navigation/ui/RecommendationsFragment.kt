@@ -8,7 +8,6 @@ import android.view.View
 
 import android.widget.ArrayAdapter
 import android.widget.ListView
-import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -17,37 +16,37 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.coroutines.launch
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import com.example.scenic_navigation.R
 import com.example.scenic_navigation.databinding.FragmentRecommendationsBinding
 import com.example.scenic_navigation.models.Poi
 import com.example.scenic_navigation.services.LocationService
 import com.example.scenic_navigation.viewmodel.RecommendationsViewModel
 import com.example.scenic_navigation.viewmodel.SharedRouteViewModel
-<<<<<<< Updated upstream
-import com.google.android.material.slider.Slider
-import kotlin.math.roundToInt
-=======
 import com.example.scenic_navigation.viewmodel.RouteViewModel
 import kotlinx.coroutines.launch
 import android.widget.Toast
 import android.util.Log
 import java.util.Locale
 import kotlin.math.roundToInt
-import android.content.Context
 import android.graphics.Color
+import android.view.ViewGroup
+import android.widget.CompoundButton
+import android.view.MotionEvent
 import com.example.scenic_navigation.utils.GeoUtils
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.example.scenic_navigation.MainActivity
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import android.widget.LinearLayout
-import android.view.ViewGroup
-import android.widget.CompoundButton
->>>>>>> Stashed changes
+import com.example.scenic_navigation.FavoriteStore
+import com.example.scenic_navigation.utils.MapIconUtils
+import org.osmdroid.views.overlay.Marker
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
 
-// RecommendationsFragment is deprecated and no longer used
-@Deprecated("Discover page is no longer used", ReplaceWith(""))
 class RecommendationsFragment : Fragment() {
     private var _binding: FragmentRecommendationsBinding? = null
     private val binding get() = _binding!!
@@ -57,11 +56,15 @@ class RecommendationsFragment : Fragment() {
     private lateinit var adapter: RecommendationsAdapter
     private lateinit var locationService: LocationService
 
-    private var showingTowns = true
+    // We no longer show the interim towns list — always display POIs directly
+    private var showingTowns = false
+    private var forceShowPois = false
     private var selectedTown: String? = null
     private var allPois: List<Poi> = emptyList()
     private var filteredPois: List<Poi> = emptyList()
-    private lateinit var townsListView: ListView
+    // Map markers for recommendations map
+    private val recMapMarkers = mutableListOf<Marker>()
+    private var townsListView: ListView? = null
 
     // Filter state
     private var userLat: Double = 14.5995 // Default Manila
@@ -71,10 +74,26 @@ class RecommendationsFragment : Fragment() {
     private var currentSeeingSelection: String = "Oceanic View"
     // Multi-select activity labels (the UI chips)
     private val selectedActivityLabels = mutableSetOf<String>()
-    private var sortBy: SortOption = SortOption.DISTANCE
+    // Make sortBy nullable so the user can clear sorting by unchecking chips
+    // Start with no active sort by default to make deselection intuitive
+    private var sortBy: SortOption? = null
+    private var filterCollapsed = true
 
+    // Track last effective categories used for a fetch so we can detect overly-strict filters
+    private var lastEffectiveCategories: Set<String> = emptySet()
+    private var didRelaxOnce = false
     // Suppress programmatic chip events to avoid recursive listener triggers and UI flicker
     private var suppressFilterEvents = false
+
+    // Helper function to update chip stroke width based on checked state
+    private fun updateChipStroke(chip: Chip, isChecked: Boolean) {
+        val strokeWidth = if (isChecked) {
+            (2 * requireContext().resources.displayMetrics.density).toInt()
+        } else {
+            0
+        }
+        chip.chipStrokeWidth = strokeWidth.toFloat()
+    }
 
     enum class SortOption {
         DISTANCE, SCENIC_SCORE, NAME
@@ -93,29 +112,22 @@ class RecommendationsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         locationService = LocationService(requireContext())
+        // Personalization is now handled in Settings; no in-UI switch here.
+
         getUserLocation()
 
         setupRecyclerView()
-        setupTownsList(view)
+        setupTownsList()
         setupFilters()
         observeViewModel()
 
         // Back press handling for navigation between towns and POIs
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-<<<<<<< Updated upstream
-                if (!showingTowns) {
-                    showTownsList(allPois)
-                } else {
-                    isEnabled = false
-                    requireActivity().onBackPressed()
-                }
-=======
                 // With towns view removed, just perform normal back navigation
                 isEnabled = false
                 // Dispatch a back press via the OnBackPressedDispatcher instead of the deprecated API
                 requireActivity().onBackPressedDispatcher.onBackPressed()
->>>>>>> Stashed changes
             }
         })
 
@@ -125,29 +137,17 @@ class RecommendationsFragment : Fragment() {
             val recommendations = sharedViewModel.recommendations.value ?: emptyList()
             updateRecommendationsList(recommendations)
         } else {
-            // Fetch general recommendations if no route exists
-            viewModel.fetchRecommendations(userLat, userLon, maxDistance.toDouble(), selectedCategories)
+            // Fetch general recommendations if no route exists (use unified fetch that computes effective categories)
+            fetchWithCurrentFilters()
         }
-<<<<<<< Updated upstream
-    }
-
-    private fun setupRecyclerView() {
-        adapter = RecommendationsAdapter(emptyList(), userLat, userLon)
-        // Use view binding to access recycler view
-        binding.rvRecommendations.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvRecommendations.adapter = adapter
-    }
-
-    private fun setupTownsList(view: View) {
-        // Use the ListView defined in layout and initialize it
-=======
 
         // Swipe to refresh triggers re-fetch
         binding.swipeRefresh?.setOnRefreshListener {
-            viewModel.fetchRecommendations(userLat, userLon, maxDistance.toDouble(), selectedCategories)
+            fetchWithCurrentFilters()
         }
 
         // FAB and empty-state button trigger curation flow (open a lightweight curator — here we just show a toast)
+        /*
         binding.fabCurate.setOnClickListener {
             // Provide quick feedback and trigger a fresh recommendation fetch.
             Log.i("RecommendationsFrag", "FAB clicked — preparing UI and triggering fetchRecommendations()")
@@ -155,19 +155,18 @@ class RecommendationsFragment : Fragment() {
             showingTowns = false
             forceShowPois = true
             // Hide towns list and empty state so the POI list (or loading) becomes visible immediately.
-            try { townsListView.visibility = View.GONE } catch (_: Exception) {}
+            try { townsListView?.visibility = View.GONE } catch (_: Exception) {}
             binding.emptyState.visibility = View.GONE
             binding.rvRecommendations.visibility = View.VISIBLE
             // Clear shared recommendations so local recommendations take precedence
             sharedViewModel.updateRecommendations(emptyList())
             Toast.makeText(requireContext(), getString(R.string.curate_now), Toast.LENGTH_SHORT).show()
-            // Trigger the ViewModel to (re)fetch recommendations — this updates the observed LiveData
-            // and will update the UI when results arrive.
-            viewModel.fetchRecommendations(userLat, userLon, maxDistance.toDouble(), selectedCategories)
+            // Trigger the ViewModel to (re)fetch recommendations using current UI filters
+            fetchWithCurrentFilters()
         }
         binding.btnCurateEmpty?.setOnClickListener {
             binding.fabCurate.performClick()
-        }
+        }*/
     }
 
     private fun setupRecyclerView() {
@@ -189,6 +188,7 @@ class RecommendationsFragment : Fragment() {
 
          // Handle like clicks from adapter
          adapter.onLikeClick = { poi ->
+            Log.d("RecommendationsFrag", "onLikeClick invoked for ${poi.name}")
             try {
                 // Toggle curated state via ViewModel using canonical key storage
                 if (!viewModel.isCurated(poi)) {
@@ -208,6 +208,7 @@ class RecommendationsFragment : Fragment() {
 
          // Handle POI taps: plan a curated route to the POI using current filter selections
          adapter.onPoiClick = { poi ->
+            Log.d("RecommendationsFrag", "onPoiClick invoked for ${poi.name}")
             try {
                 // Map current seeing/activity to enums (fallbacks included)
                 val seeing = when (currentSeeingSelection.lowercase()) {
@@ -244,93 +245,22 @@ class RecommendationsFragment : Fragment() {
      }
 
     private fun setupTownsList() {
-        // Keep the view in the layout for legacy reasons but hide it — we don't show towns anymore.
->>>>>>> Stashed changes
-        val lv = binding.lvTowns
-        lv.visibility = View.VISIBLE
-        lv.setOnItemClickListener { _, _, position, _ ->
-            val town = townsAdapter.getItem(position)
-            selectedTown = town
-            showPoisForTown(town)
+        // Try to find lv_towns by id at runtime (may not exist in the redesigned layout)
+        val id = resources.getIdentifier("lv_towns", "id", requireContext().packageName)
+        if (id != 0) {
+            try {
+                val lv = binding.root.findViewById<ListView?>(id)
+                lv?.visibility = View.GONE
+                townsListView = lv
+            } catch (e: Exception) {
+                townsListView = null
+            }
+        } else {
+            townsListView = null
         }
-        townsListView = lv
     }
 
     private fun setupFilters() {
-<<<<<<< Updated upstream
-        // Distance slider
-        binding.sliderDistance.addOnChangeListener { _, value, _ ->
-            maxDistance = value
-            binding.tvDistanceValue.text = "${value.roundToInt()} km"
-            applyFilters()
-        }
-
-        // Category chips
-        binding.chipAll.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                selectedCategories.clear()
-                uncheckOtherCategoryChips()
-            }
-            applyFilters()
-        }
-
-        binding.chipScenic.setOnCheckedChangeListener { _, isChecked ->
-            handleCategoryChip("scenic", isChecked)
-        }
-
-        binding.chipCoastal.setOnCheckedChangeListener { _, isChecked ->
-            handleCategoryChip("coastal", isChecked)
-        }
-
-        binding.chipMountain.setOnCheckedChangeListener { _, isChecked ->
-            handleCategoryChip("mountain", isChecked)
-        }
-
-        binding.chipHistoric.setOnCheckedChangeListener { _, isChecked ->
-            handleCategoryChip("historic", isChecked)
-        }
-
-        binding.chipFood.setOnCheckedChangeListener { _, isChecked ->
-            handleCategoryChip("food", isChecked)
-        }
-
-        binding.chipNature.setOnCheckedChangeListener { _, isChecked ->
-            handleCategoryChip("nature", isChecked)
-        }
-
-        // Sort chips
-        binding.chipSortDistance.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                sortBy = SortOption.DISTANCE
-                applyFilters()
-            }
-        }
-
-        binding.chipSortScenic.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                sortBy = SortOption.SCENIC_SCORE
-                applyFilters()
-            }
-        }
-
-        binding.chipSortName.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                sortBy = SortOption.NAME
-                applyFilters()
-=======
-         // Hide existing chips (we use spinners instead)
-         try {
-             binding.chipAll.visibility = View.GONE
-             binding.chipScenic.visibility = View.GONE
-             binding.chipCoastal.visibility = View.GONE
-             binding.chipMountain.visibility = View.GONE
-             binding.chipHistoric.visibility = View.GONE
-             binding.chipFood.visibility = View.GONE
-             binding.chipNature.visibility = View.GONE
-             binding.chipCulture.visibility = View.GONE
-             binding.chipShopping.visibility = View.GONE
-             binding.chipTourism.visibility = View.GONE
-         } catch (_: Exception) {}
 
          // Wire the exposed dropdown (AutoCompleteTextView) for Seeing selection
          try {
@@ -342,6 +272,7 @@ class RecommendationsFragment : Fragment() {
              actv?.setText(currentSeeingSelection, false)
              actv?.setOnItemClickListener { _, _, position, _ ->
                  currentSeeingSelection = seeingOptions[position]
+                 Log.d("RecommendationsFrag", "Seeing selected: ${seeingOptions[position]}")
                  applyFilters()
              }
          } catch (_: Exception) {}
@@ -356,20 +287,23 @@ class RecommendationsFragment : Fragment() {
                  val chip = Chip(requireContext())
                  chip.text = label
                  chip.isCheckable = true
+                 chip.isChecked = selectedActivityLabels.contains(label)
+                 // Set initial stroke width: 0dp for unchecked, 2dp for checked
+                 val strokeWidth = if (chip.isChecked) {
+                     (2 * requireContext().resources.displayMetrics.density).toInt()
+                 } else {
+                     0
+                 }
+                 chip.chipStrokeWidth = strokeWidth.toFloat()
+                 chip.chipStrokeColor = ContextCompat.getColorStateList(requireContext(), R.color.lakbay_red)
+                 chip.chipBackgroundColor = ContextCompat.getColorStateList(requireContext(), R.color.lakbay_cream)
                  chip.setOnCheckedChangeListener { _: CompoundButton, checked: Boolean ->
-                    if (checked) selectedActivityLabels.add(label) else selectedActivityLabels.remove(label)
-                     // Recompute selectedCategories from activity labels + seeing selection
-                     val tokens = mutableSetOf<String>()
-                     for (l in selectedActivityLabels) tokens.addAll(mapActivityLabelToTags(l))
-                     // also include seeing-derived tags
-                     val seeingTokens = when (currentSeeingSelection.lowercase()) {
-                         "oceanic view", "oceanic" -> setOf("coastal", "beach", "bay", "ocean")
-                         "mountain view", "mountain" -> setOf("mountain", "peak", "volcano", "view")
-                         else -> emptySet()
-                     }
-                     tokens.addAll(seeingTokens)
-                     selectedCategories.clear()
-                     selectedCategories.addAll(tokens)
+                     Log.d("RecommendationsFrag", "Activity chip '$label' checked=$checked")
+                     // Update stroke width based on checked state
+                     updateChipStroke(chip, checked)
+                     if (checked) selectedActivityLabels.add(label) else selectedActivityLabels.remove(label)
+                     // Let applyFilters() merge activity-derived tokens with explicit category chips —
+                     // do NOT overwrite selectedCategories here.
                      applyFilters()
                  }
                  chipGroup.addView(chip)
@@ -379,115 +313,141 @@ class RecommendationsFragment : Fragment() {
 
          // Distance slider
          binding.sliderDistance.addOnChangeListener { _, value, _ ->
+            Log.d("RecommendationsFrag", "Distance slider changed: $value")
              if (suppressFilterEvents) return@addOnChangeListener
              maxDistance = value
              binding.tvDistanceValue.text = getString(R.string.distance_value_fmt, value.roundToInt())
              applyFilters()
          }
 
-         // Sort chips
-         binding.chipSortDistance.setOnCheckedChangeListener { _, isChecked ->
-             if (suppressFilterEvents) return@setOnCheckedChangeListener
-             if (isChecked) {
-                 sortBy = SortOption.DISTANCE
-                 Log.i("RecommendationsFrag", "Sort changed to DISTANCE")
-                 // ensure mutual exclusivity
-                 suppressFilterEvents = true
-                 binding.chipSortScenic.isChecked = false
-                 binding.chipSortName.isChecked = false
-                 suppressFilterEvents = false
-                 applyFilters()
-             }
-         }
-
-         binding.chipSortScenic.setOnCheckedChangeListener { _, isChecked ->
-             if (suppressFilterEvents) return@setOnCheckedChangeListener
-             if (isChecked) {
-                 sortBy = SortOption.SCENIC_SCORE
-                 Log.i("RecommendationsFrag", "Sort changed to SCENIC_SCORE")
-                 suppressFilterEvents = true
-                 binding.chipSortDistance.isChecked = false
-                 binding.chipSortName.isChecked = false
-                 suppressFilterEvents = false
-                 applyFilters()
-             }
-         }
-
-         binding.chipSortName.setOnCheckedChangeListener { _, isChecked ->
-             if (suppressFilterEvents) return@setOnCheckedChangeListener
-             if (isChecked) {
-                 sortBy = SortOption.NAME
-                 Log.i("RecommendationsFrag", "Sort changed to NAME")
-                 suppressFilterEvents = true
-                 binding.chipSortDistance.isChecked = false
-                 binding.chipSortScenic.isChecked = false
-                 suppressFilterEvents = false
-                 applyFilters()
-             }
-         }
-     }
-
-    private fun setupFilterCollapse() {
-        // Wire the header collapse button to toggle the filter content using view binding.
+        // Ensure chip group allows zero selection at runtime (some themes default selectionRequired=true)
         try {
-            val btn = binding.btnFilterCollapse
-            val content = binding.filterCollapsibleContent
-            // initialize state
-            content.visibility = if (filterCollapsed) View.GONE else View.VISIBLE
-            content.alpha = if (filterCollapsed) 0f else 1f
-
-            btn.setOnClickListener {
-                filterCollapsed = !filterCollapsed
-                if (filterCollapsed) {
-                    // hide with fade
-                    content.animate().alpha(0f).setDuration(180).withEndAction { content.visibility = View.GONE }.start()
-                    btn.setText(R.string.expand_arrow) // ▲
-                } else {
-                    content.visibility = View.VISIBLE
-                    content.alpha = 0f
-                    content.animate().alpha(1f).setDuration(180).start()
-                    btn.setText(R.string.collapse_arrow) // ▼
-                }
->>>>>>> Stashed changes
-            }
-        }
-    }
-
-    private fun handleCategoryChip(category: String, isChecked: Boolean) {
-        if (suppressFilterEvents) return
-        if (isChecked) {
-            selectedCategories.add(category)
-            // turn off "All" without triggering its listener
+            binding.chipGroupSort.isSingleSelection = false
+            binding.chipGroupSort.isSelectionRequired = false
+            binding.chipSortDistance.isCheckable = true
+            binding.chipSortScenic.isCheckable = true
+            binding.chipSortName.isCheckable = true
+            // Clear any initial selection and ensure internal state consistent
             suppressFilterEvents = true
-            binding.chipAll.isChecked = false
+            binding.chipSortDistance.isChecked = false
+            binding.chipSortScenic.isChecked = false
+            binding.chipSortName.isChecked = false
+            // Update stroke width for initial unselected state
+            updateChipStroke(binding.chipSortDistance, false)
+            updateChipStroke(binding.chipSortScenic, false)
+            updateChipStroke(binding.chipSortName, false)
             suppressFilterEvents = false
-        } else {
-            selectedCategories.remove(category)
-            if (selectedCategories.isEmpty()) {
-                suppressFilterEvents = true
-                binding.chipAll.isChecked = true
-                suppressFilterEvents = false
-            }
-        }
-        applyFilters()
-    }
+            sortBy = null
+        } catch (_: Exception) {}
 
-    private fun uncheckOtherCategoryChips() {
-        // Uncheck programmatically while suppressing events
-        suppressFilterEvents = true
-        binding.chipScenic.isChecked = false
-        binding.chipCoastal.isChecked = false
-        binding.chipMountain.isChecked = false
-        binding.chipHistoric.isChecked = false
-        binding.chipFood.isChecked = false
-        binding.chipNature.isChecked = false
-<<<<<<< Updated upstream
-=======
-        binding.chipCulture.isChecked = false
-        binding.chipShopping.isChecked = false
-        binding.chipTourism.isChecked = false
-        suppressFilterEvents = false
->>>>>>> Stashed changes
+        // Use checked-change listeners to properly support deselection and mutual exclusion.
+        try {
+            binding.chipSortDistance.setOnCheckedChangeListener { _, isChecked ->
+                if (suppressFilterEvents) return@setOnCheckedChangeListener
+                suppressFilterEvents = true
+                if (isChecked) {
+                    // Enforce mutual exclusion
+                    binding.chipSortScenic.isChecked = false
+                    binding.chipSortName.isChecked = false
+                    updateChipStroke(binding.chipSortDistance, true)
+                    updateChipStroke(binding.chipSortScenic, false)
+                    updateChipStroke(binding.chipSortName, false)
+                    sortBy = SortOption.DISTANCE
+                    Log.i("RecommendationsFrag", "Sort set to DISTANCE (checked)")
+                } else {
+                    updateChipStroke(binding.chipSortDistance, false)
+                    // If nothing else is checked, clear sort
+                    if (!binding.chipSortScenic.isChecked && !binding.chipSortName.isChecked) {
+                        sortBy = null
+                        Log.i("RecommendationsFrag", "Sort cleared (distance unchecked)")
+                    }
+                }
+                suppressFilterEvents = false
+                try { updateRecommendationsList(adapter.currentList) } catch (_: Exception) {}
+            }
+
+            binding.chipSortScenic.setOnCheckedChangeListener { _, isChecked ->
+                if (suppressFilterEvents) return@setOnCheckedChangeListener
+                suppressFilterEvents = true
+                if (isChecked) {
+                    binding.chipSortDistance.isChecked = false
+                    binding.chipSortName.isChecked = false
+                    updateChipStroke(binding.chipSortDistance, false)
+                    updateChipStroke(binding.chipSortScenic, true)
+                    updateChipStroke(binding.chipSortName, false)
+                    sortBy = SortOption.SCENIC_SCORE
+                    Log.i("RecommendationsFrag", "Sort set to SCENIC (checked)")
+                } else {
+                    updateChipStroke(binding.chipSortScenic, false)
+                    if (!binding.chipSortDistance.isChecked && !binding.chipSortName.isChecked) {
+                        sortBy = null
+                        Log.i("RecommendationsFrag", "Sort cleared (scenic unchecked)")
+                    }
+                }
+                suppressFilterEvents = false
+                try { updateRecommendationsList(adapter.currentList) } catch (_: Exception) {}
+            }
+
+            binding.chipSortName.setOnCheckedChangeListener { _, isChecked ->
+                if (suppressFilterEvents) return@setOnCheckedChangeListener
+                suppressFilterEvents = true
+                if (isChecked) {
+                    binding.chipSortDistance.isChecked = false
+                    binding.chipSortScenic.isChecked = false
+                    updateChipStroke(binding.chipSortDistance, false)
+                    updateChipStroke(binding.chipSortScenic, false)
+                    updateChipStroke(binding.chipSortName, true)
+                    sortBy = SortOption.NAME
+                    Log.i("RecommendationsFrag", "Sort set to NAME (checked)")
+                } else {
+                    updateChipStroke(binding.chipSortName, false)
+                    if (!binding.chipSortDistance.isChecked && !binding.chipSortScenic.isChecked) {
+                        sortBy = null
+                        Log.i("RecommendationsFrag", "Sort cleared (name unchecked)")
+                    }
+                }
+                suppressFilterEvents = false
+                try { updateRecommendationsList(adapter.currentList) } catch (_: Exception) {}
+            }
+        } catch (_: Exception) {}
+
+         // Wire the header collapse button to toggle the filter content using view binding.
+         try {
+             val btn = binding.btnFilterCollapse
+             val content = binding.filterCollapsibleContent
+             // initialize state and ensure touch blocking matches initial visibility
+             content.visibility = if (filterCollapsed) View.GONE else View.VISIBLE
+             content.alpha = if (filterCollapsed) 0f else 1f
+             // Set initial button text based on collapsed state
+             btn.text = if (filterCollapsed) getString(R.string.expand_arrow) else getString(R.string.collapse_arrow)
+             // Ensure the card is above other content at runtime
+             try { binding.cardFilter.bringToFront() } catch (_: Exception) {}
+             // rely on XML layering and clickable attribute to block empty-area taps
+
+             btn.setOnClickListener {
+                 filterCollapsed = !filterCollapsed
+                 if (filterCollapsed) {
+                     // hide with fade
+                     content.animate().alpha(0f).setDuration(180).withEndAction {
+                         content.visibility = View.GONE
+                         // disable clickable when hidden to keep behavior explicit
+                         try { content.isClickable = false } catch (_: Exception) {}
+                     }.start()
+                     btn.setText(R.string.expand_arrow) // ▲
+                 } else {
+                     content.visibility = View.VISIBLE
+                     content.alpha = 0f
+                     // enable touch blocking immediately so touches don't pass through during animation
+                     // ensure filter card stays on top while expanded
+                     try { binding.cardFilter.bringToFront() } catch (_: Exception) {}
+                     try { content.isClickable = true } catch (_: Exception) {}
+                     content.animate().alpha(1f).setDuration(180).start()
+                     btn.setText(R.string.collapse_arrow) // ▼
+                 }
+             }
+         } catch (_: Exception) {
+             // binding may not be available in rare cases; ignore safely
+         }
     }
 
     private fun getUserLocation() {
@@ -499,18 +459,14 @@ class RecommendationsFragment : Fragment() {
                     location?.let {
                         userLat = it.latitude
                         userLon = it.longitude
-<<<<<<< Updated upstream
-                        // Update adapter with new location
-                        adapter.updateData(filteredPois.ifEmpty { allPois }, userLat, userLon)
-=======
                         // Update adapter with new location and refresh the currently shown list
                         adapter.updateUserLocation(userLat, userLon)
-                        adapter.submitList(filteredPois.ifEmpty { allPois })
+                        // Sort the list consistent with current sort selection
+                        adapter.submitList(sortPois(filteredPois.ifEmpty { allPois }))
                         // Fetch recommendations now that we have the user's accurate location
-                        viewModel.fetchRecommendations(userLat, userLon, maxDistance.toDouble(), selectedCategories)
->>>>>>> Stashed changes
+                        fetchWithCurrentFilters()
                     }
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     // Use default location
                 }
             }
@@ -561,168 +517,208 @@ class RecommendationsFragment : Fragment() {
     }
 
     private fun applyFilters() {
-<<<<<<< Updated upstream
-        if (allPois.isEmpty()) return
+        Log.d("RecommendationsFrag", "applyFilters called: seeing=$currentSeeingSelection activities=${selectedActivityLabels.joinToString()} maxDistance=$maxDistance selectedCategories=$selectedCategories")
+        // Merge activity-derived tokens with explicit category chip selections.
+        // If "All" is checked, we treat it as no category filter (empty set).
+        val activityPrefs = recomputeSelectedCategoriesFromUI()
+        // Effective categories = explicit selectedCategories (from chips) union activity-derived tokens
+        val effective = mutableSetOf<String>()
+        effective.addAll(selectedCategories)
+        effective.addAll(activityPrefs)
 
-        // Filter by distance
-        var filtered = allPois.filter { poi ->
-            poi.lat != null && poi.lon != null &&
-            calculateDistance(userLat, userLon, poi.lat!!, poi.lon!!) <= maxDistance * 1000
-        }
-
-        // Filter by category
-        if (selectedCategories.isNotEmpty()) {
-            filtered = filtered.filter { poi ->
-                selectedCategories.any { category ->
-                    poi.category?.lowercase()?.contains(category) == true ||
-                    poi.name.lowercase().contains(category)
-                }
-            }
-        }
-
-        // Sort
-        filtered = when (sortBy) {
-            SortOption.DISTANCE -> filtered.sortedBy { poi ->
-                calculateDistance(userLat, userLon, poi.lat ?: userLat, poi.lon ?: userLon)
-            }
-            SortOption.SCENIC_SCORE -> filtered.sortedByDescending { it.scenicScore }
-            SortOption.NAME -> filtered.sortedBy { it.name }
-        }
-
-        filteredPois = filtered
-
-        if (!showingTowns) {
-            updateRecommendationsList(filteredPois)
-        }
+        // Do not overwrite selectedCategories here; keep explicit chip state separate from effective filter tokens.
+        Log.d("RecommendationsFrag", "applyFilters: effectiveCategories=$effective")
+        // Reset relaxation marker when user changes filters
+        didRelaxOnce = false
+        // Use central fetch to ensure all callers compute the same effective categories
+        fetchWithCurrentFilters(effective)
     }
 
-    private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        return haversine(lat1, lon1, lat2, lon2)
+    // Centralized fetch that accepts an optional effectiveCategories set. If not provided, it
+    // computes the effective set from current UI state (activities + seeing + explicit categories).
+    private fun fetchWithCurrentFilters(effectiveCategories: Set<String>? = null) {
+         val effective = effectiveCategories ?: run {
+                val activityPrefs = recomputeSelectedCategoriesFromUI()
+                val eff = mutableSetOf<String>()
+                eff.addAll(selectedCategories)
+                eff.addAll(activityPrefs)
+                eff
+        }
+        Log.d("RecommendationsFrag", "fetchWithCurrentFilters: calling ViewModel with effective=$effective")
+        lastEffectiveCategories = effective
+        viewModel.fetchRecommendations(userLat, userLon, maxDistance.toDouble(), effective)
     }
-=======
-        // Recompute selectedCategories from UI (activity chips + seeing) before delegating
-        val prefs = recomputeSelectedCategoriesFromUI()
-        selectedCategories.clear()
-        selectedCategories.addAll(prefs)
-        viewModel.fetchRecommendations(userLat, userLon, maxDistance.toDouble(), selectedCategories)
-     }
->>>>>>> Stashed changes
 
     private fun showTownsList(pois: List<Poi>) {
-        showingTowns = true
-        val towns = pois.map { it.municipality }.filter { it.isNotBlank() }.distinct().sorted()
-        if (towns.isEmpty()) {
-            townsListView.visibility = View.GONE
-            binding.emptyState.visibility = View.VISIBLE
-            binding.emptyStateMessage.text = "No scenic destinations found. Try planning a route or check your connection."
-            view?.findViewById<RecyclerView>(R.id.rv_recommendations)?.visibility = View.GONE
-            return
-        }
-        townsListView.visibility = View.VISIBLE
-        binding.emptyState.visibility = View.GONE
-        view?.findViewById<RecyclerView>(R.id.rv_recommendations)?.visibility = View.GONE
-        townsAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, towns)
-        townsListView.adapter = townsAdapter
-        // If only one town, show POIs directly
-        if (towns.size == 1) {
-            showPoisForTown(towns.first())
-        }
-    }
-
-    private fun showPoisForTown(town: String?) {
-        showingTowns = false
-        townsListView.visibility = View.GONE
-        selectedTown = town
-
-        // Filter POIs for this town and apply other filters
-        allPois = allPois.filter { it.municipality == town }
-        applyFilters()
-    }
-
-    private fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        val R = 6371000.0 // Earth radius in meters
-        val dLat = Math.toRadians(lat2 - lat1)
-        val dLon = Math.toRadians(lon2 - lon1)
-        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2)
-        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-        return R * c
+        // Towns list UI removed — directly show POIs instead
+        updateRecommendationsList(pois)
     }
 
     private fun updateRecommendationsList(recommendations: List<Poi>) {
-<<<<<<< Updated upstream
-        val recyclerView = view?.findViewById<RecyclerView>(R.id.rv_recommendations)
-        if (recommendations.isEmpty()) {
-            binding.emptyState.visibility = View.VISIBLE
-            recyclerView?.visibility = View.GONE
-=======
          val recyclerView = binding.rvRecommendations
          Log.i("RecommendationsFrag", "updateRecommendationsList called: recommendations.size=${recommendations.size}")
-         var list = recommendations.toList()
-         // Apply sorting preference locally (distance, scenic score, name)
-         try {
-             list = when (sortBy) {
-                 SortOption.DISTANCE -> list.sortedBy { poi ->
-                     if (poi.lat == null || poi.lon == null) Double.MAX_VALUE else com.example.scenic_navigation.utils.GeoUtils.haversine(userLat, userLon, poi.lat, poi.lon)
-                 }
-                 SortOption.SCENIC_SCORE -> list.sortedByDescending { it.scenicScore ?: 0f }
-                 SortOption.NAME -> list.sortedBy { it.name }
-             }
-         } catch (_: Exception) {}
-
-         if (list.isEmpty()) {
+         Log.d("RecommendationsFrag", "Current sortBy=$sortBy")
+         if (recommendations.isEmpty()) {
             binding.emptyState.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
             // also hide towns list when showing empty POI results
-            try { townsListView.visibility = View.GONE } catch (_: Exception) {}
->>>>>>> Stashed changes
+            townsListView?.visibility = View.GONE
             val emptyMessage = if (selectedCategories.isNotEmpty() || maxDistance < 50f) {
-                "No POIs match your filters.\nTry adjusting the distance or category filters."
+                getString(R.string.no_pois_match_filters)
             } else if (selectedTown != null) {
-                "No POIs found in $selectedTown."
+                getString(R.string.no_pois_found_in_town, selectedTown)
             } else {
-                "No recommendations available.\nPlan a route first to see recommendations along the way!"
+                getString(R.string.no_recommendations_available)
             }
-<<<<<<< Updated upstream
-            binding.emptyStateMessage.text = emptyMessage
-        } else {
-            binding.emptyState.visibility = View.GONE
-            recyclerView?.visibility = View.VISIBLE
-            adapter.updateData(recommendations, userLat, userLon)
-        }
-    }
-=======
              binding.emptyStateMessage.text = emptyMessage
          } else {
              binding.emptyState.visibility = View.GONE
              // hide towns list when showing POIs
-             try { townsListView.visibility = View.GONE } catch (_: Exception) {}
+             townsListView?.visibility = View.GONE
              recyclerView.visibility = View.VISIBLE
              adapter.updateUserLocation(userLat, userLon)
-             adapter.submitList(list)
+             // Sort according to current sort selection before submitting
+             val sorted = sortPois(recommendations)
+             adapter.submitList(sorted)
+             // Update markers on the recommendations map to match the list and use shared icons
+             try {
+                 updateMapMarkers(sorted)
+             } catch (e: Exception) {
+                 Log.w("RecommendationsFrag", "Failed to update recommendation map markers", e)
+             }
              // After layout, ensure list scrolls to top so new results are visible
              recyclerView.post {
                  try { if (adapter.itemCount > 0) recyclerView.scrollToPosition(0) } catch (_: Exception) {}
              }
          }
      }
->>>>>>> Stashed changes
+
+    // Place POI markers on the recommendations map using the shared MapIconUtils icons
+    private fun updateMapMarkers(pois: List<Poi>) {
+        try {
+            // Ensure map exists in binding; id is map_recommendations -> binding.mapRecommendations
+            val map = try { binding.mapRecommendations } catch (_: Exception) { null }
+             if (map == null) {
+                 Log.w("RecommendationsFrag", "Map view not present in binding; skipping marker update")
+                 return
+             }
+
+            // Clear existing markers
+            recMapMarkers.forEach { try { map.overlays.remove(it) } catch (_: Exception) {} }
+            recMapMarkers.clear()
+
+            for (poi in pois) {
+                val lat = poi.lat ?: continue
+                val lon = poi.lon ?: continue
+                val marker = Marker(map).apply {
+                    position = org.osmdroid.util.GeoPoint(lat, lon)
+                    title = poi.name
+                    snippet = poi.description
+                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                    try {
+                        val resId = MapIconUtils.getCategoryIconResource(poi.category)
+                        val d = try { androidx.core.content.res.ResourcesCompat.getDrawable(requireContext().resources, resId, null) } catch (_: Exception) { null }
+                        if (d != null) {
+                            try {
+                                Log.d("RecommendationsFrag", "Using drawable resId=$resId for POI='${poi.name}' category='${poi.category}'")
+                                // Render drawable into a bitmap at desired marker size so osmdroid shows it reliably
+                                val markerSize = 88
+                                val bmpIcon = Bitmap.createBitmap(markerSize, markerSize, Bitmap.Config.ARGB_8888)
+                                val canvasIcon = Canvas(bmpIcon)
+                                // Draw circular background first to match MapIconUtils style
+                                val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+                                bgPaint.style = Paint.Style.FILL
+                                bgPaint.color = MapIconUtils.getCategoryColor(poi.category)
+                                canvasIcon.drawCircle(markerSize/2f, markerSize/2f, markerSize/2f - 2f, bgPaint)
+                                val stroke = Paint(Paint.ANTI_ALIAS_FLAG)
+                                stroke.style = Paint.Style.STROKE
+                                stroke.strokeWidth = 3f
+                                stroke.color = android.graphics.Color.WHITE
+                                canvasIcon.drawCircle(markerSize/2f, markerSize/2f, markerSize/2f - 2f, stroke)
+                                // Scale drawable to fit inside the circle
+                                val targetSize = (markerSize * 0.72f).toInt()
+                                val left = (markerSize - targetSize) / 2
+                                val top = (markerSize - targetSize) / 2
+                                d.setBounds(left, top, left + targetSize, top + targetSize)
+                                d.draw(canvasIcon)
+                                icon = android.graphics.drawable.BitmapDrawable(requireContext().resources, bmpIcon)
+                                Log.d("RecommendationsFrag", "Rendered drawable into bitmap for POI='${poi.name}' -> ${bmpIcon.width}x${bmpIcon.height}")
+                            } catch (e: Exception) {
+                                Log.w("RecommendationsFrag", "Failed to render drawable resId=$resId for POI='${poi.name}', falling back", e)
+                                // If drawing drawable fails, fall back to bitmap generator
+                                val bmp = MapIconUtils.createPoiIconPreferDrawable(requireContext(), poi, 88)
+                                icon = android.graphics.drawable.BitmapDrawable(requireContext().resources, bmp)
+                            }
+                        } else {
+                            Log.d("RecommendationsFrag", "No drawable found for resId=$resId for POI='${poi.name}', using MapIconUtils")
+                            val bmp = MapIconUtils.createPoiIconPreferDrawable(requireContext(), poi, 88)
+                            icon = android.graphics.drawable.BitmapDrawable(requireContext().resources, bmp)
+                        }
+                    } catch (e: Exception) {
+                        // fallback: simple colored circle
+                        val fallbackBmp = Bitmap.createBitmap(72, 72, Bitmap.Config.ARGB_8888)
+                        val canvas = Canvas(fallbackBmp)
+                        val p = Paint(Paint.ANTI_ALIAS_FLAG)
+                        p.style = Paint.Style.FILL
+                        p.color = MapIconUtils.getCategoryColor(poi.category)
+                        canvas.drawCircle(36f, 36f, 34f, p)
+                        icon = android.graphics.drawable.BitmapDrawable(requireContext().resources, fallbackBmp)
+                    }
+                    setOnMarkerClickListener { _, _ ->
+                        val bottom = POIDetailBottomSheet(poi)
+                        bottom.show(parentFragmentManager, "poi_detail")
+                        true
+                    }
+                }
+                map.overlays.add(marker)
+                recMapMarkers.add(marker)
+            }
+            try { map.invalidate() } catch (_: Exception) {}
+        } catch (e: Exception) {
+            Log.w("RecommendationsFrag", "updateMapMarkers failed", e)
+        }
+    }
 
     private fun observeViewModel() {
         // Observe shared ViewModel for route recommendations
         sharedViewModel.recommendations.observe(viewLifecycleOwner) { recommendations ->
             if (recommendations.isNotEmpty()) {
                 allPois = recommendations
-                showTownsList(recommendations)
+                // Towns list UI removed — directly show POIs instead
+                updateRecommendationsList(recommendations)
             }
         }
 
         // Fallback to local ViewModel for general recommendations
         viewModel.recommendations.observe(viewLifecycleOwner) { recommendations ->
-            if (!sharedViewModel.hasRecommendations() && recommendations.isNotEmpty()) {
+            Log.i("RecommendationsFrag", "viewModel.recommendations observed: count=${recommendations.size}, showingTowns=$showingTowns, sharedHas=${sharedViewModel.hasRecommendations()}, forceShowPois=$forceShowPois")
+            if (recommendations.isNotEmpty()) {
                 allPois = recommendations
-                showTownsList(recommendations)
+                // If the user explicitly requested POIs via FAB, force showing POIs and clear the flag.
+                if (forceShowPois) {
+                    forceShowPois = false
+                    Log.i("RecommendationsFrag", "Force-displaying POIs due to user request")
+                    updateRecommendationsList(recommendations)
+                    return@observe
+                }
+                // Otherwise follow normal behavior driven by showingTowns
+                if (!showingTowns) {
+                    Log.i("RecommendationsFrag", "Displaying POIs directly (user expected)")
+                    updateRecommendationsList(recommendations)
+                } else {
+                    Log.i("RecommendationsFrag", "Displaying towns list (default behavior)")
+                    showTownsList(recommendations)
+                }
+            } else {
+                Log.i("RecommendationsFrag", "No recommendations in local ViewModel")
+                // If we had active category filters and this is the first empty result, retry without category filters
+                if (lastEffectiveCategories.isNotEmpty() && !didRelaxOnce) {
+                    didRelaxOnce = true
+                    Log.i("RecommendationsFrag", "Empty results with active filters — retrying without category filters to avoid empty UI")
+                    Toast.makeText(requireContext(), "No POIs matched filters — showing relaxed results", Toast.LENGTH_SHORT).show()
+                    fetchWithCurrentFilters(emptySet())
+                    return@observe
+                }
             }
         }
 
@@ -735,7 +731,35 @@ class RecommendationsFragment : Fragment() {
         viewModel.isLoading.observe(viewLifecycleOwner) { loading ->
             if (!sharedViewModel.hasRecommendations()) {
                 binding.progressLoading.visibility = if (loading) View.VISIBLE else View.GONE
+                // stop the swipe refresh when loading is done
+                if (!loading) binding.swipeRefresh?.isRefreshing = false
             }
+        }
+    }
+
+    private fun getModelAuc(): String {
+        // read metadata file and return auc if present
+        return try {
+            val metaStream = requireContext().assets.open("models/model_metadata.json")
+            val content = metaStream.bufferedReader().use { it.readText() }
+            val j = org.json.JSONObject(content)
+            val metrics = j.optJSONObject("metrics")
+            val auc = metrics?.optDouble("auc", Double.NaN)
+            if (auc != null && !auc.isNaN()) "AUC: ${String.format("%.3f", auc)}" else "AUC: n/a"
+        } catch (e: Exception) {
+            "AUC: n/a"
+        }
+    }
+
+    // New helper to sort POIs according to the selected sort option.
+    private fun sortPois(list: List<Poi>): List<Poi> {
+        val opt = sortBy ?: return list
+        return when (opt) {
+            SortOption.DISTANCE -> list.sortedWith(compareBy { poi ->
+                if (poi.lat != null && poi.lon != null) GeoUtils.haversine(userLat, userLon, poi.lat!!, poi.lon!!) else Double.MAX_VALUE
+            })
+            SortOption.SCENIC_SCORE -> list.sortedWith(compareByDescending<Poi> { it.scenicScore ?: 0f }.thenBy { it.name ?: "" })
+            SortOption.NAME -> list.sortedBy { it.name?.lowercase(Locale.ROOT) ?: "" }
         }
     }
 
@@ -745,20 +769,12 @@ class RecommendationsFragment : Fragment() {
     }
 }
 
-<<<<<<< Updated upstream
-class RecommendationsAdapter(
-    private var items: List<Poi>,
-    private var userLat: Double = 14.5995,
-    private var userLon: Double = 120.9842
-) : RecyclerView.Adapter<RecommendationsAdapter.ViewHolder>() {
-=======
 class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolder>(DIFF) {
     var userLat: Double = 14.5995
     var userLon: Double = 120.9842
     var onLikeClick: ((Poi) -> Unit)? = null
     var onPoiClick: ((Poi) -> Unit)? = null
     private val PAYLOAD_USER_LOCATION = "payload_user_location"
->>>>>>> Stashed changes
 
     class ViewHolder(val binding: com.example.scenic_navigation.databinding.PoiItemBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -767,14 +783,6 @@ class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolde
         return ViewHolder(binding)
     }
 
-<<<<<<< Updated upstream
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val item = items[position]
-        with(holder.binding) {
-            tvName.text = item.name
-            tvCategory.text = item.category?.uppercase() ?: "POI"
-            tvDescription.text = item.description
-=======
     override fun getItemId(position: Int): Long {
         val item = getItem(position)
         // Use canonicalKey hash as stable id
@@ -855,27 +863,44 @@ class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolde
                  iconBackground.background.setTint(bgColor)
              } catch (_: Exception) {}
 
-            // Set like button based on persisted curated POIs stored in shared prefs using canonical key
-            try {
-                val prefs = holder.binding.root.context.getSharedPreferences("scenic_prefs", Context.MODE_PRIVATE)
-                val curated = prefs.getStringSet("curated_pois", emptySet()) ?: emptySet()
-                val key = RecommendationsAdapter.canonicalKey(item)
-                if (curated.contains(key)) {
-                    btnLike.setImageResource(R.drawable.ic_favorite_24)
-                } else {
-                    btnLike.setImageResource(R.drawable.ic_favorite_border_24)
-                }
-            } catch (_: Exception) {}
->>>>>>> Stashed changes
+            // Like button handling — the fragment will set onLikeClick and maintain curated state
+            btnLike.setOnClickListener {
+                Log.d("RecommendationsFrag", "btnLike clicked for ${item.name}")
+                onLikeClick?.invoke(item)
+            }
 
-            // Calculate and show distance
+            // POI item click handling — the fragment will set onPoiClick to plan routes
+            root.setOnClickListener {
+                Log.d("RecommendationsFrag", "POI item clicked for ${item.name}")
+                onPoiClick?.invoke(item)
+            }
+
+            // Like button state: use project drawables and apply tint
+            try {
+                val key = RecommendationsAdapter.canonicalKey(item)
+                val isFav = try { FavoriteStore.isFavorite(key) } catch (_: Exception) { false }
+                // Use our project's star vector assets for consistent UI
+                val res = btnLike.context.resources
+                if (isFav) {
+                    btnLike.setImageResource(R.drawable.ic_star_filled)
+                    btnLike.imageTintList = android.content.res.ColorStateList.valueOf(res.getColor(R.color.lakbay_yellow, null))
+                    btnLike.contentDescription = btnLike.context.getString(R.string.unlike_poi)
+                } else {
+                    btnLike.setImageResource(R.drawable.ic_star_outline)
+                    btnLike.imageTintList = android.content.res.ColorStateList.valueOf(res.getColor(R.color.text_secondary, null))
+                    btnLike.contentDescription = btnLike.context.getString(R.string.like_poi)
+                }
+                btnLike.isClickable = true
+                btnLike.isFocusable = true
+            } catch (_: Exception) {}
+
             if (item.lat != null && item.lon != null) {
-                val distanceMeters = haversine(userLat, userLon, item.lat!!, item.lon!!)
+                val distanceMeters = GeoUtils.haversine(userLat, userLon, item.lat!!, item.lon!!)
                 val distanceKm = distanceMeters / 1000.0
                 tvDistance.text = when {
-                    distanceKm < 1.0 -> "${(distanceMeters).toInt()} m"
-                    distanceKm < 10.0 -> String.format("%.1f km", distanceKm)
-                    else -> String.format("%.0f km", distanceKm)
+                    distanceKm < 1.0 -> String.format(Locale.ROOT, "%d m", distanceMeters.toInt())
+                    distanceKm < 10.0 -> String.format(Locale.ROOT, "%.1f km", distanceKm)
+                    else -> String.format(Locale.ROOT, "%.0f km", distanceKm)
                 }
                 tvDistance.visibility = View.VISIBLE
                 categoryBadge.visibility = View.VISIBLE
@@ -883,44 +908,12 @@ class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolde
                 tvDistance.visibility = View.GONE
                 categoryBadge.visibility = View.GONE
             }
-<<<<<<< Updated upstream
-=======
-
-            // Like button handling — the fragment will set onLikeClick and maintain curated state
-            btnLike.setOnClickListener {
-                onLikeClick?.invoke(item)
-            }
-
-            // POI item click handling — the fragment will set onPoiClick to plan routes
-            root.setOnClickListener {
-                onPoiClick?.invoke(item)
-            }
->>>>>>> Stashed changes
         }
     }
 
-    private fun haversine(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        val R = 6371000.0 // Earth radius in meters
-        val dLat = Math.toRadians(lat2 - lat1)
-        val dLon = Math.toRadians(lon2 - lon1)
-        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2)
-        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-        return R * c
-    }
-
-    override fun getItemCount(): Int = items.size
-
-    fun updateData(newItems: List<Poi>, lat: Double = userLat, lon: Double = userLon) {
-        items = newItems
+    fun updateUserLocation(lat: Double, lon: Double) {
         userLat = lat
         userLon = lon
-<<<<<<< Updated upstream
-        notifyDataSetChanged()
-    }
-}
-=======
         // Only notify that user location changed so onBindViewHolder can update distances only
         val count = currentList.size
         if (count > 0) notifyItemRangeChanged(0, count, PAYLOAD_USER_LOCATION)
@@ -948,4 +941,3 @@ class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolde
          }
      }
  }
->>>>>>> Stashed changes
