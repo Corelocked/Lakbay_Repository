@@ -52,7 +52,7 @@
     <string name="adventure">🎒 Adventure</string>
     <string name="relax">😌 Mag-relax</string>
     <string name="planning_route">Pinaplano ang ruta...</string>
-    <string name="scenic_destinations">Mga Scenic na Destinasyon</string>
+    <string name="scenic_destinations">Mag-tuklas</string>
     <string name="discover_description">✨ Tuklasin ang magagandang lugar para sa iyong susunod na adventure</string>
     <string name="filter_by_category">🔍 I-filter ayon sa Kategorya</string>
     <string name="dash_separator">--</string>
@@ -65,8 +65,16 @@
     <!-- POI Detail Bottom Sheet -->
     <string name="poi_title_placeholder">Pamagat ng POI</string>
     <string name="poi_description_placeholder">Maikling paglalarawan ng POI ay narito...</string>
-    <string name="navigate_button">Mag-navigate</string>
+    <string name="navigate_button">Tignan sa Google Maps</string>
     <string name="save_button">I-save</string>
+    <!-- Added for parity with default locale -->
+    <string name="poi_image_description">Preview na larawan para sa POI</string>
+    <string name="directions">Mga direksyon</string>
+    <string name="save">I-save</string>
+    <string name="nearby">Malapit</string>
+    <string name="send_to_phone">Ipadala sa telepono</string>
+    <string name="share">Ibahagi</string>
+    <string name="center_on_user">I-center sa user</string>
 
     <!-- Login/Signup -->
     <string name="log_in">Mag-log In</string>
@@ -82,13 +90,6 @@
     <string name="save_places_description">I-save ang mga lugar para bisitahin sa ibang pagkakataon</string>
 
     <!-- Recommendations Filter Chips -->
-    <string name="all_filter">Lahat</string>
-    <string name="scenic_filter">🏞️ Scenic</string>
-    <string name="coastal_filter">🌊 Coastal</string>
-    <string name="mountain_filter">⛰️ Bundok</string>
-    <string name="historic_filter">🏛️ Makasaysayan</string>
-    <string name="food_filter">🍽️ Pagkain</string>
-    <string name="nature_filter">🌳 Kalikasan</string>
     <string name="maximum_distance">📍 Pinakamalaking Distansya</string>
     <string name="sort_by">📊 Ayusin Ayon sa</string>
     <string name="distance_sort">Distansya</string>
@@ -104,16 +105,31 @@
 
     <!-- Settings -->
     <string name="settings_title">Mga Setting</string>
-    <string name="cluster_eps_title">Cluster EPS (metro)</string>
-    <string name="cluster_eps_dialog_title">Cluster EPS (metro)</string>
-    <string name="min_points_title">Pinakamababang puntos bawat cluster</string>
-    <string name="min_points_dialog_title">Pinakamababang puntos bawat cluster</string>
     <string name="reset_defaults_title">Ibalik sa default</string>
-    <string name="reset_defaults_summary">Ibalik ang mga default na halaga</string>
-    <string name="prefer_coastal_title">Paboran ang coastal sets para sa mahahabang oceanic trips</string>
-    <string name="prefer_coastal_summary">Kapag naka-enable, ang mahahabang oceanic routes ay paboran ang built-in coastal waypoint sets.</string>
+    <string name="reset_defaults_summary">I-reset ang personalization, estilo ng mapa, at wika sa default</string>
     <string name="map_style_title">Estilo ng Mapa</string>
     <string name="map_style_summary">Piliin ang estilo ng map tile</string>
     <string name="language_title">Wika</string>
     <string name="language_summary">Piliin ang wika ng app</string>
+    <!-- Added translations so locale keys match default strings.xml -->
+    <string name="default_distance_value">50 km</string>
+    <string name="map_emoji">🗺️</string>
+    <string name="personalization_title">I-personalize ang mga rekomendasyon</string>
+    <string name="personalization_summary">Paganahin ang paggamit ng iyong interaksyon para iangkop ang mga rekomendadong lugar (lokal na iniimbak)</string>
+    <string name="personalization_enabled_summary">Personalization AY ON — ang mga rekomendasyon ay nag-aangkop sa iyong interaksyon</string>
+    <string name="personalization_disabled_summary">Personalization AY OFF — ang mga rekomendasyon ay gumagamit lamang ng pangkalahatang signal</string>
+    <string name="distance_value_fmt">%1$d km</string>
+    <string name="no_scenic_destinations">Walang natagpuang scenic destinations. Subukan magplano ng ruta o suriin ang iyong koneksyon.</string>
+    <string name="no_pois_match_filters">Walang POI na tumutugma sa iyong mga filter.\nSubukang ayusin ang distance o category filters.</string>
+    <string name="no_pois_found_in_town">Walang POI na natagpuan sa %1$s.</string>
+    <string name="no_recommendations_available">Walang mga rekomendasyon na magagamit.\nMagplano muna ng ruta para makita ang mga rekomendasyon sa daan!</string>
+    <string name="poi_fallback">POI</string>
+    <string name="like_poi">Gusto ang POI</string>
+    <string name="poi_liked">Nagustuhan ang %1$s</string>
+    <string name="curate_now">I-curate ngayon</string>
+    <string name="poi_rating_star">Bituin ng rating ng POI</string>
+
+    <!-- Accessibility / overlay toggle strings (Filipino) -->
+    <string name="app_logo_desc">Logo ng app</string>
+    <string name="toggle_route_overlay">I-toggle ang route overlay</string>
 </resources>

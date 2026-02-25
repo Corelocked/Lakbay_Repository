@@ -58,12 +58,11 @@
     <color name="lakbay_red">#FE4740</color>
     <color name="lakbay_blue">#0B4AFD</color>
     <color name="lakbay_yellow">#EECE08</color>
-<<<<<<< Updated upstream
-=======
+
     <!-- Additional lakbay category colors used in RecommendationsFragment tinting -->
     <color name="lakbay_green">#66BB6A</color>
     <color name="lakbay_cyan">#26C6DA</color>
     <color name="lakbay_orange">#FF6F00</color>
     <color name="lakbay_purple">#8E24AA</color>
->>>>>>> Stashed changes
+
 </resources>

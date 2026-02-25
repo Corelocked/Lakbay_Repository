@@ -27,12 +27,20 @@ class MlFeatureExtractor {
         val timeSin = sin(angle).toFloat()
         val timeCos = cos(angle).toFloat()
 
-        val catFood = if (poi.category.equals("food", ignoreCase = true)) 1f else 0f
-        val catSight = if (poi.category.equals("sight", ignoreCase = true) || poi.category.equals("viewpoint", ignoreCase = true)) 1f else 0f
+        // Categories in the dataset are often slash-separated (e.g. "Restaurant/Romantic").
+        // Split and check for common tokens so feature flags match the dataset values.
+        val catTokens = poi.category?.split("/")?.map { it.trim().lowercase() } ?: emptyList()
+        val catFood = if (catTokens.any { it.contains("restaurant") || it.contains("food") || it.contains("cafe") || it.contains("pasalubong") || it.contains("deli") }) 1f else 0f
+        val catSight = if (catTokens.any { it.contains("viewpoint") || it.contains("tourist") || it.contains("attraction") || it.contains("scenic") || it.contains("view") || it.contains("museum") || it.contains("historical") }) 1f else 0f
 
         val hasMunicipality = if (!poi.municipality.isNullOrBlank()) 1f else 0f
 
-        return floatArrayOf(distNorm, timeSin, timeCos, catFood, catSight, scenicScore, hasMunicipality)
+        // The trainer expects `scenicScore` in the range 0..1. App-side scenic scores are
+        // stored on a larger scale (boosts applied in planner). Normalize here to match
+        // training by capping at 250 (historic cap used elsewhere) and clamping to [0,1].
+        val scenicNorm = (scenicScore / 250f).coerceIn(0f, 1f)
+
+        return floatArrayOf(distNorm, timeSin, timeCos, catFood, catSight, scenicNorm, hasMunicipality)
     }
 
     private fun haversineMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {

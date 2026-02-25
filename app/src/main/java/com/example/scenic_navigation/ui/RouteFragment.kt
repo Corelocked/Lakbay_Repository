@@ -22,6 +22,7 @@ import com.example.scenic_navigation.models.ActivityType
 import com.example.scenic_navigation.models.SeeingType
 import com.example.scenic_navigation.models.CurationIntent
 import com.example.scenic_navigation.services.LocationService
+import com.example.scenic_navigation.utils.MapIconUtils
 import com.example.scenic_navigation.utils.OffRouteDetector
 import com.example.scenic_navigation.viewmodel.RouteViewModel
 import com.example.scenic_navigation.viewmodel.SharedRouteViewModel
@@ -170,6 +171,10 @@ class RouteFragment : Fragment(), SensorEventListener {
             // fallback: try to create programmatically
             createEndRouteButton()
         }
+
+        // Initialize button elevations: card starts expanded, so buttons should be behind it
+        binding.btnCenter.translationZ = -10f
+        view.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.translationZ = -10f
     }
 
     private var clusterPollRunnable: Runnable? = null
@@ -537,6 +542,16 @@ class RouteFragment : Fragment(), SensorEventListener {
                 .scaleY(0.95f)
                 .setDuration(200)
                 .start()
+
+            // Reset button elevation to normal when collapsed
+            binding.btnCenter.translationZ = 0f
+            view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.translationZ = 0f
+
+            // Hide the legend overlay in the parent Activity to avoid overlap
+            try {
+                val overlay = activity?.findViewById<View>(R.id.legend_overlay_card)
+                overlay?.visibility = View.VISIBLE
+            } catch (_: Exception) {}
         } else {
             // Expand the inputs
             binding.collapsibleContent.visibility = View.VISIBLE
@@ -548,6 +563,16 @@ class RouteFragment : Fragment(), SensorEventListener {
                 .scaleY(1.0f)
                 .setDuration(200)
                 .start()
+
+            // Lower button elevation so they appear behind the expanded card
+            binding.btnCenter.translationZ = -10f
+            view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.translationZ = -10f
+
+            // Show the legend overlay again when inputs expand
+            try {
+                val overlay = activity?.findViewById<View>(R.id.legend_overlay_card)
+                overlay?.visibility = View.GONE
+            } catch (_: Exception) {}
         }
     }
 
@@ -579,6 +604,15 @@ class RouteFragment : Fragment(), SensorEventListener {
             binding.cardInput.isEnabled = !loading
             sharedViewModel.setLoading(loading)
             binding.progressOverlay.visibility = if (loading) View.VISIBLE else View.GONE
+
+            // Dim and disable the floating action buttons during loading
+            val buttonAlpha = if (loading) 0.3f else 1.0f
+            binding.btnCenter.alpha = buttonAlpha
+            binding.btnCenter.isEnabled = !loading
+            view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.apply {
+                alpha = buttonAlpha
+                isEnabled = !loading
+            }
         }
 
         // Observe phased loading flags for more granular UI
@@ -626,10 +660,7 @@ class RouteFragment : Fragment(), SensorEventListener {
                 binding.tvStatus.text = it
                 sharedViewModel.setStatusMessage(it)
 
-                // Show as Snackbar for important messages
-                if (!viewModel.isLoading.value!!) {
-                    Snackbar.make(binding.root, it, Snackbar.LENGTH_SHORT).show()
-                }
+                // Status messages shown only in overlay, no Snackbar popup
                 // update overlay status text if visible
                 binding.tvOverlayStatus.text = it
             }
@@ -850,12 +881,20 @@ class RouteFragment : Fragment(), SensorEventListener {
             if (!isNavigating && locationService.hasLocationPermission()) {
                 startLocationTracking()
             }
+
+            // Show the End Route button when a route is active (handle both XML and programmatic buttons)
+            view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.visibility = View.VISIBLE
+            (view as? ViewGroup)?.findViewWithTag<View>("end_route_btn")?.visibility = View.VISIBLE
         } else {
             // Stop tracking when no route
             if (isNavigating) {
                 stopLocationTracking()
             }
             offRouteDetector = null
+
+            // Hide the End Route button when no route is active (handle both XML and programmatic buttons)
+            view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.visibility = View.GONE
+            (view as? ViewGroup)?.findViewWithTag<View>("end_route_btn")?.visibility = View.GONE
         }
     }
 
@@ -880,12 +919,12 @@ class RouteFragment : Fragment(), SensorEventListener {
                     snippet = poi.description
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                     try {
-                        val bmp = createPoiIcon(poi)
+                        val bmp = MapIconUtils.createPoiIconPreferDrawable(requireContext(), poi, 88)
                         icon = BitmapDrawable(requireContext().resources, bmp)
                         Log.d("RouteFragment", "Assigned POI icon for '${poi.name}' (bmp ${bmp.width}x${bmp.height}) [declustered]")
                     } catch (e: Exception) {
                         Log.w("RouteFragment", "Failed to create POI icon, using fallback", e)
-                        val color = getCategoryColor(poi.category)
+                        val color = MapIconUtils.getCategoryColor(poi.category)
                         val fallback = createSolidCircleDrawable(color, 72)
                         DrawableCompat.setTintList(fallback, null)
                         fallback.clearColorFilter()
@@ -992,12 +1031,12 @@ class RouteFragment : Fragment(), SensorEventListener {
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                     // Use custom icon based on category and scenic score
                     try {
-                        val bmp = createPoiIcon(poi)
+                        val bmp = MapIconUtils.createPoiIconPreferDrawable(requireContext(), poi, 88)
                         icon = BitmapDrawable(requireContext().resources, bmp)
                         Log.d("RouteFragment", "Assigned POI icon for '${poi.name}' (bmp ${bmp.width}x${bmp.height})")
                     } catch (e: Exception) {
                         Log.w("RouteFragment", "Failed to create POI icon, using fallback", e)
-                        val color = getCategoryColor(poi.category)
+                        val color = MapIconUtils.getCategoryColor(poi.category)
                         val fallback = createSolidCircleDrawable(color, 72)
                         DrawableCompat.setTintList(fallback, null)
                         fallback.clearColorFilter()
@@ -1078,61 +1117,6 @@ class RouteFragment : Fragment(), SensorEventListener {
         return drawable
     }
 
-    private fun getCategoryColor(category: String?): Int {
-        val cat = category?.lowercase() ?: ""
-        return when {
-            cat.contains("beach") || cat.contains("coast") || cat.contains("ocean") || cat.contains("sea") -> android.graphics.Color.parseColor("#0288D1") // blue
-            cat.contains("mount") || cat.contains("hike") || cat.contains("view") -> android.graphics.Color.parseColor("#2E7D32") // green
-            cat.contains("historic") || cat.contains("church") || cat.contains("monument") -> android.graphics.Color.parseColor("#FFA000") // amber
-            else -> android.graphics.Color.parseColor("#1976D2") // default primary
-        }
-    }
-
-    // Create a small circular icon for a POI with the initial letter and color by category
-    private fun createPoiIcon(poi: com.example.scenic_navigation.models.Poi): Bitmap {
-        val size = 72
-        val radius = size / 2f
-        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bmp)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        paint.style = Paint.Style.FILL
-        paint.alpha = 255
-        val fill = getCategoryColor(poi.category)
-        paint.color = fill
-        canvas.drawCircle(radius, radius, radius - 2f, paint)
-
-        // draw white stroke for contrast
-        val stroke = Paint(Paint.ANTI_ALIAS_FLAG)
-        stroke.style = Paint.Style.STROKE
-        stroke.strokeWidth = 3f
-        stroke.color = android.graphics.Color.WHITE
-        canvas.drawCircle(radius, radius, radius - 2f, stroke)
-
-        val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        textPaint.color = android.graphics.Color.WHITE
-        textPaint.textSize = 28f
-        textPaint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        textPaint.isFakeBoldText = true
-        val letter = poi.name.trim().takeIf { it.isNotEmpty() }?.get(0)?.uppercaseChar() ?: '?'
-        val text = letter.toString()
-        val textWidth = textPaint.measureText(text)
-        val fm = textPaint.fontMetrics
-        val x = (size - textWidth) / 2f
-        val y = (size - fm.ascent - fm.descent) / 2f
-        canvas.drawText(text, x, y, textPaint)
-
-        // Debug: log center pixel color to help diagnose gray icon issue
-        try {
-            val cx = size / 2
-            val cy = size / 2
-            val centerColor = bmp.getPixel(cx, cy)
-            Log.d("RouteFragment", "createPoiIcon centerColor=#${Integer.toHexString(centerColor)} for poi='${poi.name}' category='${poi.category}'")
-        } catch (e: Exception) {
-            Log.w("RouteFragment", "Failed to read center pixel of POI icon", e)
-        }
-
-        return bmp
-    }
 
     private fun createClusterIcon(count: Int, avgScore: Float): Bitmap {
         val size = 120
@@ -1214,13 +1198,7 @@ class RouteFragment : Fragment(), SensorEventListener {
     private fun handleOffRoute(location: Location) {
         val newStart = GeoPoint(location.latitude, location.longitude)
 
-        Snackbar.make(
-            binding.root,
-            "You're off route! Recalculating...",
-            Snackbar.LENGTH_LONG
-        ).show()
-
-        // Recalculate route from current location
+        // Recalculate route from current location silently
         viewModel.recalculateRouteFromLocation(newStart)
     }
 
@@ -1344,10 +1322,8 @@ class RouteFragment : Fragment(), SensorEventListener {
         firestoreRepo.saveSelection(uid, intent) { success, error ->
             if (!success) {
                 Snackbar.make(binding.root, "Failed to save selection: ${error ?: "unknown"}", Snackbar.LENGTH_LONG).show()
-            } else {
-                // Optionally give feedback that the selection was saved
-                Snackbar.make(binding.root, "Selection saved", Snackbar.LENGTH_SHORT).show()
             }
+            // Selection saved silently without notification
         }
     }
 
@@ -1505,6 +1481,7 @@ class RouteFragment : Fragment(), SensorEventListener {
                 text = "End Route"
                 isAllCaps = false
                 setPadding(20, 12, 20, 12)
+                visibility = View.GONE  // Initially hidden until route is active
                 // Style for visibility (use default system button background)
                 setBackgroundResource(android.R.drawable.btn_default)
                 setOnClickListener {
@@ -1540,6 +1517,10 @@ class RouteFragment : Fragment(), SensorEventListener {
              offRouteDetector = null
              isNavigating = false
 
+             // Hide the End Route button (handle both XML and programmatic buttons)
+             view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.visibility = View.GONE
+             (view as? ViewGroup)?.findViewWithTag<View>("end_route_btn")?.visibility = View.GONE
+
              // Remove route overlays
              try { routePolyline?.let { binding.map.overlays.remove(it); routePolyline = null } } catch (_: Exception) {}
              try { traveledPolyline?.let { binding.map.overlays.remove(it); traveledPolyline = null } } catch (_: Exception) {}
@@ -1552,7 +1533,11 @@ class RouteFragment : Fragment(), SensorEventListener {
 
              binding.map.invalidate()
 
-             // Clear shared route state so other fragments/activities know the route ended
+             // Clear route data from both ViewModels to prevent re-generation when navigating back
+             try {
+                 viewModel.clearRoute()
+             } catch (_: Exception) {}
+
              try {
                  sharedViewModel.updateRouteData(emptyList(), emptyList())
              } catch (_: Exception) {}
@@ -1587,8 +1572,28 @@ class RouteFragment : Fragment(), SensorEventListener {
                 try { binding.tvOverlayStatus.text = "" } catch (_: Exception) {}
             } catch (_: Exception) {}
 
-             // Optionally notify user
-             try { Snackbar.make(binding.root, "Route ended", Snackbar.LENGTH_SHORT).show() } catch (_: Exception) {}
+             // Expand the curate menu to allow planning a new route
+             try {
+                 if (isInputCollapsed) {
+                     isInputCollapsed = false
+                     binding.collapsibleContent.visibility = View.VISIBLE
+                     binding.btnCollapse.text = "▼"
+                     binding.cardInput.animate()
+                         .alpha(1.0f)
+                         .scaleY(1.0f)
+                         .setDuration(200)
+                         .start()
+                     // Lower button elevation so they appear behind the expanded card
+                     binding.btnCenter.translationZ = -10f
+                     view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.translationZ = -10f
+
+                     // Ensure the overlay is visible when the input is expanded (end of route resets UI)
+                     try {
+                         val overlay = activity?.findViewById<View>(R.id.legend_overlay_card)
+                         overlay?.visibility = View.VISIBLE
+                     } catch (_: Exception) {}
+                 }
+             } catch (_: Exception) {}
          } catch (e: Exception) {
              Log.w("RouteFragment", "Failed to end route cleanly", e)
              try { Snackbar.make(binding.root, "Failed to end route", Snackbar.LENGTH_SHORT).show() } catch (_: Exception) {}
