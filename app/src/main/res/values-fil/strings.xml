@@ -128,4 +128,8 @@
     <string name="poi_liked">Nagustuhan ang %1$s</string>
     <string name="curate_now">I-curate ngayon</string>
     <string name="poi_rating_star">Bituin ng rating ng POI</string>
+
+    <!-- Accessibility / overlay toggle strings (Filipino) -->
+    <string name="app_logo_desc">Logo ng app</string>
+    <string name="toggle_route_overlay">I-toggle ang route overlay</string>
 </resources>

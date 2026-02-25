@@ -546,6 +546,12 @@ class RouteFragment : Fragment(), SensorEventListener {
             // Reset button elevation to normal when collapsed
             binding.btnCenter.translationZ = 0f
             view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.translationZ = 0f
+
+            // Hide the legend overlay in the parent Activity to avoid overlap
+            try {
+                val overlay = activity?.findViewById<View>(R.id.legend_overlay_card)
+                overlay?.visibility = View.VISIBLE
+            } catch (_: Exception) {}
         } else {
             // Expand the inputs
             binding.collapsibleContent.visibility = View.VISIBLE
@@ -561,6 +567,12 @@ class RouteFragment : Fragment(), SensorEventListener {
             // Lower button elevation so they appear behind the expanded card
             binding.btnCenter.translationZ = -10f
             view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.translationZ = -10f
+
+            // Show the legend overlay again when inputs expand
+            try {
+                val overlay = activity?.findViewById<View>(R.id.legend_overlay_card)
+                overlay?.visibility = View.GONE
+            } catch (_: Exception) {}
         }
     }
 
@@ -1574,6 +1586,12 @@ class RouteFragment : Fragment(), SensorEventListener {
                      // Lower button elevation so they appear behind the expanded card
                      binding.btnCenter.translationZ = -10f
                      view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.translationZ = -10f
+
+                     // Ensure the overlay is visible when the input is expanded (end of route resets UI)
+                     try {
+                         val overlay = activity?.findViewById<View>(R.id.legend_overlay_card)
+                         overlay?.visibility = View.VISIBLE
+                     } catch (_: Exception) {}
                  }
              } catch (_: Exception) {}
          } catch (e: Exception) {
