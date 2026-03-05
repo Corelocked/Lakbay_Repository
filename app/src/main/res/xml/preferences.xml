@@ -2,6 +2,13 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <!-- Telemetry opt-in: controlled by SettingsStore(KEY_TELEMETRY = "telemetry_enabled") -->
+    <SwitchPreference
+        android:key="telemetry_enabled"
+        android:title="Enable Telemetry (opt-in)"
+        android:defaultValue="false"
+        android:summary="When enabled, the app will locally record anonymized events for debugging and QA" />
+
     <SwitchPreference
         android:key="personalization_enabled"
         android:title="@string/personalization_title"
