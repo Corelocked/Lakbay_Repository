@@ -14,6 +14,7 @@ If you want a short orientation, start by reading:
 Table of contents
 - Project overview
 - Dependencies & SDKs
+- Developer Setup & Firebase Configuration
 - High-level architecture
 - Routing flow (how routes are generated & selected)
 - POI discovery & clustering
@@ -49,6 +50,15 @@ Key libraries (as found in the project files):
 - Firebase (Auth and Firestore) — used for saving/reading user curation (`FirestoreRepository`) and referenced in Gradle BoM
 - TensorFlow Lite (`org.tensorflow:tensorflow-lite`) — used in `MlInferenceEngine.kt` to run the reranker model
 - Kotlin coroutines (background processing)
+
+Developer Setup & Firebase Configuration
+To maintain security, sensitive configuration files like google-services.json are excluded from this repository. To run Lakbay_Prototype locally, you must provide your own Firebase configuration.
+
+1. Firebase Project Setup
+   - Go to the Firebase Console and create a new project.
+   - Add an Android App to your project.
+   - Use the package name found in the app/build.gradle file (e.g., com.example.package_name).
+   - Download the google-services.json file and place it in the app/ directory of this project.
 
 High-level architecture
 
