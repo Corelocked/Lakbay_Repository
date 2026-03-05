@@ -52,6 +52,7 @@ Key libraries (as found in the project files):
 - Kotlin coroutines (background processing)
 
 Developer Setup & Firebase Configuration
+
 To maintain security, sensitive configuration files like google-services.json are excluded from this repository. To run Lakbay_Prototype locally, you must provide your own Firebase configuration.
 
 1. Firebase Project Setup
