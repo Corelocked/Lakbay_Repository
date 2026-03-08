@@ -24,13 +24,20 @@
         android:layout_marginStart="8dp"
         android:layout_marginBottom="8dp" />
 
+    <!-- Wrapper: input card + ETA/distance overlay stacked vertically -->
+    <LinearLayout
+        android:id="@+id/top_panel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:orientation="vertical"
+        android:layout_margin="12dp">
+
     <!-- Input Card - Collapsible with cleaner design -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/card_input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:layout_gravity="top"
         app:cardCornerRadius="20dp"
         app:cardElevation="6dp"
         app:cardBackgroundColor="@color/card_background">
@@ -277,6 +284,66 @@
             </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
+
+    <!-- ETA / Distance overlay card: shown only when the input card is collapsed -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/legend_overlay_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:visibility="gone"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="6dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:strokeWidth="0dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:gravity="center_vertical">
+
+            <!-- Distance -->
+            <ImageView
+                android:id="@+id/iv_overlay_distance_icon"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_pin_red"
+                android:contentDescription="@string/overlay_distance_icon_desc"
+                android:layout_marginEnd="6dp" />
+
+            <TextView
+                android:id="@+id/tv_overlay_distance"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/overlay_distance_placeholder"
+                android:textSize="13sp"
+                android:textColor="@color/text_primary" />
+
+            <!-- ETA -->
+            <ImageView
+                android:id="@+id/iv_overlay_eta_icon"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_user_arrow"
+                android:contentDescription="@string/overlay_eta_icon_desc"
+                android:layout_marginEnd="6dp" />
+
+            <TextView
+                android:id="@+id/tv_overlay_eta"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/overlay_eta_placeholder"
+                android:textSize="13sp"
+                android:textColor="@color/text_primary" />
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
 
     <!-- Full-screen progress overlay (blocks interactions while loading) -->
     <FrameLayout
