@@ -547,10 +547,9 @@ class RouteFragment : Fragment(), SensorEventListener {
             binding.btnCenter.translationZ = 0f
             view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.translationZ = 0f
 
-            // Hide the legend overlay in the parent Activity to avoid overlap
+            // Show the legend overlay card when the input card is collapsed
             try {
-                val overlay = activity?.findViewById<View>(R.id.legend_overlay_card)
-                overlay?.visibility = View.VISIBLE
+                binding.legendOverlayCard.visibility = View.VISIBLE
             } catch (_: Exception) {}
         } else {
             // Expand the inputs
@@ -568,10 +567,9 @@ class RouteFragment : Fragment(), SensorEventListener {
             binding.btnCenter.translationZ = -10f
             view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.translationZ = -10f
 
-            // Show the legend overlay again when inputs expand
+            // Hide the legend overlay card when the input card is expanded
             try {
-                val overlay = activity?.findViewById<View>(R.id.legend_overlay_card)
-                overlay?.visibility = View.GONE
+                binding.legendOverlayCard.visibility = View.GONE
             } catch (_: Exception) {}
         }
     }
@@ -635,7 +633,10 @@ class RouteFragment : Fragment(), SensorEventListener {
         viewModel.routeDistanceMeters.observe(viewLifecycleOwner) { meters ->
             if (meters != null && meters > 0.0) {
                 val km = meters / 1000.0
+                val distText = if (km >= 1.0) "%.1f km".format(km) else "${meters.toInt()} m"
+                binding.tvOverlayDistance.text = distText
             } else {
+                binding.tvOverlayDistance.text = getString(R.string.overlay_distance_placeholder)
             }
         }
 
@@ -643,7 +644,10 @@ class RouteFragment : Fragment(), SensorEventListener {
             if (secs != null && secs > 0L) {
                 val hours = secs / 3600
                 val mins = (secs % 3600) / 60
+                val etaText = if (hours > 0) "${hours}h ${mins}m" else "${mins} min"
+                binding.tvOverlayEta.text = etaText
             } else {
+                binding.tvOverlayEta.text = getString(R.string.overlay_eta_placeholder)
             }
         }
 
@@ -1587,10 +1591,9 @@ class RouteFragment : Fragment(), SensorEventListener {
                      binding.btnCenter.translationZ = -10f
                      view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.translationZ = -10f
 
-                     // Ensure the overlay is visible when the input is expanded (end of route resets UI)
+                     // Ensure the overlay is hidden when the input is expanded (end of route resets UI)
                      try {
-                         val overlay = activity?.findViewById<View>(R.id.legend_overlay_card)
-                         overlay?.visibility = View.VISIBLE
+                         binding.legendOverlayCard.visibility = View.GONE
                      } catch (_: Exception) {}
                  }
              } catch (_: Exception) {}
