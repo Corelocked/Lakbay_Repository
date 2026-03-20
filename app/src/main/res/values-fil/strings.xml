@@ -42,19 +42,19 @@
     <string name="plan_your_journey">I-plano ang Iyong Paglalakbay</string>
     <string name="settings_emoji">⚙</string>
     <string name="dropdown_emoji">▼</string>
-    <string name="advanced_options">⚙️ Mga Advanced na Opsyon</string>
-    <string name="coastal_settings">🌊 Mga Coastal na Setting</string>
+    <string name="advanced_options">Mga Advanced na Opsyon</string>
+    <string name="coastal_settings">Mga Coastal na Setting</string>
     <string name="force_coastal_set">Pilitin ang coastal set</string>
-    <string name="subtypes_optional">🏷️ Mga Subtype (opsyonal)</string>
-    <string name="lakeside">🏞️ Tabi ng Lawa</string>
-    <string name="forest">🌲 Gubat</string>
-    <string name="hiking">🥾 Hiking</string>
-    <string name="adventure">🎒 Adventure</string>
-    <string name="relax">😌 Mag-relax</string>
+    <string name="subtypes_optional">🏷Mga Subtype (opsyonal)</string>
+    <string name="lakeside">Tabi ng Lawa</string>
+    <string name="forest">Gubat</string>
+    <string name="hiking">Hiking</string>
+    <string name="adventure">Adventure</string>
+    <string name="relax">Mag-relax</string>
     <string name="planning_route">Pinaplano ang ruta...</string>
     <string name="scenic_destinations">Mag-tuklas</string>
-    <string name="discover_description">✨ Tuklasin ang magagandang lugar para sa iyong susunod na adventure</string>
-    <string name="filter_by_category">🔍 I-filter ayon sa Kategorya</string>
+    <string name="discover_description">Tuklasin ang magagandang lugar para sa iyong susunod na adventure</string>
+    <string name="filter_by_category">I-filter ayon sa Kategorya</string>
     <string name="dash_separator">--</string>
     <string name="go_button">Pumunta</string>
 
@@ -83,15 +83,15 @@
     <string name="already_have_account">May account na? Mag-log in</string>
 
     <!-- Favorites -->
-    <string name="your_favorites">⭐ Iyong Mga Paborito</string>
+    <string name="your_favorites">Iyong Mga Paborito</string>
     <string name="favorites_description">Mga lugar na iyong nai-save para sa ibang pagkakataon</string>
     <string name="star_emoji">⭐</string>
     <string name="no_favorites_yet">Walang paborito pa</string>
     <string name="save_places_description">I-save ang mga lugar para bisitahin sa ibang pagkakataon</string>
 
     <!-- Recommendations Filter Chips -->
-    <string name="maximum_distance">📍 Pinakamalaking Distansya</string>
-    <string name="sort_by">📊 Ayusin Ayon sa</string>
+    <string name="maximum_distance">Pinakamalaking Distansya</string>
+    <string name="sort_by">Ayusin Ayon sa</string>
     <string name="distance_sort">Distansya</string>
     <string name="scenic_score_sort">Scenic Score</string>
     <string name="name_sort">Pangalan</string>

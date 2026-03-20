@@ -68,6 +68,8 @@ class RouteFragment : Fragment(), SensorEventListener {
     private var startMarker: Marker? = null
     private var destinationMarker: Marker? = null
     private var isInputCollapsed = false
+    // Track whether we have a non-empty route summary (distance/duration)
+    private var routeHasData = false
 
     // Location tracking
     private lateinit var locationService: LocationService
@@ -547,10 +549,8 @@ class RouteFragment : Fragment(), SensorEventListener {
             binding.btnCenter.translationZ = 0f
             view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.translationZ = 0f
 
-            // Show the legend overlay card when the input card is collapsed
-            try {
-                binding.legendOverlayCard.visibility = View.VISIBLE
-            } catch (_: Exception) {}
+            // Update overlay visibility based on collapse state and route data
+            updateLegendVisibility()
         } else {
             // Expand the inputs
             binding.collapsibleContent.visibility = View.VISIBLE
@@ -567,10 +567,8 @@ class RouteFragment : Fragment(), SensorEventListener {
             binding.btnCenter.translationZ = -10f
             view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.translationZ = -10f
 
-            // Hide the legend overlay card when the input card is expanded
-            try {
-                binding.legendOverlayCard.visibility = View.GONE
-            } catch (_: Exception) {}
+            // Update overlay visibility when expanded
+            updateLegendVisibility()
         }
     }
 
@@ -629,26 +627,44 @@ class RouteFragment : Fragment(), SensorEventListener {
             if (p) binding.tvOverlayStatus.text = getString(R.string.finding_pois_status)
         }
 
-        // Observe route summary values
+        // Observe route summary values and update overlay + visibility
         viewModel.routeDistanceMeters.observe(viewLifecycleOwner) { meters ->
-            if (meters != null && meters > 0.0) {
-                val km = meters / 1000.0
-                val distText = if (km >= 1.0) "%.1f km".format(km) else "${meters.toInt()} m"
-                binding.tvOverlayDistance.text = distText
-            } else {
-                binding.tvOverlayDistance.text = getString(R.string.overlay_distance_placeholder)
-            }
+            try {
+                if (meters != null && meters > 0.0) {
+                    val km = meters / 1000.0
+                    val text = if (km >= 1.0) {
+                        String.format(java.util.Locale.getDefault(), "%.1f km", km)
+                    } else {
+                        String.format(java.util.Locale.getDefault(), "%d m", meters.toInt())
+                    }
+                    // Replace placeholder dash with formatted distance
+                    binding.tvOverlayDistance.text = getString(R.string.overlay_distance_placeholder).replace("—", text)
+                    routeHasData = true
+                } else {
+                    binding.tvOverlayDistance.text = getString(R.string.overlay_distance_placeholder)
+                }
+            } catch (_: Exception) { }
+            updateLegendVisibility()
         }
 
         viewModel.routeDurationSeconds.observe(viewLifecycleOwner) { secs ->
-            if (secs != null && secs > 0L) {
-                val hours = secs / 3600
-                val mins = (secs % 3600) / 60
-                val etaText = if (hours > 0) "${hours}h ${mins}m" else "${mins} min"
-                binding.tvOverlayEta.text = etaText
-            } else {
-                binding.tvOverlayEta.text = getString(R.string.overlay_eta_placeholder)
-            }
+            try {
+                if (secs != null && secs > 0L) {
+                    val hours = secs / 3600
+                    val mins = (secs % 3600) / 60
+                    val text = if (hours > 0) {
+                        String.format(java.util.Locale.getDefault(), "%dh %02dm", hours, mins)
+                    } else {
+                        String.format(java.util.Locale.getDefault(), "%dm", mins)
+                    }
+                    // Replace placeholder dash with formatted ETA
+                    binding.tvOverlayEta.text = getString(R.string.overlay_eta_placeholder).replace("—", text)
+                    routeHasData = true
+                } else {
+                    binding.tvOverlayEta.text = getString(R.string.overlay_eta_placeholder)
+                }
+            } catch (_: Exception) { }
+            updateLegendVisibility()
         }
 
         viewModel.scenicScore.observe(viewLifecycleOwner) { score ->
@@ -688,6 +704,16 @@ class RouteFragment : Fragment(), SensorEventListener {
             // Update shared ViewModel only if both points and POIs are ready
             updateSharedViewModelIfReady()
         }
+    }
+
+    /**
+     * Controls visibility of the ETA/distance legend overlay card.
+     * It should only be visible when the input card is collapsed and we have
+     * non-empty route summary data.
+     */
+    private fun updateLegendVisibility() {
+        val shouldShow = isInputCollapsed && routeHasData
+        binding.legendOverlayCard.visibility = if (shouldShow) View.VISIBLE else View.GONE
     }
 
     private fun updateSharedViewModelIfReady() {
@@ -1576,8 +1602,12 @@ class RouteFragment : Fragment(), SensorEventListener {
                 try { binding.tvOverlayStatus.text = "" } catch (_: Exception) {}
             } catch (_: Exception) {}
 
-             // Expand the curate menu to allow planning a new route
+             // When ending a route, we no longer have valid route summary data.
+             // Reset the flag and expand the input card if it was collapsed, then
+             // let updateLegendVisibility() apply the correct overlay visibility.
              try {
+                 routeHasData = false
+
                  if (isInputCollapsed) {
                      isInputCollapsed = false
                      binding.collapsibleContent.visibility = View.VISIBLE
@@ -1590,12 +1620,9 @@ class RouteFragment : Fragment(), SensorEventListener {
                      // Lower button elevation so they appear behind the expanded card
                      binding.btnCenter.translationZ = -10f
                      view?.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.btn_end_route)?.translationZ = -10f
-
-                     // Ensure the overlay is hidden when the input is expanded (end of route resets UI)
-                     try {
-                         binding.legendOverlayCard.visibility = View.GONE
-                     } catch (_: Exception) {}
                  }
+
+                 updateLegendVisibility()
              } catch (_: Exception) {}
          } catch (e: Exception) {
              Log.w("RouteFragment", "Failed to end route cleanly", e)

@@ -42,19 +42,19 @@
     <string name="plan_your_journey">Plan Your Journey</string>
     <string name="settings_emoji">⚙</string>
     <string name="dropdown_emoji">▼</string>
-    <string name="advanced_options">⚙️ Advanced Options</string>
-    <string name="coastal_settings">🌊 Coastal Settings</string>
+    <string name="advanced_options">Advanced Options</string>
+    <string name="coastal_settings">Coastal Settings</string>
     <string name="force_coastal_set">Force coastal set</string>
-    <string name="subtypes_optional">🏷️ Subtypes (optional)</string>
-    <string name="lakeside">🏞️ Lakeside</string>
-    <string name="forest">🌲 Forest</string>
-    <string name="hiking">🥾 Hiking</string>
-    <string name="adventure">🎒 Adventure</string>
-    <string name="relax">😌 Relax</string>
+    <string name="subtypes_optional">🏷Subtypes (optional)</string>
+    <string name="lakeside">🏞Lakeside</string>
+    <string name="forest">Forest</string>
+    <string name="hiking">Hiking</string>
+    <string name="adventure">Adventure</string>
+    <string name="relax">Relax</string>
     <string name="planning_route">Planning route...</string>
     <string name="scenic_destinations">Discover</string>
-    <string name="discover_description">✨ Discover beautiful places for your next adventure</string>
-    <string name="filter_by_category">🔍 Filter by Category</string>
+    <string name="discover_description">Discover beautiful places for your next adventure</string>
+    <string name="filter_by_category">Filter by Category</string>
     <string name="dash_separator">--</string>
     <string name="go_button">Go</string>
 
@@ -88,14 +88,14 @@
     <string name="continue_with_google">Continue with Google</string>
 
     <!-- Favorites -->
-    <string name="your_favorites">⭐ Your Favorites</string>
+    <string name="your_favorites">Your Favorites</string>
     <string name="favorites_description">Places you\'ve saved for later</string>
     <string name="star_emoji">⭐</string>
     <string name="no_favorites_yet">No favorites yet</string>
     <string name="save_places_description">Save places to visit them later</string>
 
-    <string name="maximum_distance">📍 Maximum Distance</string>
-    <string name="sort_by">📊 Sort By</string>
+    <string name="maximum_distance">Maximum Distance</string>
+    <string name="sort_by">Sort By</string>
     <string name="distance_sort">Distance</string>
     <string name="scenic_score_sort">Scenic Score</string>
     <string name="name_sort">Name</string>
