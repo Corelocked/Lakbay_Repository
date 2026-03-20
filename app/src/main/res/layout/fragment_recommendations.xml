@@ -158,141 +158,148 @@
             </LinearLayout>
 
             <!-- Collapsible content: make clickable so empty areas consume taps -->
-            <LinearLayout
-                android:id="@+id/filter_collapsible_content"
+            <androidx.core.widget.NestedScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="12dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <!-- Seeing selection dropdown (exposed menu) -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/til_seeing"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                    android:hint="@string/seeing_hint"
-                    app:boxCornerRadiusBottomEnd="12dp"
-                    app:boxCornerRadiusBottomStart="12dp"
-                    app:boxCornerRadiusTopEnd="12dp"
-                    app:boxCornerRadiusTopStart="12dp"
-                    app:boxStrokeColor="@color/lakbay_yellow"
-                    app:hintTextColor="@color/black"
-                    android:layout_marginBottom="8dp">
-
-                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                        android:id="@+id/actv_seeing"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        style="@style/Widget.App.AutoCompleteTextView.Popup"
-                        android:inputType="none"
-                        android:entries="@array/seeing_options"
-                        />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Distance Filter -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/maximum_distance"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_primary"
-                    android:layout_marginTop="12dp"
-                    android:layout_marginBottom="6dp" />
+                android:fillViewport="true"
+                android:scrollbars="none">
 
                 <LinearLayout
+                    android:id="@+id/filter_collapsible_content"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    android:clickable="true"
+                    android:focusable="true">
 
-                    <com.google.android.material.slider.Slider
-                        android:id="@+id/slider_distance"
-                        android:layout_width="0dp"
+                    <!-- Seeing selection dropdown (exposed menu) -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/til_seeing"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:valueFrom="1.0"
-                        android:valueTo="100.0"
-                        android:value="50.0"
-                        android:stepSize="1.0"
-                        app:labelBehavior="gone"
-                        app:thumbColor="@color/lakbay_red"
-                        app:trackColorActive="@color/lakbay_red"
-                        app:trackColorInactive="@color/lakbay_cream" />
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                        android:hint="@string/seeing_hint"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxStrokeColor="@color/lakbay_yellow"
+                        app:hintTextColor="@color/black"
+                        android:layout_marginBottom="8dp">
 
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                            android:id="@+id/actv_seeing"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            style="@style/Widget.App.AutoCompleteTextView.Popup"
+                            android:inputType="none"
+                            android:entries="@array/seeing_options"
+                            />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Distance Filter -->
                     <TextView
-                        android:id="@+id/tv_distance_value"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/default_distance_value"
-                        android:textSize="14sp"
+                        android:text="@string/maximum_distance"
+                        android:textSize="15sp"
                         android:textStyle="bold"
-                        android:textColor="@color/black"
-                        android:minWidth="60dp"
-                        android:gravity="end"
-                        android:layout_marginStart="12dp" />
+                        android:textColor="@color/text_primary"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="6dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <com.google.android.material.slider.Slider
+                            android:id="@+id/slider_distance"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:valueFrom="1.0"
+                            android:valueTo="100.0"
+                            android:value="50.0"
+                            android:stepSize="1.0"
+                            app:labelBehavior="gone"
+                            app:thumbColor="@color/lakbay_red"
+                            app:trackColorActive="@color/lakbay_red"
+                            app:trackColorInactive="@color/lakbay_cream" />
+
+                        <TextView
+                            android:id="@+id/tv_distance_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/default_distance_value"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/black"
+                            android:minWidth="60dp"
+                            android:gravity="end"
+                            android:layout_marginStart="12dp" />
+                    </LinearLayout>
+
+                    <!-- Sort Options -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/sort_by"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="6dp" />
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chip_group_sort"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="false"
+                        app:selectionRequired="false"
+                        app:chipSpacingHorizontal="8dp">
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_sort_distance"
+                            style="@style/Widget.MaterialComponents.Chip.Choice"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:backgroundTint="@color/lakbay_cream"
+                            android:checkable="true"
+                            android:text="@string/distance_sort"
+                            app:checkedIconVisible="false"
+                            app:chipStrokeWidth="0dp"
+                            app:chipStrokeColor="@color/lakbay_red" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_sort_scenic"
+                            style="@style/Widget.MaterialComponents.Chip.Choice"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:backgroundTint="@color/lakbay_cream"
+                            android:checkable="true"
+                            android:text="@string/scenic_score_sort"
+                            app:checkedIconVisible="false"
+                            app:chipStrokeWidth="0dp"
+                            app:chipStrokeColor="@color/lakbay_red" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_sort_name"
+                            style="@style/Widget.MaterialComponents.Chip.Choice"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:backgroundTint="@color/lakbay_cream"
+                            android:checkable="true"
+                            android:text="@string/name_sort"
+                            app:checkedIconVisible="false"
+                            app:chipStrokeWidth="0dp"
+                            app:chipStrokeColor="@color/lakbay_red" />
+                    </com.google.android.material.chip.ChipGroup>
+
                 </LinearLayout>
-
-                <!-- Sort Options -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/sort_by"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_primary"
-                    android:layout_marginTop="12dp"
-                    android:layout_marginBottom="6dp" />
-
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/chip_group_sort"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:singleSelection="false"
-                    app:selectionRequired="false"
-                    app:chipSpacingHorizontal="8dp">
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chip_sort_distance"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:backgroundTint="@color/lakbay_cream"
-                        android:checkable="true"
-                        android:text="@string/distance_sort"
-                        app:checkedIconVisible="false"
-                        app:chipStrokeWidth="0dp"
-                        app:chipStrokeColor="@color/lakbay_red" />
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chip_sort_scenic"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:backgroundTint="@color/lakbay_cream"
-                        android:checkable="true"
-                        android:text="@string/scenic_score_sort"
-                        app:checkedIconVisible="false"
-                        app:chipStrokeWidth="0dp"
-                        app:chipStrokeColor="@color/lakbay_red" />
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chip_sort_name"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:backgroundTint="@color/lakbay_cream"
-                        android:checkable="true"
-                        android:text="@string/name_sort"
-                        app:checkedIconVisible="false"
-                        app:chipStrokeWidth="0dp"
-                        app:chipStrokeColor="@color/lakbay_red" />
-                </com.google.android.material.chip.ChipGroup>
-
-            </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

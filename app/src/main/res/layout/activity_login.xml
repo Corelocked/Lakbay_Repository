@@ -1,21 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:scrollbars="none"
+    android:background="@color/lakbay_cream"
+    tools:context=".ui.LoginActivity">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/lakbay_cream"
-        tools:context=".ui.LoginActivity">
+        android:layout_height="wrap_content">
 
-    <!-- Guideline: controls vertical position of the logo as a percent of the screen height -->
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/logo_guideline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.12" />
+        <!-- Guideline: controls vertical position of the logo as a percent of the screen height -->
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/logo_guideline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.12" />
 
-    <ImageView
+        <ImageView
             android:id="@+id/logo_pin"
             android:layout_width="160dp"
             android:layout_height="170dp"
@@ -26,7 +32,7 @@
             app:srcCompat="@drawable/logo_pin_new"
             app:layout_constraintHorizontal_bias="0.498" />
 
-    <ImageView
+        <ImageView
             android:id="@+id/logo_title"
             android:layout_width="300dp"
             android:layout_height="90dp"
@@ -38,32 +44,33 @@
             app:srcCompat="@drawable/logo_title_fixed"
             app:layout_constraintHorizontal_bias="0.495" />
 
-    <!-- Dynamic content container: login / signup partials will inflate here -->
-    <FrameLayout
-        android:id="@+id/content_container"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@+id/logo_title"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginStart="0dp"
-        android:layout_marginEnd="0dp">
+        <!-- Dynamic content container: login / signup partials will inflate here -->
+        <FrameLayout
+            android:id="@+id/content_container"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@+id/logo_title"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="0dp"
+            android:layout_marginEnd="0dp">
 
-        <ViewStub
-            android:id="@+id/stub_login"
-            android:layout="@layout/partial_login"
-            android:inflatedId="@+id/content_login"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            <ViewStub
+                android:id="@+id/stub_login"
+                android:layout="@layout/partial_login"
+                android:inflatedId="@+id/content_login"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
-        <ViewStub
-            android:id="@+id/stub_signup"
-            android:layout="@layout/partial_signup"
-            android:inflatedId="@+id/content_signup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            <ViewStub
+                android:id="@+id/stub_signup"
+                android:layout="@layout/partial_signup"
+                android:inflatedId="@+id/content_signup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
-    </FrameLayout>
+        </FrameLayout>
 
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>
