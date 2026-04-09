@@ -1,8 +1,24 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.google.gms.google.services)
+    alias(libs.plugins.ksp)
 }
+
+val localProps = Properties().apply {
+    val localFile = rootProject.file("local.properties")
+    if (localFile.exists()) {
+        localFile.inputStream().use { load(it) }
+    }
+}
+
+val mapboxPublicToken = providers.gradleProperty("MAPBOX_ACCESS_TOKEN").orNull
+    ?: providers.gradleProperty("mapbox.public.token").orNull
+    ?: localProps.getProperty("mapbox.public.token")
+    ?: System.getenv("MAPBOX_PUBLIC_TOKEN")
+    ?: ""
 
 android {
     namespace = "com.example.scenic_navigation"
@@ -16,6 +32,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "MAPBOX_PUBLIC_TOKEN", "\"$mapboxPublicToken\"")
+        resValue("string", "mapbox_access_token", mapboxPublicToken)
     }
 
     buildTypes {
@@ -30,6 +48,15 @@ android {
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true
+        resValues = true
+    }
+
+    packaging {
+        jniLibs {
+            // Keep modern native library packaging so aligned .so files can be mmap'd directly.
+            useLegacyPackaging = false
+        }
     }
 
     compileOptions {
@@ -100,9 +127,15 @@ dependencies {
 
     // 3. Add this line for data storage
     implementation(libs.firebase.firestore)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.sqlite)
+    implementation(libs.mapbox.maps.android)
+    ksp(libs.androidx.room.compiler)
 
-    // TensorFlow Lite for on-device inference (ensure version matches your trainer runtime)
-    implementation("org.tensorflow:tensorflow-lite:2.12.0")
+    // TensorFlow Lite for on-device inference. Use a runtime with updated native libraries
+    // so Android can load it without 16 KB page-size compatibility mode.
+    implementation("org.tensorflow:tensorflow-lite:2.17.0")
 
     // SwipeRefreshLayout for pull-to-refresh in Recommendations
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0")

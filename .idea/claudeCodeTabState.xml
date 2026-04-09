@@ -6,11 +6,12 @@
         <entry key="0">
           <value>
             <TabSessionState>
-              <option name="provider" value="claude" />
+              <option name="provider" value="codex" />
+              <option name="sessionId" value="019d6ff9-7e22-78c1-9028-944e731140d7" />
               <option name="cwd" value="$PROJECT_DIR$" />
-              <option name="model" value="claude-sonnet-4-6" />
+              <option name="model" value="gpt-5.4" />
               <option name="permissionMode" value="bypassPermissions" />
-              <option name="reasoningEffort" value="medium" />
+              <option name="reasoningEffort" value="low" />
             </TabSessionState>
           </value>
         </entry>

@@ -1,6 +1,9 @@
 package com.example.scenic_navigation.config
 
 object Config {
+    // Mapbox access token for Maps SDK and Directions API
+    const val MAPBOX_ACCESS_TOKEN = "pk.eyJ1IjoiY2VkaWVmcmVlY3MiLCJhIjoiY21ucXp1OHB0MGNhOTJ4c2ZtaDVndjIzaSJ9.2nWcYYKLU0-vbBDOUw3JaQ"
+
     // Toggle to disable Overpass network queries for testing the local model/dataset
     const val DISABLE_OVERPASS = false
     // Defaults for cluster tuning (meters, min points)

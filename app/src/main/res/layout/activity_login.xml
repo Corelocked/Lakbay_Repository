@@ -4,73 +4,80 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
     android:fillViewport="true"
     android:scrollbars="none"
-    android:background="@color/lakbay_cream"
     tools:context=".ui.LoginActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/spacing_editorial_left"
+        android:paddingTop="28dp"
+        android:paddingEnd="@dimen/spacing_editorial_right"
+        android:paddingBottom="32dp">
 
-        <!-- Guideline: controls vertical position of the logo as a percent of the screen height -->
         <androidx.constraintlayout.widget.Guideline
-            android:id="@+id/logo_guideline"
+            android:id="@+id/logo_left_guide"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            app:layout_constraintGuide_percent="0.12" />
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.18" />
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/logo_right_guide"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_percent="0.82" />
 
         <ImageView
-            android:id="@+id/logo_pin"
-            android:layout_width="160dp"
-            android:layout_height="170dp"
-            android:contentDescription="@string/app_name"
-            app:layout_constraintTop_toTopOf="@id/logo_guideline"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:srcCompat="@drawable/logo_pin_new"
-            app:layout_constraintHorizontal_bias="0.498" />
+                android:id="@+id/logo_pin"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/app_name"
+                app:layout_constraintEnd_toStartOf="@id/logo_right_guide"
+                app:layout_constraintStart_toEndOf="@id/logo_left_guide"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/logo_pin_new"
+                android:layout_marginTop="28dp" />
 
         <ImageView
-            android:id="@+id/logo_title"
-            android:layout_width="300dp"
-            android:layout_height="90dp"
-            android:layout_marginTop="12dp"
-            android:contentDescription="@string/app_name"
-            app:layout_constraintTop_toBottomOf="@+id/logo_pin"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:srcCompat="@drawable/logo_title_fixed"
-            app:layout_constraintHorizontal_bias="0.495" />
+                android:id="@+id/logo_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:layout_marginTop="4dp"
+                android:contentDescription="@string/app_name"
+                app:layout_constraintEnd_toStartOf="@id/logo_right_guide"
+                app:layout_constraintStart_toEndOf="@id/logo_left_guide"
+                app:layout_constraintTop_toBottomOf="@id/logo_pin"
+                app:srcCompat="@drawable/logo_title_fixed" />
 
-        <!-- Dynamic content container: login / signup partials will inflate here -->
         <FrameLayout
             android:id="@+id/content_container"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@+id/logo_title"
-            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="22dp"
             app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginStart="0dp"
-            android:layout_marginEnd="0dp">
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/logo_title">
 
             <ViewStub
                 android:id="@+id/stub_login"
-                android:layout="@layout/partial_login"
-                android:inflatedId="@+id/content_login"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:inflatedId="@+id/content_login"
+                android:layout="@layout/partial_login" />
 
             <ViewStub
                 android:id="@+id/stub_signup"
-                android:layout="@layout/partial_signup"
-                android:inflatedId="@+id/content_signup"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
+                android:layout_height="wrap_content"
+                android:inflatedId="@+id/content_signup"
+                android:layout="@layout/partial_signup" />
         </FrameLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
 </ScrollView>

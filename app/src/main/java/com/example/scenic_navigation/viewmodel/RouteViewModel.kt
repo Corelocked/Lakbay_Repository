@@ -10,6 +10,7 @@ import com.example.scenic_navigation.services.GeocodingService
 import com.example.scenic_navigation.services.RoutingService
 import com.example.scenic_navigation.services.ScenicRoutePlanner
 import android.content.Context
+import android.util.Log
 import com.example.scenic_navigation.config.Config
 import androidx.lifecycle.Observer
 import android.content.SharedPreferences
@@ -18,9 +19,6 @@ import com.example.scenic_navigation.ml.PoiReranker
 import com.example.scenic_navigation.ml.MlInferenceEngine
 import kotlinx.coroutines.launch
 import org.osmdroid.util.GeoPoint
-import java.io.BufferedReader
-import java.io.InputStreamReader
-
 class RouteViewModel(application: Application) : AndroidViewModel(application) {
     private val geocodingService = GeocodingService()
     private val routingService = RoutingService()
@@ -35,25 +33,7 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
     private val packageName = application.packageName
     private var settingsObserver: Observer<Int>? = null
     private val poiReranker = PoiReranker(MlInferenceEngine(application.applicationContext, "models/poi_reranker_from_luzon.tflite"))
-
-    // Simple CSV parser to handle quoted fields
-    private fun parseCsvLine(line: String): List<String> {
-        val result = mutableListOf<String>()
-        var current = StringBuilder()
-        var inQuotes = false
-        for (char in line) {
-            when {
-                char == '"' -> inQuotes = !inQuotes
-                char == ',' && !inQuotes -> {
-                    result.add(current.toString().trim())
-                    current = StringBuilder()
-                }
-                else -> current.append(char)
-            }
-        }
-        result.add(current.toString().trim())
-        return result
-    }
+    private val poiService = com.example.scenic_navigation.services.PoiService(application.applicationContext)
 
     // Calculate minimum distance from a point to the route (list of GeoPoints)
     private fun minDistanceToRoute(point: GeoPoint, route: List<GeoPoint>): Double {
@@ -326,36 +306,13 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                     _statusMessage.postValue(status)
                 }
 
-                // Load dataset POIs for descriptions
-                val assetManager = getApplication<Application>().assets
-                val inputStream = assetManager.open("datasets/luzon_dataset.csv")
-                val reader = BufferedReader(InputStreamReader(inputStream))
-                val datasetPois = mutableListOf<Poi>()
-
-                reader.readLine() // Skip header
-                reader.forEachLine { line ->
-                    val parts = parseCsvLine(line)
-                    if (parts.size >= 6) {
-                        val poi = Poi(
-                            name = parts[0].trim().removeSurrounding("\""),
-                            category = parts[1].trim().removeSurrounding("\""),
-                            description = parts[5].trim().removeSurrounding("\""),
-                            municipality = parts[2].trim().removeSurrounding("\""),
-                            lat = parts[3].trim().removeSurrounding("\"").toDoubleOrNull(),
-                            lon = parts[4].trim().removeSurrounding("\"").toDoubleOrNull()
-                        )
-                        if (poi.name.isNotBlank() && poi.lat != null && poi.lon != null && poi.description.isNotBlank()) {
-                            datasetPois.add(poi)
-                        }
-                    }
-                }
-                reader.close()
-                inputStream.close()
+                // Load dataset POIs for enrichment (description, imageUrl, tags, etc.)
+                val datasetPois = poiService.getDatabasePois()
 
                 // Convert ScenicPoi to Poi
                 val pois = scenicPois.map { scenic ->
                     // Find matching dataset POI
-                    val datasetPoi = datasetPois.find { it.name.equals(scenic.name, ignoreCase = true) }
+                    val datasetPoi = findBestDatasetPoiForScenic(scenic, datasetPois)
                     val description = datasetPoi?.description ?: scenic.description.ifBlank { "A scenic location along the route." }
                     // Boost scenic score for POIs that came from the dataset
                     val boostedScore = scenic.score.toFloat() + (if (datasetPoi != null) 20f else 0f)
@@ -363,12 +320,23 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                         name = scenic.name,
                         category = scenic.type,
                         description = description,
-                        municipality = scenic.municipality ?: "Unknown",
+                        municipality = datasetPoi?.municipality ?: scenic.municipality ?: "Unknown",
                         lat = scenic.lat,
                         lon = scenic.lon,
-                        scenicScore = boostedScore
+                        scenicScore = boostedScore,
+                        province = datasetPoi?.province ?: "",
+                        tags = datasetPoi?.tags ?: emptyList(),
+                        photoHint = datasetPoi?.photoHint ?: "",
+                        imageUrl = datasetPoi?.imageUrl ?: ""
                     )
                 }.toMutableList()
+
+                try {
+                    val matched = pois.count { it.province.isNotBlank() || it.tags.isNotEmpty() || it.photoHint.isNotBlank() }
+                    val withImage = pois.count { it.imageUrl.isNotBlank() }
+                    Log.d("RouteViewModel", "Enrichment summary: scenic=${scenicPois.size} matched=$matched withImage=$withImage")
+                } catch (_: Exception) {
+                }
 
                 // Add dataset POIs directly to routePois without filtering
                 _routePois.value = pois
@@ -533,36 +501,13 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                     _statusMessage.postValue(status)
                 }
 
-                // Load dataset POIs for descriptions
-                val assetManager = getApplication<Application>().assets
-                val inputStream = assetManager.open("datasets/luzon_dataset.csv")
-                val reader = BufferedReader(InputStreamReader(inputStream))
-                val datasetPois = mutableListOf<Poi>()
-
-                reader.readLine() // Skip header
-                reader.forEachLine { line ->
-                    val parts = parseCsvLine(line)
-                    if (parts.size >= 6) {
-                        val poi = Poi(
-                            name = parts[0].trim().removeSurrounding("\""),
-                            category = parts[1].trim().removeSurrounding("\""),
-                            description = parts[5].trim().removeSurrounding("\""),
-                            municipality = parts[2].trim().removeSurrounding("\""),
-                            lat = parts[3].trim().removeSurrounding("\"").toDoubleOrNull(),
-                            lon = parts[4].trim().removeSurrounding("\"").toDoubleOrNull()
-                        )
-                        if (poi.name.isNotBlank() && poi.lat != null && poi.lon != null && poi.description.isNotBlank()) {
-                            datasetPois.add(poi)
-                        }
-                    }
-                }
-                reader.close()
-                inputStream.close()
+                // Load dataset POIs for enrichment (description, imageUrl, tags, etc.)
+                val datasetPois = poiService.getDatabasePois()
 
                 // Convert ScenicPoi to Poi
                 val pois = scenicPois.map { scenic ->
                     // Find matching dataset POI
-                    val datasetPoi = datasetPois.find { it.name.equals(scenic.name, ignoreCase = true) }
+                    val datasetPoi = findBestDatasetPoiForScenic(scenic, datasetPois)
                     val description = datasetPoi?.description ?: scenic.description.ifBlank { "A scenic location along the route." }
                     // Boost scenic score for POIs that came from the dataset
                     val boostedScore = scenic.score.toFloat() + (if (datasetPoi != null) 20f else 0f)
@@ -570,12 +515,23 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                         name = scenic.name,
                         category = scenic.type,
                         description = description,
-                        municipality = scenic.municipality ?: "Unknown",
+                        municipality = datasetPoi?.municipality ?: scenic.municipality ?: "Unknown",
                         lat = scenic.lat,
                         lon = scenic.lon,
-                        scenicScore = boostedScore
+                        scenicScore = boostedScore,
+                        province = datasetPoi?.province ?: "",
+                        tags = datasetPoi?.tags ?: emptyList(),
+                        photoHint = datasetPoi?.photoHint ?: "",
+                        imageUrl = datasetPoi?.imageUrl ?: ""
                     )
                 }.toMutableList()
+
+                try {
+                    val matched = pois.count { it.province.isNotBlank() || it.tags.isNotEmpty() || it.photoHint.isNotBlank() }
+                    val withImage = pois.count { it.imageUrl.isNotBlank() }
+                    Log.d("RouteViewModel", "Recalc enrichment summary: scenic=${scenicPois.size} matched=$matched withImage=$withImage")
+                } catch (_: Exception) {
+                }
 
                 // Add dataset POIs directly to routePois without filtering
                 _routePois.value = pois
@@ -603,5 +559,86 @@ class RouteViewModel(application: Application) : AndroidViewModel(application) {
                 _isLoading.value = false
             }
         }
+    }
+
+    private fun findBestDatasetPoiForScenic(
+        scenic: com.example.scenic_navigation.models.ScenicPoi,
+        datasetPois: List<Poi>
+    ): Poi? {
+        if (datasetPois.isEmpty()) return null
+
+        val scenicName = normalizePoiName(scenic.name)
+        if (scenicName.isBlank()) return null
+
+        // 1) Exact normalized name match
+        datasetPois.firstOrNull { normalizePoiName(it.name) == scenicName }?.let { return it }
+
+        // 2) Fuzzy name containment match, choose nearest when coords are available
+        val fuzzy = datasetPois.filter {
+            val candidate = normalizePoiName(it.name)
+            candidate.isNotBlank() && (candidate.contains(scenicName) || scenicName.contains(candidate))
+        }
+        if (fuzzy.isNotEmpty()) {
+            val nearestFuzzy = fuzzy.minByOrNull { candidate ->
+                try {
+                    com.example.scenic_navigation.utils.GeoUtils.haversine(
+                        scenic.lat,
+                        scenic.lon,
+                        candidate.lat ?: scenic.lat,
+                        candidate.lon ?: scenic.lon
+                    )
+                } catch (_: Exception) {
+                    Double.MAX_VALUE
+                }
+            }
+            if (nearestFuzzy != null) {
+                val d = try {
+                    com.example.scenic_navigation.utils.GeoUtils.haversine(
+                        scenic.lat,
+                        scenic.lon,
+                        nearestFuzzy.lat ?: scenic.lat,
+                        nearestFuzzy.lon ?: scenic.lon
+                    )
+                } catch (_: Exception) {
+                    Double.MAX_VALUE
+                }
+                if (d <= 5000.0) return nearestFuzzy
+            }
+        }
+
+        // 3) Nearest coordinate fallback for very close points
+        val nearest = datasetPois.minByOrNull { candidate ->
+            try {
+                com.example.scenic_navigation.utils.GeoUtils.haversine(
+                    scenic.lat,
+                    scenic.lon,
+                    candidate.lat ?: scenic.lat,
+                    candidate.lon ?: scenic.lon
+                )
+            } catch (_: Exception) {
+                Double.MAX_VALUE
+            }
+        } ?: return null
+
+        val nearestDist = try {
+            com.example.scenic_navigation.utils.GeoUtils.haversine(
+                scenic.lat,
+                scenic.lon,
+                nearest.lat ?: scenic.lat,
+                nearest.lon ?: scenic.lon
+            )
+        } catch (_: Exception) {
+            Double.MAX_VALUE
+        }
+
+        return if (nearestDist <= 400.0) nearest else null
+    }
+
+    private fun normalizePoiName(value: String): String {
+        return value
+            .lowercase()
+            .replace(Regex("[^a-z0-9\\s]"), " ")
+            .replace(Regex("\\s+"), " ")
+            .trim()
     }
 }

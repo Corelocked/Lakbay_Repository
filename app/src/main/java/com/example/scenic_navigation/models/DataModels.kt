@@ -9,9 +9,12 @@ data class Poi(
     val description: String,
     val municipality: String, // Added for grouping by town/municipality
     val lat: Double? = null,
-    val lon: Double? = null
-    ,
-    val scenicScore: Float? = null // Optional scenic score passed from ScenicPoi
+    val lon: Double? = null,
+    val scenicScore: Float? = null, // Optional scenic score passed from ScenicPoi
+    val province: String = "",
+    val tags: List<String> = emptyList(),
+    val photoHint: String = "",
+    val imageUrl: String = "" // URL to the POI image
 )
 
 /**

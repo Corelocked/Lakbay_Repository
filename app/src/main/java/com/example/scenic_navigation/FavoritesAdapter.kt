@@ -5,9 +5,10 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.scenic_navigation.databinding.ItemFavoriteBinding
 import com.example.scenic_navigation.models.Poi
+import com.example.scenic_navigation.services.PoiImageRepository
 
 class FavoritesAdapter(
-    private val items: List<Poi>,
+    private val items: MutableList<Poi>,
     private val onClick: (Poi) -> Unit
 ) : RecyclerView.Adapter<FavoritesAdapter.ViewHolder>() {
 
@@ -23,6 +24,7 @@ class FavoritesAdapter(
         with(holder.binding) {
             tvPoiName.text = poi.name
             tvPoiCategory.text = poi.category
+            PoiImageRepository.loadInto(ivPoiIcon, poi)
             root.setOnClickListener { onClick(poi) }
 
             val key = try { com.example.scenic_navigation.ui.RecommendationsAdapter.canonicalKey(poi) } catch (_: Exception) { "${poi.name}_${poi.lat}_${poi.lon}" }
@@ -58,4 +60,10 @@ class FavoritesAdapter(
     }
 
     override fun getItemCount(): Int = items.size
+
+    fun replaceItems(updated: List<Poi>) {
+        items.clear()
+        items.addAll(updated)
+        notifyDataSetChanged()
+    }
 }

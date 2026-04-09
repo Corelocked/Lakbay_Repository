@@ -76,6 +76,9 @@ class MainActivity : AppCompatActivity() {
 
         // Setup bottom navigation
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        if (savedInstanceState == null) {
+            bottomNav.selectedItemId = R.id.nav_route
+        }
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_route -> {
@@ -114,7 +117,7 @@ class MainActivity : AppCompatActivity() {
                             finish()
                         }
                         .show()
-                    true
+                    false
                 }
                 else -> false
             }

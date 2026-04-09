@@ -14,6 +14,8 @@ import androidx.core.content.ContextCompat
 import com.example.scenic_navigation.services.UserPreferenceStore
 import com.example.scenic_navigation.services.EventLogger
 import com.example.scenic_navigation.services.SettingsStore
+import com.example.scenic_navigation.utils.PoiTagChipBinder
+import com.example.scenic_navigation.utils.PoiTagFormatter
 import org.json.JSONObject
 
 class PoiAdapter(
@@ -37,7 +39,9 @@ class PoiAdapter(
                 val poi = item.poi
                 with(holder.binding) {
                     tvName.text = poi.name
-                    tvCategory.text = poi.category ?: holder.binding.root.context.getString(R.string.poi_fallback)
+                    tagScroll.visibility = View.VISIBLE
+                    tvCategory.visibility = View.GONE
+                    PoiTagChipBinder.bind(tagContainer, poi)
                     tvDescription.text = poi.description.ifBlank { "Tap to view on map" }
                     root.setOnClickListener {
                         // record preference by category
@@ -82,6 +86,8 @@ class PoiAdapter(
                 val m = item.municipality
                 with(holder.binding) {
                     tvName.text = m.name
+                    tagScroll.visibility = View.GONE
+                    tvCategory.visibility = View.VISIBLE
                     tvCategory.text = when (m.type) {
                         "coastal" -> "Coastal Town"
                         "mountain" -> "Mountain Town"
@@ -109,6 +115,8 @@ class PoiAdapter(
                 val town = item.town
                 with(holder.binding) {
                     tvName.text = town.name
+                    tagScroll.visibility = View.GONE
+                    tvCategory.visibility = View.VISIBLE
                     tvCategory.text = when (town.type) {
                         "city" -> "City"
                         "town" -> "Town"
@@ -139,6 +147,8 @@ class PoiAdapter(
                 val scenicPoi = item.scenicPoi
                 with(holder.binding) {
                     tvName.text = scenicPoi.name
+                    tagScroll.visibility = View.GONE
+                    tvCategory.visibility = View.VISIBLE
                     tvCategory.text = scenicPoi.type.replaceFirstChar { it.uppercase() }
                     tvDescription.text = "Scenic score: ${scenicPoi.score}/100 • Highly recommended"
                     root.setOnClickListener { /* ScenicPoi doesn't have full details to show */ }

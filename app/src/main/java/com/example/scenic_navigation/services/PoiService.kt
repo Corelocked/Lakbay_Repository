@@ -2,20 +2,30 @@ package com.example.scenic_navigation.services
 
 import android.util.Log
 import android.content.Context
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import com.example.scenic_navigation.models.Poi
+import com.example.scenic_navigation.data.PoiCsvLoader
+import com.example.scenic_navigation.data.local.AppDatabase
+import com.example.scenic_navigation.data.local.PoiEntity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.osmdroid.util.GeoPoint
+import androidx.sqlite.db.SimpleSQLiteQuery
 import java.util.Locale
+import kotlin.math.cos
 
 /**
  * Service for fetching Points of Interest from local dataset
  */
 class PoiService(private val context: Context? = null) {
+    companion object {
+        private const val DATASET_PREFS = "poi_dataset_seed"
+        private const val DATASET_HASH_KEY = "dataset_hash"
+    }
+
     // Local dataset loaded from assets (optional)
     private val localPois: MutableList<Poi> = mutableListOf()
+    private val database = context?.let { AppDatabase.getInstance(it) }
 
     init {
         try {
@@ -25,32 +35,20 @@ class PoiService(private val context: Context? = null) {
                 val files = am.list(datasetPath) ?: emptyArray()
                 if (files.contains("luzon_dataset.csv")) {
                     val path = "$datasetPath/luzon_dataset.csv"
-                    am.open(path).use { stream ->
-                        BufferedReader(InputStreamReader(stream)).use { br ->
-                            // Skip header
-                            var line = br.readLine()
-                            val csvSplit = Regex(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")
-                            while (true) {
-                                line = br.readLine() ?: break
-                                if (line.isBlank()) continue
-                                val parts = line.split(csvSplit)
-                                if (parts.size >= 6) {
-                                    val name = parts[0].trim().trim('"')
-                                    val category = parts[1].trim().trim('"')
-                                    val location = parts[2].trim().trim('"')
-                                    val lat = parts[3].trim().toDoubleOrNull()
-                                    val lon = parts[4].trim().toDoubleOrNull()
-                                    val description = parts[5].trim().trim('"')
-                                    if (lat != null && lon != null) {
-                                        // Extract municipality from location (e.g., "Tagaytay, Cavite" -> "Tagaytay")
-                                        val municipality = location.split(",")[0].trim()
-                                        localPois.add(Poi(name, category, description, municipality, lat, lon))
-                                    }
-                                }
-                            }
+                    val poiDao = database?.poiDao()
+                    val seedRows = PoiCsvLoader.loadFromAssets(am, path)
+                    val datasetHash = buildDatasetHash(seedRows)
+                    val seeded = runBlocking(Dispatchers.IO) {
+                        if (poiDao != null && shouldRefreshSeed(ctx, poiDao.count(), datasetHash)) {
+                            poiDao.clear()
+                            poiDao.insertAll(seedRows.map { PoiEntity.fromPoi(it.poi, it.location) })
+                            rememberSeedHash(ctx, datasetHash)
                         }
+                        poiDao?.getAll()?.map { it.toPoi() } ?: emptyList()
                     }
-                    Log.d("PoiService", "Loaded ${localPois.size} local dataset POIs")
+                    localPois.addAll(seeded)
+                    val withImages = localPois.count { it.imageUrl.isNotBlank() }
+                    Log.d("PoiService", "Loaded ${localPois.size} local dataset POIs ($withImages with imageUrl)")
                 }
             }
         } catch (e: Exception) {
@@ -132,6 +130,80 @@ class PoiService(private val context: Context? = null) {
 
     fun getLocalPois(): List<Poi> = localPois
 
+    fun getDatabasePois(): List<Poi> = runBlocking(Dispatchers.IO) {
+        database?.poiDao()?.getAll()?.map { it.toPoi() } ?: localPois.toList()
+    }
+
+    fun searchDatabasePois(
+        userLat: Double,
+        userLon: Double,
+        maxDistanceKm: Double,
+        preferredCategories: Set<String> = emptySet()
+    ): List<Poi> = runBlocking(Dispatchers.IO) {
+        val poiDao = database?.poiDao() ?: return@runBlocking localPois.toList()
+        val radiusMeters = maxDistanceKm * 1000.0
+        val latDelta = radiusMeters / 111_320.0
+        val lonDelta = radiusMeters / (111_320.0 * cos(Math.toRadians(userLat)).coerceAtLeast(0.1))
+        val args = mutableListOf<Any>(userLat - latDelta, userLat + latDelta, userLon - lonDelta, userLon + lonDelta)
+        val where = mutableListOf("lat BETWEEN ? AND ?", "lon BETWEEN ? AND ?")
+
+        val tokens = preferredCategories
+            .flatMap { mapCategoryQueryTokens(it) }
+            .map { it.trim().lowercase(Locale.US) }
+            .filter { it.isNotBlank() }
+            .distinct()
+
+        if (tokens.isNotEmpty()) {
+            val tokenClause = tokens.joinToString(" OR ") {
+                args += "%$it%"
+                args += "%$it%"
+                args += "%$it%"
+                args += "%$it%"
+                "(LOWER(category) LIKE ? OR LOWER(tags) LIKE ? OR LOWER(name) LIKE ? OR LOWER(photoHint) LIKE ?)"
+            }
+            where += "($tokenClause)"
+        }
+
+        val query = SimpleSQLiteQuery(
+            "SELECT * FROM pois WHERE ${where.joinToString(" AND ")} ORDER BY name COLLATE NOCASE",
+            args.toTypedArray()
+        )
+
+        poiDao.search(query).map { it.toPoi() }
+    }
+
+    private fun buildDatasetHash(rows: List<PoiCsvLoader.ParsedPoiRow>): String {
+        return rows.joinToString(separator = "\n") { row ->
+            val poi = row.poi
+            listOf(
+                poi.name,
+                poi.category,
+                row.location,
+                poi.lat,
+                poi.lon,
+                poi.description,
+                poi.municipality,
+                poi.province,
+                poi.tags.joinToString("|"),
+                poi.photoHint,
+                poi.imageUrl
+            ).joinToString("|")
+        }.hashCode().toString()
+    }
+
+    private fun shouldRefreshSeed(context: Context, currentCount: Int, datasetHash: String): Boolean {
+        if (currentCount == 0) return true
+        val prefs = context.getSharedPreferences(DATASET_PREFS, Context.MODE_PRIVATE)
+        return prefs.getString(DATASET_HASH_KEY, null) != datasetHash
+    }
+
+    private fun rememberSeedHash(context: Context, datasetHash: String) {
+        context.getSharedPreferences(DATASET_PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString(DATASET_HASH_KEY, datasetHash)
+            .apply()
+    }
+
     private fun sampleRoute(
         routePoints: List<GeoPoint>,
         sampleDistMeters: Int,
@@ -176,5 +248,21 @@ class PoiService(private val context: Context? = null) {
             if (d < minD) minD = d
         }
         return minD
+    }
+
+    private fun mapCategoryQueryTokens(selection: String): List<String> {
+        val value = selection.lowercase(Locale.US)
+        return when {
+            value.contains("scenic") -> listOf("scenic", "viewpoint", "attraction", "park")
+            value.contains("natural") || value.contains("nature") -> listOf("natural", "nature", "waterfall", "park")
+            value.contains("tourism") -> listOf("tourism", "tourist", "attraction")
+            value.contains("historic") || value.contains("landmark") -> listOf("historic", "historical", "heritage", "museum", "monument")
+            value.contains("cultur") -> listOf("cultural", "culture", "museum", "heritage")
+            value.contains("food") || value.contains("restaurant") || value.contains("cafe") -> listOf("restaurant", "cafe", "food", "dining")
+            value.contains("shop") || value.contains("market") -> listOf("shop", "shopping", "market", "souvenir")
+            value.contains("coast") || value.contains("beach") || value.contains("ocean") -> listOf("beach", "coast", "bay", "ocean")
+            value.contains("mountain") || value.contains("mount") || value.contains("peak") -> listOf("mountain", "peak", "volcano", "ridge", "hiking")
+            else -> listOf(value)
+        }
     }
 }

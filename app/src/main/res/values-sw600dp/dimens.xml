@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="spacing_editorial_left">40dp</dimen>
+    <dimen name="spacing_editorial_right">40dp</dimen>
+    <dimen name="shell_horizontal_margin">28dp</dimen>
+    <dimen name="shell_bottom_margin">24dp</dimen>
+    <dimen name="text_size_title">32sp</dimen>
+</resources>

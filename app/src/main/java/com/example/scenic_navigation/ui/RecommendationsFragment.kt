@@ -37,11 +37,14 @@ import android.view.MotionEvent
 import com.example.scenic_navigation.utils.GeoUtils
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.example.scenic_navigation.MainActivity
+import com.example.scenic_navigation.services.PoiImageRepository
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import android.widget.LinearLayout
 import com.example.scenic_navigation.FavoriteStore
 import com.example.scenic_navigation.utils.MapIconUtils
+import com.example.scenic_navigation.utils.PoiTagChipBinder
+import com.example.scenic_navigation.utils.PoiTagFormatter
 import org.osmdroid.views.overlay.Marker
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -546,6 +549,7 @@ class RecommendationsFragment : Fragment() {
         }
         Log.d("RecommendationsFrag", "fetchWithCurrentFilters: calling ViewModel with effective=$effective")
         lastEffectiveCategories = effective
+        adapter.updateRelevantTags(effective)
         viewModel.fetchRecommendations(userLat, userLon, maxDistance.toDouble(), effective)
     }
 
@@ -665,7 +669,7 @@ class RecommendationsFragment : Fragment() {
                         icon = android.graphics.drawable.BitmapDrawable(requireContext().resources, fallbackBmp)
                     }
                     setOnMarkerClickListener { _, _ ->
-                        val bottom = POIDetailBottomSheet(poi)
+                    val bottom = POIDetailBottomSheet(poi, lastEffectiveCategories)
                         bottom.show(parentFragmentManager, "poi_detail")
                         true
                     }
@@ -826,10 +830,13 @@ class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolde
         }
     }
 
-    private fun bindFull(holder: ViewHolder, item: Poi) {
+        private fun bindFull(holder: ViewHolder, item: Poi) {
          with(holder.binding) {
              tvName.text = item.name
-             tvCategory.text = item.category?.uppercase() ?: "POI"
+             tagScroll.visibility = View.VISIBLE
+             tvCategory.visibility = View.GONE
+             PoiTagChipBinder.bind(tagContainer, item, preferredTokens = relevantTagTokens)
+             PoiImageRepository.loadInto(ivIcon, item)
              // Set scenic score pill if available
              val score = item.scenicScore ?: 0f
              if (score > 0f) {
@@ -940,4 +947,11 @@ class RecommendationsAdapter : ListAdapter<Poi, RecommendationsAdapter.ViewHolde
              }
          }
      }
+
+    private var relevantTagTokens: Set<String> = emptySet()
+
+    fun updateRelevantTags(tokens: Set<String>) {
+        relevantTagTokens = tokens
+        if (currentList.isNotEmpty()) notifyItemRangeChanged(0, currentList.size)
+    }
  }

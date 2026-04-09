@@ -17,6 +17,8 @@ import androidx.lifecycle.lifecycleScope
 import com.example.scenic_navigation.R
 import com.example.scenic_navigation.models.Poi
 import com.example.scenic_navigation.FavoriteStore
+import com.example.scenic_navigation.services.PoiImageRepository
+import com.example.scenic_navigation.utils.PoiTagChipBinder
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +30,10 @@ import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
-class POIDetailBottomSheet(private val poi: Poi) : BottomSheetDialogFragment() {
+class POIDetailBottomSheet(
+    private val poi: Poi,
+    private val relevantTagTokens: Set<String> = emptySet()
+) : BottomSheetDialogFragment() {
 
     private val TAG = "POIDetailBottomSheet"
 
@@ -44,25 +49,18 @@ class POIDetailBottomSheet(private val poi: Poi) : BottomSheetDialogFragment() {
         Log.i(TAG, "onCreateView for POI='${poi.name}'")
 
         val tvTitle = view.findViewById<android.widget.TextView>(R.id.tv_poi_title)
-        val tvCategory = view.findViewById<android.widget.TextView>(R.id.tv_poi_category)
         val tvDescription = view.findViewById<android.widget.TextView>(R.id.tv_poi_description)
         val btnSave = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_save)
         val btnNavigate = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_navigate)
+        val tagContainer = view.findViewById<android.widget.LinearLayout>(R.id.tag_container)
 
         val ivImage = view.findViewById<ImageView>(R.id.iv_poi_image)
-        try {
-            val placeholder = createHeaderPlaceholder(poi.name)
-            ivImage?.setImageBitmap(placeholder)
-            Log.i(TAG, "Set image placeholder for POI='${poi.name}'")
-        } catch (_: Exception) {}
-
         ivImage?.let {
-            Log.i(TAG, "Starting image lookup for POI='${poi.name}'")
-            loadPoiImage(it, poi)
+            PoiImageRepository.loadInto(it, poi)
         }
 
         tvTitle.text = poi.name
-        tvCategory.text = poi.category
+        tagContainer?.let { PoiTagChipBinder.bind(it, poi, maxTags = 4, preferredTokens = relevantTagTokens) }
         tvDescription.text = if (poi.description.isNotBlank()) poi.description else "No description available for this location."
 
         // Telemetry: POI detail opened

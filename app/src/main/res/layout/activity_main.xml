@@ -5,64 +5,127 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/lakbay_cream"
+    android:background="@color/background"
     tools:context=".MainActivity">
 
+    <View
+        android:id="@+id/top_wash"
+        android:layout_width="0dp"
+        android:layout_height="140dp"
+        android:background="@drawable/editorial_header_gradient"
+        android:alpha="0.08"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="0dp"
+        android:id="@+id/toolbar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_editorial_left"
+        android:layout_marginTop="18dp"
+        android:layout_marginEnd="@dimen/spacing_editorial_right"
+        android:background="@android:color/transparent"
+        app:contentInsetStart="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navigationIconTint="@color/text_primary"
+        app:titleCentered="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/white"
-            android:elevation="4dp"
-            android:minHeight="?attr/actionBarSize"
-            app:contentInsetStart="0dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingEnd="12dp">
 
-            <ImageView
+                <ImageView
                     android:id="@+id/toolbar_logo"
+                    android:layout_width="112dp"
+                    android:layout_height="36dp"
+                    android:contentDescription="@string/app_logo_desc"
+                    android:scaleType="fitStart"
+                    android:src="@drawable/logo_title_fixed" />
+
+                <TextView
                     android:layout_width="wrap_content"
-                    android:layout_height="160dp"
-                    android:layout_marginBottom="-100dp"
-                    android:layout_centerVertical="true"
-                    android:layout_centerHorizontal="true"
-                    android:src="@drawable/logo_title_new"
-                    android:contentDescription="@string/app_logo_desc" />
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Digital concierge for scenic drives"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
+            </LinearLayout>
 
-        </RelativeLayout>
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                app:cardBackgroundColor="@color/surface_container_lowest"
+                app:cardCornerRadius="23dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/outline_ghost"
+                app:strokeWidth="1dp">
 
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/app_name"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_scenic_marker"
+                    app:tint="@color/primary" />
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
     </com.google.android.material.appbar.MaterialToolbar>
 
-
-    <!-- Fragment Container -->
     <FrameLayout
         android:id="@+id/fragment_container"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
+        android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation_wrap"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/toolbar" />
 
-    <!-- Bottom Navigation with clean elevation -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_navigation"
+    <FrameLayout
+        android:id="@+id/bottom_navigation_wrap"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@color/white"
-        android:elevation="12dp"
-        app:itemIconTint="@color/lakbay_blue"
-        app:itemTextColor="@color/text_primary"
-        app:labelVisibilityMode="labeled"
-        app:menu="@menu/bottom_nav_menu"
+        android:layout_marginStart="@dimen/shell_horizontal_margin"
+        android:layout_marginEnd="@dimen/shell_horizontal_margin"
+        android:layout_marginBottom="@dimen/shell_bottom_margin"
+        android:background="@drawable/editorial_glass_nav"
+        android:clipToPadding="false"
+        android:elevation="8dp"
+        android:paddingStart="4dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="4dp"
+        android:paddingBottom="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent">
 
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottom_navigation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="68dp"
+            android:background="@android:color/transparent"
+            app:itemIconTint="@color/bottom_nav_item_color"
+            app:itemPaddingTop="6dp"
+            app:itemPaddingBottom="6dp"
+            app:itemRippleColor="@color/overlay_light"
+            app:itemTextAppearanceActive="@style/TextAppearance.Material3.LabelMedium"
+            app:itemTextAppearanceInactive="@style/TextAppearance.Material3.LabelSmall"
+            app:itemTextColor="@color/bottom_nav_text_color"
+            app:labelVisibilityMode="labeled"
+            app:menu="@menu/bottom_nav_menu" />
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

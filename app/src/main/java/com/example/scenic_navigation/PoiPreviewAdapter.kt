@@ -2,14 +2,24 @@ package com.example.scenic_navigation
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.scenic_navigation.databinding.ItemPoiPreviewHorizontalBinding
 import com.example.scenic_navigation.models.Poi
+import com.example.scenic_navigation.services.PoiImageRepository
+import com.example.scenic_navigation.utils.PoiTagChipBinder
 
 class PoiPreviewAdapter(
-    private val items: List<Poi>,
-    private val onClick: (Poi) -> Unit
+    initialItems: List<Poi>,
+    private val onClick: (Poi) -> Unit,
+    private val relevantTagTokens: Set<String> = emptySet()
 ) : RecyclerView.Adapter<PoiPreviewAdapter.ViewHolder>() {
+
+    private val items = mutableListOf<Poi>()
+
+    init {
+        items.addAll(initialItems)
+    }
 
     class ViewHolder(val binding: ItemPoiPreviewHorizontalBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -22,7 +32,8 @@ class PoiPreviewAdapter(
         val poi = items[position]
         with(holder.binding) {
             tvPreviewName.text = poi.name
-            tvPreviewCategory.text = poi.category
+            PoiTagChipBinder.bind(previewTagContainer, poi, maxTags = 2, preferredTokens = relevantTagTokens)
+            ivPreviewImage?.let { PoiImageRepository.loadInto(it, poi) }
             root.setOnClickListener { onClick(poi) }
             // Accessibility: content description for card
             root.contentDescription = root.context.getString(com.example.scenic_navigation.R.string.poi_card_desc, poi.name, poi.category)
@@ -61,4 +72,29 @@ class PoiPreviewAdapter(
     }
 
     override fun getItemCount(): Int = items.size
+
+    fun submitItems(newItems: List<Poi>) {
+        val oldItems = items.toList()
+        val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+            override fun getOldListSize(): Int = oldItems.size
+            override fun getNewListSize(): Int = newItems.size
+
+            override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                return stableKey(oldItems[oldItemPosition]) == stableKey(newItems[newItemPosition])
+            }
+
+            override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                return oldItems[oldItemPosition] == newItems[newItemPosition]
+            }
+        })
+        items.clear()
+        items.addAll(newItems)
+        diff.dispatchUpdatesTo(this)
+    }
+
+    private fun stableKey(poi: Poi): String {
+        val lat = poi.lat?.toString() ?: "na"
+        val lon = poi.lon?.toString() ?: "na"
+        return "${poi.name}|$lat|$lon"
+    }
 }

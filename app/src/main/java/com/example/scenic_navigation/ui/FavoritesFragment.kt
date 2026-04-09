@@ -22,12 +22,14 @@ class FavoritesFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         binding.rvFavorites.layoutManager = LinearLayoutManager(requireContext())
         FavoriteStore.init(requireContext())
-        val favorites = FavoriteStore.getAllFavorites()
-        val adapter = FavoritesAdapter(favorites) { poi ->
+        val adapter = FavoritesAdapter(mutableListOf()) { poi ->
             val bottom = POIDetailBottomSheet(poi)
             bottom.show(parentFragmentManager, "poi_detail")
         }
         binding.rvFavorites.adapter = adapter
+        FavoriteStore.observeAllFavorites().observe(viewLifecycleOwner) { favorites ->
+            adapter.replaceItems(favorites)
+        }
     }
 
     override fun onDestroyView() {

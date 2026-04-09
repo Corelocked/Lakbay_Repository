@@ -3,66 +3,64 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- Modern color palette for scenic navigation - Updated with gradients -->
-    <color name="primary">#1E88E5</color>
-    <color name="primary_dark">#1565C0</color>
-    <color name="primary_light">#64B5F6</color>
-    <color name="accent">#FF6F00</color>
-    <color name="accent_light">#FFA726</color>
+    <color name="primary">#B81217</color>
+    <color name="primary_dark">#7F0A0F</color>
+    <color name="primary_light">#DC312D</color>
+    <color name="accent">#655E49</color>
+    <color name="accent_light">#ECE2C6</color>
 
-    <!-- Backgrounds -->
-    <color name="background">#F8F9FA</color>
-    <color name="background_dark">#E8EAF6</color>
-    <color name="surface">#FFFFFF</color>
-    <color name="surface_elevated">#FFFFFF</color>
-    <color name="card_background">#FFFFFF</color>
+    <color name="background">#F7F0E4</color>
+    <color name="background_dark">#E8DDCA</color>
+    <color name="surface">#FFFDF8</color>
+    <color name="surface_elevated">#F4ECDF</color>
+    <color name="card_background">#FFFFFFFF</color>
+    <color name="surface_bright">#FFF9F0</color>
+    <color name="surface_container_low">#F2E8D8</color>
+    <color name="surface_container_lowest">#FFFFFFFF</color>
+    <color name="surface_container_high">#EADCC7</color>
 
-    <!-- Text colors -->
-    <color name="text_primary">#1A1A1A</color>
-    <color name="text_secondary">#6B6B6B</color>
-    <color name="text_hint">#9E9E9E</color>
+    <color name="text_primary">#1B1C1C</color>
+    <color name="text_secondary">#675F56</color>
+    <color name="text_hint">#978D80</color>
 
-    <!-- UI Elements -->
-    <color name="divider">#E0E0E0</color>
-    <color name="success">#4CAF50</color>
-    <color name="warning">#FF9800</color>
-    <color name="error">#EF5350</color>
+    <color name="divider">#26655E49</color>
+    <color name="success">#5E8E5C</color>
+    <color name="warning">#C8892F</color>
+    <color name="error">#C83E3A</color>
 
-    <!-- Overlays -->
-    <color name="overlay_dark">#80000000</color>
-    <color name="overlay_light">#40FFFFFF</color>
+    <color name="overlay_dark">#7A201411</color>
+    <color name="overlay_light">#CCFFF9F0</color>
+    <color name="glass_surface">#CCFFF9F0</color>
+    <color name="outline_ghost">#26655E49</color>
 
-    <!-- Gradient colors for scenic theme -->
-    <color name="gradient_start">#1E88E5</color>
-    <color name="gradient_end">#42A5F5</color>
-    <color name="gradient_oceanic_start">#00ACC1</color>
-    <color name="gradient_oceanic_end">#26C6DA</color>
-    <color name="gradient_mountain_start">#66BB6A</color>
-    <color name="gradient_mountain_end">#81C784</color>
+    <color name="gradient_start">#B81217</color>
+    <color name="gradient_end">#DC312D</color>
+    <color name="gradient_oceanic_start">#95C9D9</color>
+    <color name="gradient_oceanic_end">#3C849D</color>
+    <color name="gradient_mountain_start">#799A63</color>
+    <color name="gradient_mountain_end">#476A3E</color>
 
-    <!-- Category colors for POI types - Enhanced -->
-    <color name="category_food">#FF6F00</color>
-    <color name="category_culture">#8E24AA</color>
-    <color name="category_historic">#6D4C41</color>
-    <color name="category_shopping">#EC407A</color>
-    <color name="category_nature">#66BB6A</color>
-    <color name="category_scenic">#42A5F5</color>
-    <color name="category_coastal">#26C6DA</color>
-    <color name="category_mountain">#9CCC65</color>
-    <color name="category_city">#FFA726</color>
-    <color name="category_town">#78909C</color>
-    <color name="category_village">#BDBDBD</color>
-    <color name="category_default">#90A4AE</color>
+    <color name="category_food">#C06A2D</color>
+    <color name="category_culture">#9F4E56</color>
+    <color name="category_historic">#8A6A43</color>
+    <color name="category_shopping">#C34C63</color>
+    <color name="category_nature">#6F9564</color>
+    <color name="category_scenic">#6A9BB6</color>
+    <color name="category_coastal">#4D99A8</color>
+    <color name="category_mountain">#5E8450</color>
+    <color name="category_city">#D19B54</color>
+    <color name="category_town">#888072</color>
+    <color name="category_village">#B7AB98</color>
+    <color name="category_default">#9B907E</color>
 
-    <color name="lakbay_cream">#FFECC8</color>
-    <color name="lakbay_red">#FE4740</color>
-    <color name="lakbay_blue">#0B4AFD</color>
-    <color name="lakbay_yellow">#EECE08</color>
+    <color name="lakbay_cream">#F7F0E4</color>
+    <color name="lakbay_red">#B81217</color>
+    <color name="lakbay_blue">#6A9BB6</color>
+    <color name="lakbay_yellow">#E6BB4F</color>
 
-    <!-- Additional lakbay category colors used in RecommendationsFragment tinting -->
-    <color name="lakbay_green">#66BB6A</color>
-    <color name="lakbay_cyan">#26C6DA</color>
-    <color name="lakbay_orange">#FF6F00</color>
-    <color name="lakbay_purple">#8E24AA</color>
+    <color name="lakbay_green">#6F9564</color>
+    <color name="lakbay_cyan">#4D99A8</color>
+    <color name="lakbay_orange">#C06A2D</color>
+    <color name="lakbay_purple">#9F4E56</color>
 
 </resources>

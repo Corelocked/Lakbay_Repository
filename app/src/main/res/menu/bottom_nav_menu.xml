@@ -2,21 +2,20 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/nav_route"
-        android:icon="@android:drawable/ic_menu_directions"
+        android:icon="@drawable/ic_pin_red"
         android:title="@string/nav_route" />
 
-    <!-- Re-enable Discover/Recommendations page -->
     <item
         android:id="@+id/nav_recommendations"
-        android:icon="@android:drawable/ic_menu_view"
+        android:icon="@drawable/ic_scenic_marker"
         android:title="@string/scenic_destinations" />
 
     <item
         android:id="@+id/nav_favorites"
-        android:icon="@android:drawable/btn_star_big_on"
+        android:icon="@drawable/ic_star_outline"
         android:title="@string/nav_favorites" />
     <item
         android:id="@+id/nav_sign_out"
-        android:icon="@android:drawable/ic_menu_close_clear_cancel"
+        android:icon="@drawable/ic_close"
         android:title="@string/nav_sign_out" />
 </menu>

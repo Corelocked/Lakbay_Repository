@@ -2,21 +2,33 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@color/background"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:paddingStart="@dimen/spacing_editorial_left"
+    android:paddingTop="10dp"
+    android:paddingEnd="@dimen/spacing_editorial_right"
+    android:paddingBottom="24dp">
+
+    <View
+        android:layout_width="52dp"
+        android:layout_height="5dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="18dp"
+        android:background="@drawable/editorial_glass_nav" />
 
     <TextView
         android:id="@+id/tv_cluster_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+        android:text="Cluster"
         android:textColor="@color/text_primary"
-        android:text="Cluster" />
+        android:textSize="28sp"
+        android:textStyle="bold" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_cluster_members"
         android:layout_width="match_parent"
         android:layout_height="300dp"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="12dp" />
 
 </LinearLayout>

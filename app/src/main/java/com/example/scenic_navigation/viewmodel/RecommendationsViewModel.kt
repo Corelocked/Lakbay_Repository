@@ -129,25 +129,6 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
-    // Simple CSV parser to handle quoted fields
-    private fun parseCsvLine(line: String): List<String> {
-        val result = mutableListOf<String>()
-        var current = StringBuilder()
-        var inQuotes = false
-        for (char in line) {
-            when {
-                char == '"' -> inQuotes = !inQuotes
-                char == ',' && !inQuotes -> {
-                    result.add(current.toString().trim())
-                    current = StringBuilder()
-                }
-                else -> current.append(char)
-            }
-        }
-        result.add(current.toString().trim())
-        return result
-    }
-
     /**
      * Allow user to 'like' or curate a POI. This increments the category count (used by personalization)
      * and persists the POI name in a curated set so future suggestions can prioritize it.
@@ -184,37 +165,16 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
 
         val allPois = mutableListOf<Poi>()
         try {
-            val assetManager = getApplication<Application>().assets
-            val inputStream = assetManager.open("datasets/luzon_dataset.csv")
-            val reader = BufferedReader(InputStreamReader(inputStream))
-            reader.readLine() // skip header
-            reader.forEachLine { line ->
-                val parts = parseCsvLine(line)
-                if (parts.size >= 6) {
-                    val poi = Poi(
-                        name = parts[0].trim().removeSurrounding("\"") ,
-                        category = parts[1].trim().removeSurrounding("\"") ,
-                        description = parts[5].trim().removeSurrounding("\"") ,
-                        municipality = parts[2].trim().removeSurrounding("\"") ,
-                        lat = parts[3].trim().removeSurrounding("\"").toDoubleOrNull(),
-                        lon = parts[4].trim().removeSurrounding("\"").toDoubleOrNull()
-                    )
-                    if (poi.name.isNotBlank() && poi.lat != null && poi.lon != null) {
-                        allPois.add(poi)
-                    }
-                }
-            }
-            reader.close()
-            inputStream.close()
-            Log.i("RecommendationsVM", "Loaded ${allPois.size} POIs from luzon_dataset.csv")
+            allPois.addAll(poiService.getDatabasePois())
+            Log.i("RecommendationsVM", "Loaded ${allPois.size} POIs from Room database")
             if (allPois.isNotEmpty()) {
                 val sample = allPois.take(5).map { it.name }
                 Log.d("RecommendationsVM", "Sample loaded POIs: $sample")
             } else {
-                Log.w("RecommendationsVM", "No POIs found in luzon_dataset.csv after parsing (file may be missing or empty)")
+                Log.w("RecommendationsVM", "No POIs found in the local Room database")
             }
         } catch (e: Exception) {
-            Log.w("RecommendationsVM", "Could not load luzon_dataset.csv from assets: ${e.message}")
+            Log.w("RecommendationsVM", "Could not load POIs from the local Room database: ${e.message}")
         }
 
         // Fallbacks only executed if CSV returned nothing
@@ -267,8 +227,16 @@ class RecommendationsViewModel(application: Application) : AndroidViewModel(appl
             _isLoading.value = true
             try {
                 Log.d("RecommendationsVM", "fetchRecommendations invoked: userLat=$userLat userLon=$userLon maxDistance=$maxDistanceKm preferredCategories=$preferredCategories")
-                // Load candidates via cached loader
-                val allPois = loadCandidates().toMutableList()
+                val queriedCandidates = if (preferredCategories.isEmpty()) {
+                    poiService.searchDatabasePois(userLat, userLon, maxDistanceKm)
+                } else {
+                    poiService.searchDatabasePois(userLat, userLon, maxDistanceKm, preferredCategories)
+                }
+                val allPois = if (queriedCandidates.isNotEmpty()) {
+                    queriedCandidates.toMutableList()
+                } else {
+                    loadCandidates().toMutableList()
+                }
                 Log.i("RecommendationsVM", "Candidates after load: ${allPois.size}")
 
                 // 5) Sort by simple category priority then rerank with ML (if available)

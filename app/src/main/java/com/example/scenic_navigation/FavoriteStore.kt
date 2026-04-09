@@ -1,73 +1,32 @@
 package com.example.scenic_navigation
 
 import android.content.Context
-import org.json.JSONObject
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.map
+import com.example.scenic_navigation.data.local.AppDatabase
+import com.example.scenic_navigation.data.local.FavoritePoiEntity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 
 /**
- * Simple favorites store that persists full POI JSON under a single SharedPreferences string.
- * Keys are computed externally (e.g. name_lat_lon). Stored value is JSON with POI fields.
+ * Favorites store backed by Room. Public API stays stable so UI callers do not need to know
+ * whether favorites are stored in SharedPreferences or the local database.
  */
 object FavoriteStore {
-    private const val PREFS = "scenic_favorites"
-    private const val KEY_MAP = "favorites_map"
     private var initialized = false
     private lateinit var ctx: Context
+    private val database get() = AppDatabase.getInstance(ctx)
+    @Volatile
+    private var favoriteKeysCache: MutableSet<String> = mutableSetOf()
 
     fun init(context: Context) {
         if (!initialized) {
             ctx = context.applicationContext
+            favoriteKeysCache = runBlocking(Dispatchers.IO) {
+                database.favoritePoiDao().getAllKeys().toMutableSet()
+            }
             initialized = true
-            // perform a best-effort dedupe on any existing favorites stored under legacy or duplicate keys
-            try { dedupeExistingFavorites() } catch (_: Exception) {}
         }
-    }
-
-    // Best-effort pass over stored favorites to deduplicate entries referring to the same POI
-    private fun dedupeExistingFavorites() {
-        val obj = readMap()
-        val keys = obj.keys().asSequence().toList()
-        val seen = mutableListOf<Pair<Double, Double>>() // lat/lon pairs seen
-        val namesSeen = mutableSetOf<String>()
-        val toRemove = mutableListOf<String>()
-        for (k in keys) {
-            try {
-                val o = obj.optJSONObject(k) ?: continue
-                val lat = if (o.has("lat")) o.optDouble("lat") else Double.NaN
-                val lon = if (o.has("lon")) o.optDouble("lon") else Double.NaN
-                if (!lat.isNaN() && !lon.isNaN()) {
-                    val found = seen.find { kotlin.math.abs(it.first - lat) < 1e-6 && kotlin.math.abs(it.second - lon) < 1e-6 }
-                    if (found != null) {
-                        toRemove.add(k)
-                        continue
-                    } else {
-                        seen.add(Pair(lat, lon))
-                    }
-                } else {
-                    val name = o.optString("name", "").trim().lowercase()
-                    if (name.isNotBlank()) {
-                        if (namesSeen.contains(name)) {
-                            toRemove.add(k)
-                            continue
-                        } else namesSeen.add(name)
-                    }
-                }
-            } catch (_: Exception) {}
-        }
-        if (toRemove.isNotEmpty()) {
-            for (k in toRemove) obj.remove(k)
-            writeMap(obj)
-        }
-    }
-
-    private fun prefs() = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-
-    private fun readMap(): JSONObject {
-        val raw = prefs().getString(KEY_MAP, null) ?: return JSONObject()
-        return try { JSONObject(raw) } catch (_: Exception) { JSONObject() }
-    }
-
-    private fun writeMap(obj: JSONObject) {
-        prefs().edit().putString(KEY_MAP, obj.toString()).apply()
     }
 
     // Helper to compute canonical key in the same format used elsewhere: name,category,lat,lon
@@ -81,133 +40,58 @@ object FavoriteStore {
 
     fun getAllFavorites(): List<com.example.scenic_navigation.models.Poi> {
         if (!initialized) throw IllegalStateException("FavoriteStore not initialized")
-        val obj = readMap()
-        val list = mutableListOf<com.example.scenic_navigation.models.Poi>()
-        val keys = obj.keys()
-        while (keys.hasNext()) {
-            val k = keys.next()
-            try {
-                val o = obj.getJSONObject(k)
-                val poi = com.example.scenic_navigation.models.Poi(
-                    name = o.optString("name", "Unknown"),
-                    category = o.optString("category", ""),
-                    description = o.optString("description", ""),
-                    municipality = o.optString("municipality", ""),
-                    lat = if (o.has("lat")) o.optDouble("lat") else null,
-                    lon = if (o.has("lon")) o.optDouble("lon") else null,
-                    scenicScore = if (o.has("scenicScore")) o.optDouble("scenicScore").toFloat() else null
-                )
-                list.add(poi)
-            } catch (_: Exception) {}
+        return runBlocking(Dispatchers.IO) {
+            database.favoritePoiDao().getAll().map { it.toPoi() }
         }
-        return list
+    }
+
+    fun observeAllFavorites(): LiveData<List<com.example.scenic_navigation.models.Poi>> {
+        if (!initialized) throw IllegalStateException("FavoriteStore not initialized")
+        return database.favoritePoiDao().observeAll().map { entities ->
+            entities.map { it.toPoi() }
+        }
     }
 
     fun isFavorite(key: String): Boolean {
         if (!initialized) throw IllegalStateException("FavoriteStore not initialized")
-        val obj = readMap()
-        return obj.has(key)
+        return favoriteKeysCache.contains(key)
     }
 
     fun addFavorite(key: String, poi: com.example.scenic_navigation.models.Poi) {
-        // Normalize to canonical key based on POI fields to avoid multiple representations of same POI
-        val obj = readMap()
         val storeKey = try { com.example.scenic_navigation.ui.RecommendationsAdapter.canonicalKey(poi) } catch (_: Exception) {
             canonicalKeyForPoi(poi.name, poi.category, poi.lat, poi.lon)
         }
-
-        // Remove any existing entries that appear to refer to the same POI (match by lat/lon if present)
-        try {
-            val keys = obj.keys().asSequence().toList()
-            for (k in keys) {
-                try {
-                    val o = obj.optJSONObject(k) ?: continue
-                    val storedLat = if (o.has("lat")) o.optDouble("lat") else Double.NaN
-                    val storedLon = if (o.has("lon")) o.optDouble("lon") else Double.NaN
-                    if (!storedLat.isNaN() && !storedLon.isNaN() && poi.lat != null && poi.lon != null) {
-                        val eps = 1e-6
-                        if (k != storeKey && kotlin.math.abs(storedLat - poi.lat) < eps && kotlin.math.abs(storedLon - poi.lon) < eps) {
-                            obj.remove(k)
-                        }
-                    } else {
-                        // Fallback: compare normalized names
-                        val storedName = o.optString("name", "").trim().lowercase()
-                        if (storedName.isNotBlank() && storedName == poi.name.trim().lowercase() && k != storeKey) {
-                            obj.remove(k)
-                        }
-                    }
-                } catch (_: Exception) {}
-            }
-        } catch (_: Exception) {}
-
-        val p = JSONObject()
-        p.put("name", poi.name)
-        p.put("category", poi.category)
-        p.put("description", poi.description)
-        p.put("municipality", poi.municipality)
-        poi.lat?.let { p.put("lat", it) }
-        poi.lon?.let { p.put("lon", it) }
-        poi.scenicScore?.let { p.put("scenicScore", it) }
-        obj.put(storeKey, p)
-        writeMap(obj)
+        runBlocking(Dispatchers.IO) {
+            val dao = database.favoritePoiDao()
+            dao.deleteByName(poi.name.trim())
+            dao.upsert(FavoritePoiEntity.fromPoi(storeKey, poi))
+        }
+        favoriteKeysCache.removeIf { existing ->
+            existing.split(',').firstOrNull()?.trim()?.equals(poi.name.trim(), ignoreCase = true) == true
+        }
+        favoriteKeysCache.add(storeKey)
     }
 
     fun removeFavorite(key: String) {
-        val obj = readMap()
-        if (obj.has(key)) {
-            obj.remove(key)
-            writeMap(obj)
-            return
+        if (!initialized) throw IllegalStateException("FavoriteStore not initialized")
+        val namePart = key.split(',').firstOrNull()?.trim()
+        runBlocking(Dispatchers.IO) {
+            val dao = database.favoritePoiDao()
+            dao.deleteByKey(key)
+            if (!namePart.isNullOrBlank()) {
+                dao.deleteByName(namePart)
+            }
         }
-
-        // If exact key not present, try to parse lat/lon from the provided key and remove any matching entries
-        try {
-            val numberRegex = Regex("-?\\d+\\.?\\d*(?:[eE][+-]?\\d+)?")
-            val found = numberRegex.findAll(key).map { it.value }.toList()
-            if (found.size >= 2) {
-                val lat = found[found.size - 2].toDoubleOrNull()
-                val lon = found[found.size - 1].toDoubleOrNull()
-                if (lat != null && lon != null) {
-                    val keys = obj.keys().asSequence().toList()
-                    val eps = 1e-6
-                    for (k in keys) {
-                        try {
-                            val o = obj.optJSONObject(k) ?: continue
-                            val storedLat = if (o.has("lat")) o.optDouble("lat") else Double.NaN
-                            val storedLon = if (o.has("lon")) o.optDouble("lon") else Double.NaN
-                            if (!storedLat.isNaN() && !storedLon.isNaN()) {
-                                if (k != key && kotlin.math.abs(storedLat - lat) < eps && kotlin.math.abs(storedLon - lon) < eps) {
-                                    obj.remove(k)
-                                }
-                            }
-                        } catch (_: Exception) {}
-                    }
-                    writeMap(obj)
-                    return
-                }
+        favoriteKeysCache.remove(key)
+        if (!namePart.isNullOrBlank()) {
+            favoriteKeysCache.removeIf { existing ->
+                existing.split(',').firstOrNull()?.trim()?.equals(namePart, ignoreCase = true) == true
             }
-        } catch (_: Exception) {}
-
-        // As a last resort, try removing entries with matching normalized name
-        try {
-            val namePart = key.split(',').firstOrNull()?.trim()?.lowercase() ?: key.trim().lowercase()
-            val keys = obj.keys().asSequence().toList()
-            for (k in keys) {
-                try {
-                    val o = obj.optJSONObject(k) ?: continue
-                    val storedName = o.optString("name", "").trim().lowercase()
-                    if (storedName == namePart) obj.remove(k)
-                } catch (_: Exception) {}
-            }
-            writeMap(obj)
-        } catch (_: Exception) {}
+        }
     }
 
     fun getFavoriteKeys(): Set<String> {
-        val obj = readMap()
-        val s = mutableSetOf<String>()
-        val keys = obj.keys()
-        while (keys.hasNext()) s.add(keys.next())
-        return s
+        if (!initialized) throw IllegalStateException("FavoriteStore not initialized")
+        return favoriteKeysCache.toSet()
     }
 }

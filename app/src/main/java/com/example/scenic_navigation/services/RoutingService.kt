@@ -15,9 +15,11 @@ import java.util.Collections
 import java.util.LinkedHashMap
 
 /**
- * Service for fetching routes using OSRM API
+ * Service for fetching routes using Mapbox Directions API
  */
 class RoutingService {
+    private val mapboxAccessToken = com.example.scenic_navigation.config.Config.MAPBOX_ACCESS_TOKEN
+
     private val httpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
@@ -26,6 +28,7 @@ class RoutingService {
             .connectionPool(okhttp3.ConnectionPool(8, 5, java.util.concurrent.TimeUnit.MINUTES))
             .build()
     }
+
     // Cache for segment routes: key is "fromLon,fromLat;toLon,toLat"
     private val segmentCache: MutableMap<String, List<GeoPoint>> = Collections.synchronizedMap(
         object : LinkedHashMap<String, List<GeoPoint>>(64, 0.75f, true) {
@@ -34,6 +37,8 @@ class RoutingService {
             }
         }
     )
+
+    // ...existing waypoint definitions remain the same...
 
     // Hardcoded Philippine mountain waypoints
     private val mountainWaypoints = mapOf(
@@ -252,26 +257,26 @@ class RoutingService {
             "oceanic" -> generateCoastalRouteViaWaypoints(start, destination, packageName)
             "mountain" -> generateMountainRouteViaWaypoints(start, destination, packageName)
             else -> {
-                // Default: direct route
-                val waypointsStr = "${start.longitude},${start.latitude};${destination.longitude},${destination.latitude}"
-                val url = "https://router.project-osrm.org/route/v1/driving/" +
-                        waypointsStr +
-                        "?overview=full&geometries=geojson&alternatives=false"
+                // Default: direct route via Mapbox
+                val url = "https://api.mapbox.com/directions/v5/mapbox/driving/" +
+                        "${start.longitude},${start.latitude};${destination.longitude},${destination.latitude}" +
+                        "?steps=true&geometries=geojson&overview=full&access_token=$mapboxAccessToken"
+
                 val request = Request.Builder()
                     .url(url)
                     .header("User-Agent", packageName)
                     .header("Accept", "application/json")
                     .build()
                 try {
-                    Log.d("RoutingService", "OSRM request: $url")
+                    Log.d("RoutingService", "Mapbox request: $url")
                     val response = httpClient.newCall(request).execute()
-                    Log.d("RoutingService", "OSRM response code: ${response.code}")
+                    Log.d("RoutingService", "Mapbox response code: ${response.code}")
                     if (response.isSuccessful) {
                         val body = response.body?.string() ?: ""
-                        return@withContext parseRouteFromOsrmResponse(body)
+                        return@withContext parseRouteFromMapboxResponse(body)
                     }
                 } catch (e: Exception) {
-                    Log.d("RoutingService", "OSRM error: ${e.message}")
+                    Log.e("RoutingService", "Mapbox error: ${e.message}")
                 }
                 return@withContext emptyList()
             }
@@ -447,16 +452,11 @@ class RoutingService {
     }
 
     private suspend fun generateRouteViaWaypoints(start: GeoPoint, dest: GeoPoint, packageName: String, waypoints: List<GeoPoint>): List<GeoPoint> {
-        // Sort and filter waypoints to follow logical path from start to dest
         val sortedWaypoints = sortWaypointsAlongPath(start, dest, waypoints)
 
-        // Limit waypoints to prevent overly complex routes
-        // More waypoints = more chances for branching and routing issues
-        // Keep it at 3 to match mountain routes for consistency
         val maxWaypoints = 3
         val limitedWaypoints = if (sortedWaypoints.size > maxWaypoints) {
             Log.d("RoutingService", "Limiting waypoints from ${sortedWaypoints.size} to $maxWaypoints to prevent route complexity")
-            // Take evenly distributed waypoints
             val step = sortedWaypoints.size.toDouble() / maxWaypoints
             (0 until maxWaypoints).map { i ->
                 sortedWaypoints[(i * step).toInt()]
@@ -465,7 +465,6 @@ class RoutingService {
             sortedWaypoints
         }
 
-        // Enforce initial efficient segment: reserve first 15% of the route (cap 2.5km)
         val directDistance = try {
             com.example.scenic_navigation.utils.GeoUtils.haversine(start.latitude, start.longitude, dest.latitude, dest.longitude)
         } catch (_: Exception) {
@@ -494,7 +493,6 @@ class RoutingService {
         } else limitedWaypoints
 
         val allPoints = listOf(start) + waypointsRespectingInitialClear + listOf(dest)
-        // Fetch segments in parallel with limited concurrency
         val semaphore = Semaphore(4)
         val deferred = mutableListOf<kotlinx.coroutines.Deferred<Pair<Int, List<GeoPoint>>>>()
 
@@ -505,7 +503,6 @@ class RoutingService {
                 val to = allPoints[i + 1]
                 val key = "${from.longitude},${from.latitude};${to.longitude},${to.latitude}"
 
-                // If cached, return immediately
                 val cached = segmentCache[key]
                 if (cached != null) {
                     deferred.add(async { Pair(idx, cached) })
@@ -515,7 +512,10 @@ class RoutingService {
                 deferred.add(async {
                     semaphore.withPermit {
                         try {
-                            val segmentUrl = "https://router.project-osrm.org/route/v1/driving/${from.longitude},${from.latitude};${to.longitude},${to.latitude}?overview=full&geometries=geojson"
+                            // Use Mapbox Directions API instead of OSRM
+                            val segmentUrl = "https://api.mapbox.com/directions/v5/mapbox/driving/" +
+                                    "${from.longitude},${from.latitude};${to.longitude},${to.latitude}" +
+                                    "?steps=true&geometries=geojson&overview=full&access_token=$mapboxAccessToken"
                             Log.d("RoutingService", "Fetching segment[$idx]: $segmentUrl")
                             val request = Request.Builder()
                                 .url(segmentUrl)
@@ -526,10 +526,9 @@ class RoutingService {
                             Log.d("RoutingService", "Segment[$idx] response code: ${response.code}")
                             val segmentRoute = if (response.isSuccessful) {
                                 val body = response.body?.string() ?: ""
-                                parseRouteFromOsrmResponse(body)
+                                parseRouteFromMapboxResponse(body)
                             } else emptyList()
                             response.close()
-                            // cache route
                             if (segmentRoute.isNotEmpty()) segmentCache[key] = segmentRoute
                             Pair(idx, segmentRoute)
                         } catch (e: Exception) {
@@ -540,29 +539,23 @@ class RoutingService {
                 })
             }
 
-            // Wait and collect in order
             val segments = deferred.awaitAll().sortedBy { it.first }.map { it.second }
 
-            // Assemble full route while avoiding exact/near-duplicate consecutive points
             val fullRoute = mutableListOf<GeoPoint>()
             for (segment in segments) {
                 if (segment.isEmpty()) continue
                 if (fullRoute.isEmpty()) {
                     fullRoute.addAll(segment)
                 } else {
-                    // Append segment but avoid repeating the first point if it's the same
-                    // as the last point we already have (or extremely close).
                     val lastExisting = fullRoute.last()
                     val firstOfSegment = segment.first()
                     val isSame = try {
-                        // Use a small distance threshold (1 meter) to collapse near-duplicates
                         val d = com.example.scenic_navigation.utils.GeoUtils.haversine(
                             lastExisting.latitude, lastExisting.longitude,
                             firstOfSegment.latitude, firstOfSegment.longitude
                         )
                         d < 1.0
                     } catch (_: Exception) {
-                        // Fallback to exact coordinate compare
                         lastExisting.latitude == firstOfSegment.latitude && lastExisting.longitude == firstOfSegment.longitude
                     }
 
@@ -575,10 +568,9 @@ class RoutingService {
             }
 
             if (fullRoute.isEmpty()) {
-                Log.w("RoutingService", "Assembled full route is empty after fetching all segments. This may indicate OSRM failed to return segment geometries for the provided waypoints.")
+                Log.w("RoutingService", "Assembled full route is empty after fetching all segments.")
             }
 
-            // Final pass: remove any remaining consecutive near-duplicates due to OSRM noise
             val deduped = mutableListOf<GeoPoint>()
             for (p in fullRoute) {
                 if (deduped.isEmpty()) {
@@ -590,7 +582,7 @@ class RoutingService {
                     } catch (_: Exception) {
                         0.0
                     }
-                    if (dist >= 0.5) { // keep points that are at least 0.5m apart
+                    if (dist >= 0.5) {
                         deduped.add(p)
                     }
                 }
@@ -704,18 +696,21 @@ class RoutingService {
             .map { it.first }
     }
 
-    private fun parseRouteFromOsrmResponse(body: String): List<GeoPoint> {
+    private fun parseRouteFromMapboxResponse(body: String): List<GeoPoint> {
         return try {
             val json = org.json.JSONObject(body)
 
+            // Mapbox returns "code": "Ok" on success, or "message" on error
             val code = json.optString("code", "")
             if (code != "Ok") {
-                Log.e("RoutingService", "OSRM error: $code")
+                val message = json.optString("message", "Unknown error")
+                Log.e("RoutingService", "Mapbox error: $code - $message")
                 return emptyList()
             }
 
             val routes = json.optJSONArray("routes")
             if (routes == null || routes.length() == 0) {
+                Log.w("RoutingService", "No routes returned from Mapbox")
                 return emptyList()
             }
 
@@ -726,12 +721,13 @@ class RoutingService {
             val routePoints = mutableListOf<GeoPoint>()
             for (i in 0 until coords.length()) {
                 val point = coords.getJSONArray(i)
+                // Mapbox returns [lon, lat], GeoPoint expects (lat, lon)
                 routePoints.add(GeoPoint(point.getDouble(1), point.getDouble(0)))
             }
 
             routePoints
         } catch (e: Exception) {
-            Log.e("RoutingService", "Error parsing OSRM response: ${e.message}")
+            Log.e("RoutingService", "Error parsing Mapbox response: ${e.message}")
             emptyList()
         }
     }
@@ -741,9 +737,9 @@ class RoutingService {
         destination: GeoPoint,
         packageName: String
     ): List<List<GeoPoint>> = withContext(Dispatchers.IO) {
-        val url = "https://router.project-osrm.org/route/v1/driving/" +
+        val url = "https://api.mapbox.com/directions/v5/mapbox/driving/" +
                 "${start.longitude},${start.latitude};${destination.longitude},${destination.latitude}" +
-                "?overview=full&geometries=geojson&alternatives=true"
+                "?steps=true&geometries=geojson&overview=full&alternatives=true&access_token=$mapboxAccessToken"
 
         val request = Request.Builder()
             .url(url)
@@ -752,16 +748,16 @@ class RoutingService {
             .build()
 
         try {
-            Log.d("RoutingService", "OSRM alternatives request: $url")
+            Log.d("RoutingService", "Mapbox alternatives request: $url")
             val response = httpClient.newCall(request).execute()
-            Log.d("RoutingService", "OSRM response code: ${response.code}")
+            Log.d("RoutingService", "Mapbox response code: ${response.code}")
 
             if (response.isSuccessful) {
                 val body = response.body?.string() ?: ""
                 return@withContext parseAlternatives(body)
             }
         } catch (e: Exception) {
-            Log.d("RoutingService", "OSRM error: ${e.message}")
+            Log.e("RoutingService", "Mapbox error: ${e.message}")
         }
 
         return@withContext emptyList()
@@ -781,6 +777,7 @@ class RoutingService {
 
                 for (j in 0 until coords.length()) {
                     val point = coords.getJSONArray(j)
+                    // Mapbox returns [lon, lat]
                     routePoints.add(GeoPoint(point.getDouble(1), point.getDouble(0)))
                 }
 
